@@ -1,4 +1,4 @@
-package main
+package dataapi
 
 import (
 	"encoding/json"

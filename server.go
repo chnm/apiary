@@ -1,11 +1,11 @@
-package main
+package dataapi
 
 import (
 	"database/sql"
 	"fmt"
+
 	"github.com/gorilla/mux"
 	_ "github.com/lib/pq" // Driver for database
-	"os"
 )
 
 // The Server type shares access to the database.
@@ -19,7 +19,15 @@ func NewServer() (*Server, error) {
 	s := Server{}
 
 	// Connect to the database
-	constr := fmt.Sprintf("user=releco dbname=releco password=%s host=localhost port=5555 sslmode=disable", os.Getenv("DBPASS"))
+	dbhost := getEnv("DATAAPI_DBHOST", "localhost")
+	dbport := getEnv("DATAAPI_DBPORT", "5432")
+	dbname := getEnv("DATAAPI_DBNAME", "dataapi")
+	dbuser := getEnv("DATAAPI_DBUSER", "dataapi")
+	dbpass := getEnv("DATAAPI_DBPASS", "")
+	dbsslm := getEnv("DATAAPI_SSL", "disable")
+
+	constr := fmt.Sprintf("host=%s port=%s dbname=%s user=%s password=%s sslmode=%s",
+		dbhost, dbport, dbname, dbuser, dbpass, dbsslm)
 	db, err := sql.Open("postgres", constr)
 	if err != nil {
 		return nil, err

@@ -1,5 +1,6 @@
-package main
+package dataapi
 
-func (s *Server) routes() {
+// Routes registers the handlers for the URLs that should be served.
+func (s *Server) Routes() {
 	s.Router.HandleFunc("/presbyterians/", s.PresbyteriansHandler())
 }
