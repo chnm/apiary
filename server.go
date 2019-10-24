@@ -23,7 +23,8 @@ type Server struct {
 func NewServer() *Server {
 	s := Server{}
 
-	// Connect to the database
+	// Connect to the database. Read the configuration from environment variables,
+	// connect to the database, and then store the database in the struct.
 	dbhost := getEnv("RELECAPI_DBHOST", "localhost")
 	dbport := getEnv("RELECAPI_DBPORT", "5432")
 	dbname := getEnv("RELECAPI_DBNAME", "dataapi")
@@ -40,21 +41,19 @@ func NewServer() *Server {
 	if err := db.Ping(); err != nil {
 		log.Fatalln(err)
 	}
-
-	// Create the router
-	router := mux.NewRouter()
-
 	s.Database = db
+
+	// Create the router, store it in the struct, and initialize the routes.
+	router := mux.NewRouter()
 	s.Router = router
+	s.Routes()
 
 	return &s
 }
 
 // Run starts the API server.
 func (s *Server) Run() {
-	defer s.Shutdown() // Make sure we shutdown
-
-	s.Routes()
+	defer s.Shutdown() // Make sure we shutdown.
 
 	// Run the server in a go routine, using a blocking channel to listen for interrupts.
 	stop := make(chan os.Signal, 1)
@@ -62,7 +61,7 @@ func (s *Server) Run() {
 
 	port := ":" + getEnv("RELECAPI_PORT", "8080")
 
-	log.Printf("Starting the server on localhost%s ...\n", port)
+	log.Printf("Starting the server on http://localhost%s ...\n", port)
 	go func() {
 		err := http.ListenAndServe(port, s.Router)
 		if err != nil {
