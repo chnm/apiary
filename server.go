@@ -60,9 +60,11 @@ func (s *Server) Run() {
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, os.Interrupt, syscall.SIGTERM, syscall.SIGINT, syscall.SIGQUIT)
 
-	log.Println("Starting the server ...")
+	port := ":" + getEnv("RELECAPI_PORT", "8080")
+
+	log.Printf("Starting the server on localhost%s ...\n", port)
 	go func() {
-		err := http.ListenAndServe(":8080", s.Router)
+		err := http.ListenAndServe(port, s.Router)
 		if err != nil {
 			log.Fatalln(err)
 		}
