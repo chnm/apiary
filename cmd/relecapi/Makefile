@@ -1,5 +1,5 @@
 test : build
-	source .env && ./dataapi
+	source .env && ./relecapi
 
 build :
 	cd ../.. && go build

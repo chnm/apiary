@@ -1,4 +1,4 @@
-package dataapi
+package relecapi
 
 import (
 	"encoding/json"

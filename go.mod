@@ -1,4 +1,4 @@
-module github.com/religious-ecologies/dataapi
+module github.com/religious-ecologies/relecapi
 
 go 1.13
 

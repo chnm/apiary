@@ -1,4 +1,4 @@
-package dataapi
+package relecapi
 
 import (
 	"database/sql"
@@ -24,12 +24,12 @@ func NewServer() *Server {
 	s := Server{}
 
 	// Connect to the database
-	dbhost := getEnv("DATAAPI_DBHOST", "localhost")
-	dbport := getEnv("DATAAPI_DBPORT", "5432")
-	dbname := getEnv("DATAAPI_DBNAME", "dataapi")
-	dbuser := getEnv("DATAAPI_DBUSER", "dataapi")
-	dbpass := getEnv("DATAAPI_DBPASS", "")
-	dbsslm := getEnv("DATAAPI_SSL", "disable")
+	dbhost := getEnv("RELECAPI_DBHOST", "localhost")
+	dbport := getEnv("RELECAPI_DBPORT", "5432")
+	dbname := getEnv("RELECAPI_DBNAME", "dataapi")
+	dbuser := getEnv("RELECAPI_DBUSER", "dataapi")
+	dbpass := getEnv("RELECAPI_DBPASS", "")
+	dbsslm := getEnv("RELECAPI_SSL", "disable")
 
 	constr := fmt.Sprintf("host=%s port=%s dbname=%s user=%s password=%s sslmode=%s",
 		dbhost, dbport, dbname, dbuser, dbpass, dbsslm)
