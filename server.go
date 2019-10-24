@@ -3,6 +3,11 @@ package dataapi
 import (
 	"database/sql"
 	"fmt"
+	"log"
+	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/gorilla/mux"
 	_ "github.com/lib/pq" // Driver for database
@@ -15,7 +20,7 @@ type Server struct {
 }
 
 // NewServer creates a new Server and connects to the database or fails trying.
-func NewServer() (*Server, error) {
+func NewServer() *Server {
 	s := Server{}
 
 	// Connect to the database
@@ -30,10 +35,10 @@ func NewServer() (*Server, error) {
 		dbhost, dbport, dbname, dbuser, dbpass, dbsslm)
 	db, err := sql.Open("postgres", constr)
 	if err != nil {
-		return nil, err
+		log.Fatalln(err)
 	}
 	if err := db.Ping(); err != nil {
-		return nil, err
+		log.Fatalln(err)
 	}
 
 	// Create the router
@@ -42,5 +47,37 @@ func NewServer() (*Server, error) {
 	s.Database = db
 	s.Router = router
 
-	return &s, nil
+	return &s
+}
+
+// Run starts the API server.
+func (s *Server) Run() {
+	defer s.Shutdown() // Make sure we shutdown
+
+	s.Routes()
+
+	// Run the server in a go routine, using a blocking channel to listen for interrupts.
+	stop := make(chan os.Signal, 1)
+	signal.Notify(stop, os.Interrupt, syscall.SIGTERM, syscall.SIGINT, syscall.SIGQUIT)
+
+	log.Println("Starting the server ...")
+	go func() {
+		err := http.ListenAndServe(":8080", s.Router)
+		if err != nil {
+			log.Fatalln(err)
+		}
+	}()
+
+	<-stop
+
+}
+
+// Shutdown closes the connection to the database and shutsdown the server.
+func (s *Server) Shutdown() {
+	log.Println("Closing the connection to the database.")
+	err := s.Database.Close()
+	if err != nil {
+		log.Fatalln(err)
+	}
+	log.Println("Shutting down the server.")
 }
