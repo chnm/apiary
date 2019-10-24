@@ -19,6 +19,26 @@ func TestMain(m *testing.M) {
 	os.Exit(code)
 }
 
+// Helper for tests.
+func executeRequest(req *http.Request) *httptest.ResponseRecorder {
+	rr := httptest.NewRecorder()
+	s.Router.ServeHTTP(rr, req)
+	return rr
+}
+
+// Helper for tests.
+func checkResponseCode(t *testing.T, expected, actual int) {
+	if expected != actual {
+		t.Errorf("Expected response code %d. Got %d.\n", expected, actual)
+	}
+}
+func TestEndpoints(t *testing.T) {
+	// It is sufficient to check that the list of endpoints is there
+	req, _ := http.NewRequest("GET", "/", nil)
+	response := executeRequest(req)
+	checkResponseCode(t, http.StatusOK, response.Code)
+}
+
 func TestPresbyterians(t *testing.T) {
 	// Check that we get the right response
 	req, _ := http.NewRequest("GET", "/presbyterians/", nil)
@@ -40,16 +60,4 @@ func TestPresbyterians(t *testing.T) {
 		t.Error("Values in data are not what was expected.")
 	}
 
-}
-
-func executeRequest(req *http.Request) *httptest.ResponseRecorder {
-	rr := httptest.NewRecorder()
-	s.Router.ServeHTTP(rr, req)
-	return rr
-}
-
-func checkResponseCode(t *testing.T, expected, actual int) {
-	if expected != actual {
-		t.Errorf("Expected response code %d. Got %d.\n", expected, actual)
-	}
 }
