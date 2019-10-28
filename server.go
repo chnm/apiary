@@ -42,10 +42,12 @@ func NewServer() *Server {
 	}
 	s.Database = db
 
-	// Create the router, store it in the struct, and initialize the routes.
+	// Create the router, store it in the struct, initialize the routes, and
+	// register the middleware.
 	router := mux.NewRouter()
 	s.Router = router
 	s.Routes()
+	s.Middleware()
 
 	return &s
 }
@@ -60,7 +62,7 @@ func (s *Server) Run() {
 
 	port := ":" + getEnv("RELECAPI_PORT", "8080")
 
-	log.Printf("Starting the server on http://localhost%s ...\n", port)
+	log.Printf("Starting the server on http://localhost%s.\n", port)
 	go func() {
 		err := http.ListenAndServe(port, s.Router)
 		if err != nil {
