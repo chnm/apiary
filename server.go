@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"syscall"
 
 	"github.com/gorilla/mux"
 	_ "github.com/lib/pq" // Driver for database
@@ -57,8 +58,9 @@ func (s *Server) Run() {
 	defer s.Shutdown() // Make sure we shutdown.
 
 	// Run the server in a go routine, using a blocking channel to listen for interrupts.
+	// Stop gracefully for SIGTERM and SIGINT.
 	stop := make(chan os.Signal, 1)
-	signal.Notify(stop, os.Interrupt)
+	signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
 
 	port := ":" + getEnv("RELECAPI_PORT", "8080")
 
