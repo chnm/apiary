@@ -8,6 +8,7 @@ import (
 func (s *Server) Routes() {
 	s.Router.HandleFunc("/presbyterians/", s.PresbyteriansHandler())
 	s.Router.HandleFunc("/", s.EndpointHandler())
+	s.Router.NotFoundHandler = loggingMiddleware(s.NotFoundHandler())
 }
 
 // Middleware registers the middleware functions that should be used.

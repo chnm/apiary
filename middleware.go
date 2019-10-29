@@ -19,3 +19,12 @@ func corsMiddleware(next http.Handler) http.Handler {
 		next.ServeHTTP(w, r)
 	})
 }
+
+// NotFoundHandler returns 404 errors
+func (s *Server) NotFoundHandler() http.HandlerFunc {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNotFound)
+		w.Write([]byte("404 Not found."))
+	})
+
+}

@@ -61,3 +61,9 @@ func TestPresbyterians(t *testing.T) {
 	}
 
 }
+
+func Test404(t *testing.T) {
+	req, _ := http.NewRequest("GET", "/nodatahere/", nil)
+	response := executeRequest(req)
+	checkResponseCode(t, http.StatusNotFound, response.Code)
+}
