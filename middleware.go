@@ -7,6 +7,14 @@ import (
 	"github.com/gorilla/handlers"
 )
 
+// Middleware registers the middleware functions that should be used.
+func (s *Server) Middleware() {
+	s.Router.Use(loggingMiddleware)
+	s.Router.Use(corsMiddleware)
+	s.Router.Use(handlers.CompressHandler)   // gzip requests
+	s.Router.Use(handlers.RecoveryHandler()) // Recover from runtime panics
+}
+
 // Log requests in the Apache Common Log format
 func loggingMiddleware(next http.Handler) http.Handler {
 	return handlers.LoggingHandler(os.Stdout, next)
