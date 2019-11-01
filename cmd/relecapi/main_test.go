@@ -14,6 +14,7 @@ import (
 var s *relecapi.Server
 
 func TestMain(m *testing.M) {
+	os.Setenv("RELECAPI_LOGGING", "off") // No logs during testing
 	s = relecapi.NewServer()
 	code := m.Run()
 	os.Exit(code)

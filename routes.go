@@ -4,5 +4,10 @@ package relecapi
 func (s *Server) Routes() {
 	s.Router.HandleFunc("/presbyterians/", s.PresbyteriansHandler())
 	s.Router.HandleFunc("/", s.EndpointHandler())
-	s.Router.NotFoundHandler = loggingMiddleware(s.NotFoundHandler())
+
+	if getEnv("RELECAPI_LOGGING", "on") == "on" {
+		s.Router.NotFoundHandler = loggingMiddleware(s.NotFoundHandler())
+	} else {
+		s.Router.NotFoundHandler = s.NotFoundHandler()
+	}
 }

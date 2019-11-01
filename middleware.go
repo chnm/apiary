@@ -9,7 +9,9 @@ import (
 
 // Middleware registers the middleware functions that should be used.
 func (s *Server) Middleware() {
-	s.Router.Use(loggingMiddleware)
+	if getEnv("RELECAPI_LOGGING", "on") == "on" {
+		s.Router.Use(loggingMiddleware)
+	}
 	s.Router.Use(corsMiddleware)
 	s.Router.Use(handlers.CompressHandler)   // gzip requests
 	s.Router.Use(handlers.RecoveryHandler()) // Recover from runtime panics
