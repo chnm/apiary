@@ -14,13 +14,14 @@ go get github.com/religious-ecologies/relecapi/cmd/relecapi
 
 Set the following environment variables to configure the server:
 
-- `RELECAPI_DBHOST`
-- `RELECAPI_DBPORT`
-- `RELECAPI_DBNAME`
-- `RELECAPI_DBUSER`
-- `RELECAPI_DBPASS`
-- `RELECAPI_SSL`
-- `RELECAPI_PORT`
+- `RELECAPI_DBHOST` (default: `localhost`)
+- `RELECAPI_DBPORT` (default: `5432`)
+- `RELECAPI_DBNAME` (default: none)
+- `RELECAPI_DBUSER` (default: none)
+- `RELECAPI_DBPASS` (default: none)
+- `RELECAPI_SSL` (default: none; options: `enable`, `disable`)
+- `RELECAPI_PORT` (default: `8090`)
+- `RELECAPI_LOGGING` (default: `on`)
 
 Obviously this service requires that you be able to access the database.
 

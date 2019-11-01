@@ -27,10 +27,10 @@ func NewServer() *Server {
 	// connect to the database, and then store the database in the struct.
 	dbhost := getEnv("RELECAPI_DBHOST", "localhost")
 	dbport := getEnv("RELECAPI_DBPORT", "5432")
-	dbname := getEnv("RELECAPI_DBNAME", "dataapi")
-	dbuser := getEnv("RELECAPI_DBUSER", "dataapi")
+	dbname := getEnv("RELECAPI_DBNAME", "")
+	dbuser := getEnv("RELECAPI_DBUSER", "")
 	dbpass := getEnv("RELECAPI_DBPASS", "")
-	dbsslm := getEnv("RELECAPI_SSL", "disable")
+	dbsslm := getEnv("RELECAPI_SSL", "")
 
 	constr := fmt.Sprintf("host=%s port=%s dbname=%s user=%s password=%s sslmode=%s",
 		dbhost, dbport, dbname, dbuser, dbpass, dbsslm)
@@ -62,7 +62,7 @@ func (s *Server) Run() {
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
 
-	port := ":" + getEnv("RELECAPI_PORT", "8080")
+	port := ":" + getEnv("RELECAPI_PORT", "8090")
 
 	log.Printf("Starting the server on http://localhost%s.\n", port)
 	go func() {
