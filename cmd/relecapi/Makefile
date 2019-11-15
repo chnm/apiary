@@ -1,5 +1,5 @@
 serve : build
-	source .env && ./relecapi
+	./relecapi
 
 build :
 	cd ../.. && go build
@@ -10,4 +10,4 @@ install :
 	go install
 
 test :
-	source .env && go test -v
+	go test -v
