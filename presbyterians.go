@@ -21,10 +21,12 @@ func (s *Server) PresbyteriansHandler() http.HandlerFunc {
 		results := make([]PresbyteriansByYear, 0)
 		var row PresbyteriansByYear
 
-		query := `SELECT year, SUM(members) as members, SUM(churches) as churches
-							FROM presbyterians_weber 
-							WHERE members IS NOT NULL 
-							GROUP BY year ORDER BY year;`
+		query := `
+		SELECT year, SUM(members) as members, SUM(churches) as churches
+		FROM presbyterians_weber 
+		WHERE members IS NOT NULL 
+		GROUP BY year ORDER BY year;
+		`
 
 		rows, err := s.Database.Query(query)
 		if err != nil {
