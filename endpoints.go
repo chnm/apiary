@@ -44,6 +44,7 @@ func (s *Server) EndpointHandler() http.HandlerFunc {
 		err = rows.Err()
 		if err != nil {
 			log.Println(err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		}
 
 		response, _ := json.MarshalIndent(results, "", "  ")
