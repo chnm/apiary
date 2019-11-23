@@ -13,6 +13,7 @@ func (s *Server) Middleware() {
 		s.Router.Use(loggingMiddleware)
 	}
 	s.Router.Use(corsMiddleware)
+	s.Router.Use(clientCacheMiddleware)
 	s.Router.Use(handlers.CompressHandler)   // gzip requests
 	s.Router.Use(handlers.RecoveryHandler()) // Recover from runtime panics
 }
@@ -26,6 +27,14 @@ func loggingMiddleware(next http.Handler) http.Handler {
 func corsMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		(w).Header().Set("Access-Control-Allow-Origin", "*")
+		next.ServeHTTP(w, r)
+	})
+}
+
+// clientCacheMiddleware sets HTTP headers to permit client-side caching.
+func clientCacheMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Cache-Control", "max-age=604800") // One week
 		next.ServeHTTP(w, r)
 	})
 }
