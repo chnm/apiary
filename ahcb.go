@@ -9,8 +9,7 @@ import (
 )
 
 // AHCBStatesHandler returns a GeoJSON FeatureCollection containing states from
-// AHCB. The handler expects a date, for which it will get the state boundaries
-// for that particular date.
+// AHCB. The handler will get the county boundaries for a particular date.
 func (s *Server) AHCBStatesHandler() http.HandlerFunc {
 
 	// The minimum and maximum dates are the range of dates for states in AHCB.
@@ -31,7 +30,9 @@ func (s *Server) AHCBStatesHandler() http.HandlerFunc {
 				'geometry', ST_AsGeoJSON(geom_01)::json,
 				'properties', json_build_object(
 				'name', name,
-				'abbr', abbr_name)
+					'abbr', abbr_name,
+					'area_sqmi', area_sqmi,
+					'terr_type', terr_type)
 			) AS feature
 			FROM ahcb_states
 			WHERE start_date <= $1 AND end_date >= $1
