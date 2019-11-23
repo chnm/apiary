@@ -13,6 +13,12 @@ import (
 
 var s *relecapi.Server
 
+// Basic structure of a FeatureCollection in GeoJSON
+type GeoJSONFeatureCollection struct {
+	Type     string        `json:"type"`
+	Features []interface{} `json:"features"`
+}
+
 func TestMain(m *testing.M) {
 	os.Setenv("RELECAPI_LOGGING", "off") // No logs during testing
 	s = relecapi.NewServer()
@@ -69,11 +75,11 @@ func TestAHCBStates(t *testing.T) {
 	checkResponseCode(t, http.StatusOK, response.Code)
 
 	// Get the data
-	type StatesGeoJSON struct {
+	type GeoJSONFeatureCollection struct {
 		Type     string        `json:"type"`
 		Features []interface{} `json:"features"`
 	}
-	var data StatesGeoJSON
+	var data GeoJSONFeatureCollection
 	err := json.Unmarshal(response.Body.Bytes(), &data)
 	if err != nil {
 		t.Error(err)
@@ -84,6 +90,28 @@ func TestAHCBStates(t *testing.T) {
 	}
 
 	if len(data.Features) != 16 {
+		t.Error("Incorrect number of counties returned.")
+	}
+
+}
+
+func TestAHCBCounties(t *testing.T) {
+	req, _ := http.NewRequest("GET", "/ahcb/counties/1926-07-04/", nil)
+	response := executeRequest(req)
+	checkResponseCode(t, http.StatusOK, response.Code)
+
+	// Get the data
+	var data GeoJSONFeatureCollection
+	err := json.Unmarshal(response.Body.Bytes(), &data)
+	if err != nil {
+		t.Error(err)
+	}
+
+	if data.Type != "FeatureCollection" {
+		t.Error("Data is not a FeatureCollection.")
+	}
+
+	if len(data.Features) != 3113 {
 		t.Error("Incorrect number of states returned.")
 	}
 
