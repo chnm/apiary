@@ -63,6 +63,32 @@ func TestPresbyterians(t *testing.T) {
 
 }
 
+func TestAHCBStates(t *testing.T) {
+	req, _ := http.NewRequest("GET", "/ahcb/states/1789-07-04/", nil)
+	response := executeRequest(req)
+	checkResponseCode(t, http.StatusOK, response.Code)
+
+	// Get the data
+	type StatesGeoJSON struct {
+		Type     string        `json:"type"`
+		Features []interface{} `json:"features"`
+	}
+	var data StatesGeoJSON
+	err := json.Unmarshal(response.Body.Bytes(), &data)
+	if err != nil {
+		t.Error(err)
+	}
+
+	if data.Type != "FeatureCollection" {
+		t.Error("Data is not a FeatureCollection.")
+	}
+
+	if len(data.Features) != 16 {
+		t.Error("Incorrect number of states returned.")
+	}
+
+}
+
 func Test404(t *testing.T) {
 	req, _ := http.NewRequest("GET", "/nodatahere/", nil)
 	response := executeRequest(req)
