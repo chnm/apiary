@@ -15,8 +15,9 @@ import (
 
 // The Server type shares access to the database.
 type Server struct {
-	Database *sql.DB
-	Router   *mux.Router
+	Database   *sql.DB
+	Router     *mux.Router
+	Statements map[string]*sql.Stmt
 }
 
 // NewServer creates a new Server and connects to the database or fails trying.
@@ -42,6 +43,9 @@ func NewServer() *Server {
 		log.Fatalln(err)
 	}
 	s.Database = db
+
+	// Create an empty map to store prepared statements
+	s.Statements = make(map[string]*sql.Stmt)
 
 	// Create the router, store it in the struct, initialize the routes, and
 	// register the middleware.
@@ -78,6 +82,13 @@ func (s *Server) Run() {
 
 // Shutdown closes the connection to the database and shutsdown the server.
 func (s *Server) Shutdown() {
+	// Close any prepared statements
+	for _, v := range s.Statements {
+		err := v.Close()
+		if err != nil {
+			log.Println(err)
+		}
+	}
 	log.Println("Closing the connection to the database.")
 	err := s.Database.Close()
 	if err != nil {
