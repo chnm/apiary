@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/gorilla/mux"
 	_ "github.com/lib/pq" // Driver for database
@@ -15,6 +16,7 @@ import (
 
 // The Server type shares access to the database.
 type Server struct {
+	Server     *http.Server
 	Database   *sql.DB
 	Router     *mux.Router
 	Statements map[string]*sql.Stmt
@@ -54,6 +56,16 @@ func NewServer() *Server {
 	s.Routes()
 	s.Middleware()
 
+	port := ":" + getEnv("RELECAPI_PORT", "8090")
+
+	s.Server = &http.Server{
+		Addr:         port,
+		WriteTimeout: time.Second * 15,
+		ReadTimeout:  time.Second * 15,
+		IdleTimeout:  time.Second * 60,
+		Handler:      s.Router,
+	}
+
 	return &s
 }
 
@@ -66,13 +78,11 @@ func (s *Server) Run() {
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
 
-	port := ":" + getEnv("RELECAPI_PORT", "8090")
+	log.Printf("Starting the server on http://localhost%s.\n", s.Server.Addr)
 
-	log.Printf("Starting the server on http://localhost%s.\n", port)
 	go func() {
-		err := http.ListenAndServe(port, s.Router)
-		if err != nil {
-			log.Fatalln(err)
+		if err := s.Server.ListenAndServe(); err != nil {
+			log.Println(err)
 		}
 	}()
 
