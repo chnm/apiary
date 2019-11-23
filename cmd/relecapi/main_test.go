@@ -33,7 +33,7 @@ func checkResponseCode(t *testing.T, expected, actual int) {
 		t.Errorf("Expected response code %d. Got %d.\n", expected, actual)
 	}
 }
-func TestEndpoints(t *testing.T) {
+func TestSources(t *testing.T) {
 	// It is sufficient to check that the list of endpoints is there
 	req, _ := http.NewRequest("GET", "/", nil)
 	response := executeRequest(req)

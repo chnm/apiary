@@ -4,7 +4,7 @@ package relecapi
 func (s *Server) Routes() {
 	s.Router.HandleFunc("/presbyterians/", s.PresbyteriansHandler()).Methods("GET")
 	s.Router.HandleFunc("/ahcb/states/{date}/", s.AHCBStatesHandler()).Methods("GET")
-	s.Router.HandleFunc("/", s.EndpointHandler()).Methods("GET")
+	s.Router.HandleFunc("/", s.SourcesHandler()).Methods("GET")
 
 	// Make sure to log 404 errors
 	if getEnv("RELECAPI_LOGGING", "on") == "on" {
