@@ -138,11 +138,32 @@ func TestAHCBCounties(t *testing.T) {
 	}
 
 	if len(data.Features) != 3113 {
-		t.Error("Incorrect number of states returned.")
+		t.Error("Incorrect number of features returned.")
 	}
 
 }
 
+func TestNorthAmerica(t *testing.T) {
+	req, _ := http.NewRequest("GET", "/ne/northamerica/", nil)
+	response := executeRequest(req)
+	checkResponseCode(t, http.StatusOK, response.Code)
+
+	// Get the data
+	var data GeoJSONFeatureCollection
+	err := json.Unmarshal(response.Body.Bytes(), &data)
+	if err != nil {
+		t.Error(err)
+	}
+
+	if data.Type != "FeatureCollection" {
+		t.Error("Data is not a FeatureCollection.")
+	}
+
+	if len(data.Features) != 17 {
+		t.Error("Incorrect number of features returned.")
+	}
+
+}
 func Test404(t *testing.T) {
 	req, _ := http.NewRequest("GET", "/nodatahere/", nil)
 	response := executeRequest(req)
