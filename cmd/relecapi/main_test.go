@@ -69,6 +69,32 @@ func TestPresbyterians(t *testing.T) {
 
 }
 
+func TestCatholicDioceses(t *testing.T) {
+	// Check that we get the right response
+	req, _ := http.NewRequest("GET", "/catholic-dioceses/", nil)
+	response := executeRequest(req)
+	checkResponseCode(t, http.StatusOK, response.Code)
+
+	// Get the data
+	var data []relecapi.CatholicDiocese
+	err := json.Unmarshal(response.Body.Bytes(), &data)
+	if err != nil {
+		t.Error(err)
+	}
+
+	// Check that the data has the right content
+	expected := []relecapi.CatholicDiocese{
+		{City: "San Juan", State: "Puerto Rico", Country: "USA",
+			Rite: "Latin", DateErected: "1511-08-11", DateMetropolitan: "1960-04-30",
+			Lon: -66.1057, Lat: 18.4663},
+		{City: "Puebla de los Ángeles", State: "Puebla", Country: "MEX",
+			Rite: "Latin", DateErected: "1525-10-13", DateMetropolitan: "1903-08-11",
+			Lon: -98.2062, Lat: 19.0413}}
+	if !reflect.DeepEqual(data[0:2], expected) {
+		t.Error("Values in data are not what was expected.")
+	}
+
+}
 func TestAHCBStates(t *testing.T) {
 	req, _ := http.NewRequest("GET", "/ahcb/states/1789-07-04/", nil)
 	response := executeRequest(req)
