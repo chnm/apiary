@@ -13,7 +13,7 @@ func (s *Server) Routes() {
 	s.Router.HandleFunc("/", s.SourcesHandler()).Methods("GET")
 
 	// Make sure to log 404 errors
-	if getEnv("RELECAPI_LOGGING", "on") == "on" {
+	if s.Config.logging {
 		s.Router.NotFoundHandler = loggingMiddleware(s.NotFoundHandler())
 	} else {
 		s.Router.NotFoundHandler = s.NotFoundHandler()

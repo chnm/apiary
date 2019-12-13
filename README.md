@@ -19,9 +19,11 @@ Set the following environment variables to configure the server:
 - `RELECAPI_DBNAME` (default: none)
 - `RELECAPI_DBUSER` (default: none)
 - `RELECAPI_DBPASS` (default: none)
-- `RELECAPI_SSL` (default: none; options: `enable`, `disable`)
+- `RELECAPI_SSL` (default: `require`; see [pq docs](https://godoc.org/github.com/lib/pq))
 - `RELECAPI_PORT` (default: `8090`)
 - `RELECAPI_LOGGING` (default: `on`)
+
+If logging is on, then access logs will be written to stdout in the Apache Common Log format. Errors and status messages will always be written to stderr.
 
 Obviously this service requires that you be able to access the database.
 
