@@ -4,11 +4,9 @@ This repository contains a microservice written in Go that provides an API to da
 
 ## Compiling
 
-Run this command to compile and install the binary in your `$GOPATH`:
+Using a version of Go that supports Go modules, you should be able to run `go build` in the project root to install dependencies.
 
-```
-go get github.com/religious-ecologies/relecapi/cmd/relecapi
-```
+There is a Makefile in `cmd/relecapi/` that can be used for compiling and for running the service locally.
 
 ## Configuration
 
