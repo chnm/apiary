@@ -71,6 +71,8 @@ func (s *Server) AHCBStatesHandler() http.HandlerFunc {
 
 // AHCBCountiesHandler returns a GeoJSON FeatureCollection containing countries
 // from AHCB. The handler will get the county boundaries for a particular date.
+// Optionally, a comma-separated array of values for either county IDs or the
+// state/territory names can be used to filter the results.
 func (s *Server) AHCBCountiesHandler() http.HandlerFunc {
 
 	// The minimum and maximum dates are the range of dates for states in AHCB.
