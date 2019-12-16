@@ -164,6 +164,28 @@ func TestAHCBCountiesByID(t *testing.T) {
 	}
 }
 
+func TestAHCBCountiesByStateTerrId(t *testing.T) {
+	req, _ := http.NewRequest("GET",
+		"/ahcb/counties/1980-12-31/state-terr-id/ga_state,va_state/", nil)
+	response := executeRequest(req)
+	checkResponseCode(t, http.StatusOK, response.Code)
+
+	// Get the data
+	var data GeoJSONFeatureCollection
+	err := json.Unmarshal(response.Body.Bytes(), &data)
+	if err != nil {
+		t.Error(err)
+	}
+
+	if data.Type != "FeatureCollection" {
+		t.Error("Data is not a FeatureCollection.")
+	}
+
+	if len(data.Features) != 295 {
+		t.Error("Incorrect number of features returned.")
+	}
+}
+
 func TestAHCBCountiesByStateCode(t *testing.T) {
 	req, _ := http.NewRequest("GET",
 		"/ahcb/counties/1940-12-31/state-code/nd,sd/", nil)
