@@ -86,6 +86,8 @@ func (s *Server) AHCBCountiesHandler() http.HandlerFunc {
 				'properties', json_build_object(
 					'name', name,
 					'state_terr', state_terr,
+					'state_terr_id', state_terr_id,
+					'state_code', state_code,
 					'area_sqmi', area_sqmi
 				)
 			) AS feature
@@ -135,6 +137,8 @@ func (s *Server) AHCBCountiesByIdHandler() http.HandlerFunc {
 				'properties', json_build_object(
 					'name', name,
 					'state_terr', state_terr,
+					'state_terr_id', state_terr_id,
+					'state_code', state_code,
 					'area_sqmi', area_sqmi
 				)
 			) AS feature
@@ -186,6 +190,8 @@ func (s *Server) AHCBCountiesByStateTerrIdHandler() http.HandlerFunc {
 				'properties', json_build_object(
 					'name', name,
 					'state_terr', state_terr,
+					'state_terr_id', state_terr_id,
+					'state_code', state_code,
 					'area_sqmi', area_sqmi
 				)
 			) AS feature
@@ -237,6 +243,8 @@ func (s *Server) AHCBCountiesByStateCodeHandler() http.HandlerFunc {
 				'properties', json_build_object(
 					'name', name,
 					'state_terr', state_terr,
+					'state_terr_id', state_terr_id,
+					'state_code', state_code,
 					'area_sqmi', area_sqmi
 				)
 			) AS feature
