@@ -142,9 +142,9 @@ func TestAHCBCounties(t *testing.T) {
 	}
 }
 
-func TestAHCBCountiesIdFilter(t *testing.T) {
+func TestAHCBCountiesByID(t *testing.T) {
 	req, _ := http.NewRequest("GET",
-		"/ahcb/counties/1980-12-31/?id=vas_fairfax,vas_arlington,vas_princewilliam", nil)
+		"/ahcb/counties/1980-12-31/id/vas_fairfax,vas_arlington,vas_princewilliam/", nil)
 	response := executeRequest(req)
 	checkResponseCode(t, http.StatusOK, response.Code)
 
@@ -164,9 +164,9 @@ func TestAHCBCountiesIdFilter(t *testing.T) {
 	}
 }
 
-func TestAHCBCountiesStateterrFilter(t *testing.T) {
+func TestAHCBCountiesByStateCode(t *testing.T) {
 	req, _ := http.NewRequest("GET",
-		"/ahcb/counties/1940-12-31/?state_terr=North+Dakota,South+Dakota", nil)
+		"/ahcb/counties/1940-12-31/state-code/nd,sd/", nil)
 	response := executeRequest(req)
 	checkResponseCode(t, http.StatusOK, response.Code)
 
