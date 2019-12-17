@@ -8,20 +8,27 @@ The following endpoints are offered by the API.
 
 ### AHCB counties and states
 
-Spatial polygons from the [Atlas of Historic County Boundaries](https://publications.newberry.org/ahcbp/) are available by date.
+Spatial polygons from the [Atlas of Historic County Boundaries](https://publications.newberry.org/ahcbp/) are available by date. The results will always be filtered by the date provided. Use the `id`, `state-terr-id`, or `state-code` to filter geographically.
 
 ```
-GET /ahcb/counties/:date/
 GET /ahcb/states/:date/
+GET /ahcb/counties/:date/
+GET /ahcb/counties/:date/id/:id/
+GET /ahcb/counties/:date/state-terr-id/:state_terr_id/
+GET /ahcb/counties/:date/state-code/:state_code/
 ```
 
 Parameters:
 
 - `date`: The date of the historic boundaries, specified as an ISO-8601 string (e.g., `1848-07-05`). If the date requested is before or after the minimum or after the maximum dates for that type of geometry, the minimum or maximum will be silently returned.
+- `id`: A comma-separated list of AHCB IDs for counties (e.g., `vas_fairfax`).
+- `state_terr_id`: A comma-separated list of AHCB IDs for states and territories (e.g., `va_state`).
+- `state_code`: A comma-separated list two-letter codes for states, roughly corresponding to postal codes (.e.g, `va`).
+
 
 Response:
 
-A GeoJSON feature collection in EPSG 4326 with one feature per state or county. 
+A GeoJSON feature collection in EPSG 4326 with one feature per state or county. The properties of each feature will include information such as the square mileage of the polygons.
 
 ### Catholic dioceses
 
