@@ -9,7 +9,7 @@ import (
 
 // Middleware registers the middleware functions that should be used.
 func (s *Server) Middleware() {
-	if getEnv("RELECAPI_LOGGING", "on") == "on" {
+	if s.Config.logging {
 		s.Router.Use(loggingMiddleware)
 	}
 	s.Router.Use(corsMiddleware)

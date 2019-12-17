@@ -14,11 +14,24 @@ import (
 	_ "github.com/lib/pq" // Driver for database
 )
 
+// The Config type stores configuration which is read from environment variables.
+type Config struct {
+	dbhost  string
+	dbport  string
+	dbname  string
+	dbuser  string
+	dbpass  string
+	dbssl   string // SSL mode for the database connection
+	logging bool   // Whether or not to write access logs; errors/status are always logged
+	address string // The address at which this will be hosted, e.g.: localhost:8090
+}
+
 // The Server type shares access to the database.
 type Server struct {
 	Server     *http.Server
 	Database   *sql.DB
 	Router     *mux.Router
+	Config     Config
 	Statements map[string]*sql.Stmt
 }
 
@@ -26,17 +39,21 @@ type Server struct {
 func NewServer() *Server {
 	s := Server{}
 
-	// Connect to the database. Read the configuration from environment variables,
-	// connect to the database, and then store the database in the struct.
-	dbhost := getEnv("RELECAPI_DBHOST", "localhost")
-	dbport := getEnv("RELECAPI_DBPORT", "5432")
-	dbname := getEnv("RELECAPI_DBNAME", "")
-	dbuser := getEnv("RELECAPI_DBUSER", "")
-	dbpass := getEnv("RELECAPI_DBPASS", "")
-	dbsslm := getEnv("RELECAPI_SSL", "")
+	// Read the configuration from environment variables. The `getEnv()` function
+	// will provide a default.
+	s.Config.dbhost = getEnv("RELECAPI_DBHOST", "localhost")
+	s.Config.dbport = getEnv("RELECAPI_DBPORT", "5432")
+	s.Config.dbname = getEnv("RELECAPI_DBNAME", "")
+	s.Config.dbuser = getEnv("RELECAPI_DBUSER", "")
+	s.Config.dbpass = getEnv("RELECAPI_DBPASS", "")
+	s.Config.dbssl = getEnv("RELECAPI_SSL", "require")
+	s.Config.logging = getEnv("RELECAPI_LOGGING", "on") == "on"
+	s.Config.address = "localhost:" + getEnv("RELECAPI_PORT", "8090")
 
+	// Connect to the database then store the database in the struct.
 	constr := fmt.Sprintf("host=%s port=%s dbname=%s user=%s password=%s sslmode=%s",
-		dbhost, dbport, dbname, dbuser, dbpass, dbsslm)
+		s.Config.dbhost, s.Config.dbport, s.Config.dbname, s.Config.dbuser,
+		s.Config.dbpass, s.Config.dbssl)
 	db, err := sql.Open("postgres", constr)
 	if err != nil {
 		log.Fatalln(err)
@@ -56,10 +73,8 @@ func NewServer() *Server {
 	s.Routes()
 	s.Middleware()
 
-	port := ":" + getEnv("RELECAPI_PORT", "8090")
-
 	s.Server = &http.Server{
-		Addr:         port,
+		Addr:         s.Config.address,
 		WriteTimeout: time.Second * 15,
 		ReadTimeout:  time.Second * 15,
 		IdleTimeout:  time.Second * 60,
@@ -78,7 +93,7 @@ func (s *Server) Run() {
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
 
-	log.Printf("Starting the server on http://localhost%s.\n", s.Server.Addr)
+	log.Printf("Starting the server on http://%s.\n", s.Config.address)
 
 	go func() {
 		if err := s.Server.ListenAndServe(); err != nil {
