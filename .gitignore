@@ -1,3 +1,3 @@
-cmd/relecapi/relecapi
+cmd/dataapi/dataapi
 .env
-cmd/relecapi/.env
+cmd/dataapi/.env
