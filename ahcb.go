@@ -1,13 +1,14 @@
-package relecapi
+package dataapi
 
 import (
 	"fmt"
-	"github.com/gorilla/mux"
-	"github.com/lib/pq"
 	"log"
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/gorilla/mux"
+	"github.com/lib/pq"
 )
 
 // AHCBStatesHandler returns a GeoJSON FeatureCollection containing states from

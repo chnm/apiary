@@ -96,7 +96,7 @@ A JSON array of objects. Each object is an endpoint for the API, with citations 
 
 Using a version of Go that supports Go modules, you should be able to run `go build` in the project root to install dependencies.
 
-There is a Makefile in `cmd/relecapi/` that can be used for compiling and for running the service locally.
+There is a Makefile in `cmd/dataapi/` that can be used for compiling and for running the service locally.
 
 ## Configuration
 
@@ -117,4 +117,4 @@ Obviously this service requires that you be able to access the database.
 
 ## Testing
 
-You can run the tests with `go test -v` inside the directory that contains the package for the command: `cmd/relecapi`.
+You can run the tests with `go test -v` inside the directory that contains the package for the command: `cmd/dataapi`.

@@ -1,4 +1,4 @@
-package relecapi
+package dataapi
 
 // Routes registers the handlers for the URLs that should be served.
 func (s *Server) Routes() {

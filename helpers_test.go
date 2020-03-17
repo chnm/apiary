@@ -1,4 +1,4 @@
-package relecapi
+package dataapi
 
 import (
 	"reflect"
