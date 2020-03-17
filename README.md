@@ -102,14 +102,14 @@ There is a Makefile in `cmd/dataapi/` that can be used for compiling and for run
 
 Set the following environment variables to configure the server:
 
-- `RELECAPI_DBHOST` (default: `localhost`)
-- `RELECAPI_DBPORT` (default: `5432`)
-- `RELECAPI_DBNAME` (default: none)
-- `RELECAPI_DBUSER` (default: none)
-- `RELECAPI_DBPASS` (default: none)
-- `RELECAPI_SSL` (default: `require`; see [pq docs](https://godoc.org/github.com/lib/pq))
-- `RELECAPI_PORT` (default: `8090`)
-- `RELECAPI_LOGGING` (default: `on`)
+- `DATAAPI_DBHOST` (default: `localhost`)
+- `DATAAPI_DBPORT` (default: `5432`)
+- `DATAAPI_DBNAME` (default: none)
+- `DATAAPI_DBUSER` (default: none)
+- `DATAAPI_DBPASS` (default: none)
+- `DATAAPI_SSL` (default: `require`; see [pq docs](https://godoc.org/github.com/lib/pq))
+- `DATAAPI_PORT` (default: `8090`)
+- `DATAAPI_LOGGING` (default: `on`)
 
 If logging is on, then access logs will be written to stdout in the Apache Common Log format. Errors and status messages will always be written to stderr.
 

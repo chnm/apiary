@@ -41,14 +41,14 @@ func NewServer() *Server {
 
 	// Read the configuration from environment variables. The `getEnv()` function
 	// will provide a default.
-	s.Config.dbhost = getEnv("RELECAPI_DBHOST", "localhost")
-	s.Config.dbport = getEnv("RELECAPI_DBPORT", "5432")
-	s.Config.dbname = getEnv("RELECAPI_DBNAME", "")
-	s.Config.dbuser = getEnv("RELECAPI_DBUSER", "")
-	s.Config.dbpass = getEnv("RELECAPI_DBPASS", "")
-	s.Config.dbssl = getEnv("RELECAPI_SSL", "require")
-	s.Config.logging = getEnv("RELECAPI_LOGGING", "on") == "on"
-	s.Config.address = "localhost:" + getEnv("RELECAPI_PORT", "8090")
+	s.Config.dbhost = getEnv("DATAAPI_DBHOST", "localhost")
+	s.Config.dbport = getEnv("DATAAPI_DBPORT", "5432")
+	s.Config.dbname = getEnv("DATAAPI_DBNAME", "")
+	s.Config.dbuser = getEnv("DATAAPI_DBUSER", "")
+	s.Config.dbpass = getEnv("DATAAPI_DBPASS", "")
+	s.Config.dbssl = getEnv("DATAAPI_SSL", "require")
+	s.Config.logging = getEnv("DATAAPI_LOGGING", "on") == "on"
+	s.Config.address = "localhost:" + getEnv("DATAAPI_PORT", "8090")
 
 	// Connect to the database then store the database in the struct.
 	constr := fmt.Sprintf("host=%s port=%s dbname=%s user=%s password=%s sslmode=%s",

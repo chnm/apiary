@@ -20,7 +20,7 @@ type GeoJSONFeatureCollection struct {
 }
 
 func TestMain(m *testing.M) {
-	os.Setenv("RELECAPI_LOGGING", "off") // No logs during testing
+	os.Setenv("DATAAPI_LOGGING", "off") // No logs during testing
 	s = dataapi.NewServer()
 	code := m.Run()
 	os.Exit(code)
