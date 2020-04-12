@@ -4,7 +4,7 @@
 FROM golang:latest
 
 # Add Maintainer Info
-LABEL maintainer="Katchoua <webmaster@chnm.gmu.edu>"
+LABEL maintainer="G Katchoua <gkatchou@gmu.edu>"
 
 # Set the Current Working Directory inside the container
 WORKDIR /app
@@ -19,4 +19,4 @@ RUN cd cmd/dataapi && go build -o main .
 EXPOSE 8090
 
 # Command to run the executable
-CMD ["/app/md/dataapi/main"]
+CMD ["/app/cmd/dataapi/main"]
