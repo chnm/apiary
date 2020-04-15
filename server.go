@@ -48,7 +48,7 @@ func NewServer() *Server {
 	s.Config.dbpass = getEnv("DATAAPI_DBPASS", "")
 	s.Config.dbssl = getEnv("DATAAPI_SSL", "require")
 	s.Config.logging = getEnv("DATAAPI_LOGGING", "on") == "on"
-	s.Config.address = "localhost:" + getEnv("DATAAPI_PORT", "8090")
+	s.Config.address = getEnv("DATAAPI_INTERFACE", "0.0.0.0") + ":" + getEnv("DATAAPI_PORT", "8090")
 
 	// Connect to the database then store the database in the struct.
 	constr := fmt.Sprintf("host=%s port=%s dbname=%s user=%s password=%s sslmode=%s",

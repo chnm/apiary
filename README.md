@@ -108,6 +108,7 @@ Set the following environment variables to configure the server:
 - `DATAAPI_DBUSER` (default: none)
 - `DATAAPI_DBPASS` (default: none)
 - `DATAAPI_SSL` (default: `require`; see [pq docs](https://godoc.org/github.com/lib/pq))
+- `DATAAPI_INTERFACE` (default: `0.0.0.0`)
 - `DATAAPI_PORT` (default: `8090`)
 - `DATAAPI_LOGGING` (default: `on`)
 
