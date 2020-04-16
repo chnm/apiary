@@ -18,10 +18,10 @@ RUN go mod download
 COPY . /app
 
 # Build the Go app
-RUN cd cmd/dataapi && go build -o main .
+RUN cd cmd/dataapi && go build
 
 # Expose port 8090 to the outside world
 EXPOSE 8090
 
 # Command to run the executable
-CMD ["/app/cmd/dataapi/main"]
+CMD ["/app/cmd/dataapi/dataapi"]
