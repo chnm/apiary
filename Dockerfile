@@ -1,7 +1,7 @@
 # Dockerfile References: https://docs.docker.com/engine/reference/builder/
 
 # Start from the latest golang base image
-FROM golang:latest
+FROM golang:latest AS compiler
 
 # Add Maintainer Info
 LABEL maintainer="G Katchoua <gkatchou@gmu.edu>"
@@ -17,11 +17,17 @@ RUN go mod download
 # Copy the source from the current directory to the Working Directory inside the container
 COPY . /app
 
-# Build the Go app
-RUN cd cmd/dataapi && go build
+# Build the Go app, making sure it is a static binary with no debugging symbols
+RUN cd cmd/dataapi && GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -a -ldflags="-w -s"
+
+# Start over with a completely empty image
+FROM scratch
+
+# Copy over just the static binary to root
+COPY --from=compiler /app/cmd/dataapi/dataapi /dataapi
 
 # Expose port 8090 to the outside world
 EXPOSE 8090
 
 # Command to run the executable
-CMD ["/app/cmd/dataapi/dataapi"]
+CMD ["/dataapi"]
