@@ -1,5 +1,5 @@
 serve : build
-	./dataapi
+	DATAAPI_INTERFACE=localhost ./dataapi
 
 build :
 	cd ../.. && go build
