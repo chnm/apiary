@@ -9,6 +9,11 @@ LABEL maintainer="G Katchoua <gkatchou@gmu.edu>"
 # Set the Current Working Directory inside the container
 WORKDIR /app
 
+# Copy dependencies prior to building so that this layer is cached unless
+# specified dependencies change
+COPY go.mod go.sum /app/
+RUN go mod download
+
 # Copy the source from the current directory to the Working Directory inside the container
 COPY . /app
 
