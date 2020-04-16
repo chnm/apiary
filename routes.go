@@ -10,7 +10,7 @@ func (s *Server) Routes() {
 	s.Router.HandleFunc("/catholic-dioceses/", s.CatholicDiocesesHandler()).Methods("GET", "HEAD")
 	s.Router.HandleFunc("/ne/northamerica/", s.NENorthAmericaHandler()).Methods("GET", "HEAD")
 	s.Router.HandleFunc("/presbyterians/", s.PresbyteriansHandler()).Methods("GET", "HEAD")
-	s.Router.HandleFunc("/", s.SourcesHandler()).Methods("GET")
+	s.Router.HandleFunc("/", s.EndpointsHandler()).Methods("GET", "HEAD")
 
 	// Make sure to log 404 errors
 	if s.Config.logging {
