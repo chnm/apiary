@@ -78,7 +78,7 @@ Response:
 
 A JSON array of objects, each object representing a year of membership data.
 
-### Sources
+### Endpoints
 
 ```
 GET /
@@ -90,7 +90,7 @@ Parameters:
 
 Response:
 
-A JSON array of objects. Each object is an endpoint for the API, with citations for the sources used and a URL for sample data from that endpoint.
+A JSON array of objects. Each object is an endpoint for the API, with a sample URL for that endpoint.
 
 ## Compiling
 
