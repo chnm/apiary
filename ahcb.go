@@ -120,10 +120,10 @@ func (s *Server) AHCBCountiesHandler() http.HandlerFunc {
 	}
 }
 
-// AHCBCountiesByIdHandler returns a GeoJSON FeatureCollection containing counties
+// AHCBCountiesByIDHandler returns a GeoJSON FeatureCollection containing counties
 // from AHCB. The handler will get the county boundaries for a particular date and
 // by county ID (or IDs if given a comma-separated string of values).
-func (s *Server) AHCBCountiesByIdHandler() http.HandlerFunc {
+func (s *Server) AHCBCountiesByIDHandler() http.HandlerFunc {
 	minDate, _ := time.Parse("2006-01-02", "1629-03-04")
 	maxDate, _ := time.Parse("2006-01-02", "2000-12-31")
 	query := `
@@ -173,10 +173,10 @@ func (s *Server) AHCBCountiesByIdHandler() http.HandlerFunc {
 	}
 }
 
-// AHCBCountiesByStateTerrIdHandler returns a GeoJSON FeatureCollection containing
+// AHCBCountiesByStateTerrIDHandler returns a GeoJSON FeatureCollection containing
 // counties from AHCB. The handler will get the county boundaries for a particular
 // date and by state/territory ID (or IDs if given a comma-separated string of values).
-func (s *Server) AHCBCountiesByStateTerrIdHandler() http.HandlerFunc {
+func (s *Server) AHCBCountiesByStateTerrIDHandler() http.HandlerFunc {
 	minDate, _ := time.Parse("2006-01-02", "1629-03-04")
 	maxDate, _ := time.Parse("2006-01-02", "2000-12-31")
 	query := `
