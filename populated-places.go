@@ -13,18 +13,16 @@ import (
 // This file creates a series of endpoints to return all possible names for
 // populated places, associated with their county IDs from AHCB as of 1926-1928.
 
-// PopPlacesCounty represents a popuplated place
+// PopPlacesCounty represents a county with ID and name
 type PopPlacesCounty struct {
 	CountyAHCB string `json:"county_ahcb"`
 	County     string `json:"name"`
 }
 
-// PopPlacesPlace represents a county in a state, with its AHCB ID.
+// PopPlacesPlace represents a place with ID and name
 type PopPlacesPlace struct {
-	PlaceID    int    `json:"place_id"`
-	Place      string `json:"place"`
-	CountyAHCB string `json:"county_ahcb"`
-	County     string `json:"county"`
+	PlaceID int    `json:"place_id"`
+	Place   string `json:"place"`
 }
 
 // PopPlacesCountiesInState returns a list of all the counties in a state, with
@@ -81,7 +79,7 @@ func (s *Server) PopPlacesCountiesInState() http.HandlerFunc {
 func (s *Server) PopPlacesPlacesInCounty() http.HandlerFunc {
 
 	query := `
-		SELECT place_id, place, county_ahcb, county
+		SELECT place_id, place
 		FROM popplaces_1926
 		WHERE county_ahcb = $1
 		ORDER BY place;
@@ -107,7 +105,7 @@ func (s *Server) PopPlacesPlacesInCounty() http.HandlerFunc {
 		}
 		defer rows.Close()
 		for rows.Next() {
-			err := rows.Scan(&row.PlaceID, &row.Place, &row.CountyAHCB, &row.County)
+			err := rows.Scan(&row.PlaceID, &row.Place)
 			if err != nil {
 				log.Println(err)
 			}
@@ -130,7 +128,7 @@ func (s *Server) PopPlacesPlacesInCounty() http.HandlerFunc {
 func (s *Server) PopPlacesPlacesInState() http.HandlerFunc {
 
 	query := `
-		SELECT place_id, place, county_ahcb, county
+		SELECT place_id, place
 		FROM popplaces_1926
 		WHERE state = $1
 		ORDER BY place;
@@ -156,7 +154,7 @@ func (s *Server) PopPlacesPlacesInState() http.HandlerFunc {
 		}
 		defer rows.Close()
 		for rows.Next() {
-			err := rows.Scan(&row.PlaceID, &row.Place, &row.CountyAHCB, &row.County)
+			err := rows.Scan(&row.PlaceID, &row.Place)
 			if err != nil {
 				log.Println(err)
 			}
