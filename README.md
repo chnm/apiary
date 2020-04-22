@@ -78,6 +78,28 @@ Response:
 
 A JSON array of objects, each object representing a year of membership data.
 
+### Populated places
+
+Lists of populated places from the USGS in a state or county.
+
+```
+GET /pop-places/state/:state/county
+GET /pop-places/state/:state/place
+GET /pop-places/county/:county/place
+
+```
+
+Parameters:
+
+- `state`: The state as a two-character abbreviation (e.g., `CA`).
+- `county`: An ACHB county ID (e.g., `vas_fairfax`).
+
+Response:
+
+A JSON array of objects where the objrects are all the counties in a state, or all the places in a state or county. The objects have both the unique identifiers and human-readable names.
+
+For example, you should be able to query `/pop-places/state/va/county` to get all the counties in Virginia, and then query `/pop-places/county/vas_fairfax/place` to get all the places in Fairfax county.
+
 ### Endpoints
 
 ```
