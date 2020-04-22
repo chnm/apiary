@@ -285,3 +285,28 @@ func TestPopPlacesPlacesInState(t *testing.T) {
 	}
 
 }
+
+func TestPopPlacesPlace(t *testing.T) {
+	req, _ := http.NewRequest("GET", "/pop-places/place/611119/", nil)
+	response := executeRequest(req)
+	checkResponseCode(t, http.StatusOK, response.Code)
+
+	// Get the data
+	var data dataapi.PopPlacesPlaceDetail
+	err := json.Unmarshal(response.Body.Bytes(), &data)
+	if err != nil {
+		t.Error(err)
+	}
+
+	expected := dataapi.PopPlacesPlaceDetail{
+		PlaceID:    611119,
+		Place:      "Groton",
+		County:     "Middlesex",
+		CountyAHCB: "mas_middlesex",
+		State:      "MA",
+	}
+	if !reflect.DeepEqual(data, expected) {
+		t.Error("Values in data are not what was expected.")
+	}
+
+}

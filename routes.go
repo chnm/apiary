@@ -12,6 +12,7 @@ func (s *Server) Routes() {
 	s.Router.HandleFunc("/pop-places/state/{state:[a-z]{2}}/county/", s.PopPlacesCountiesInState()).Methods("GET", "HEAD")
 	s.Router.HandleFunc("/pop-places/state/{state:[a-z]{2}}/place/", s.PopPlacesPlacesInState()).Methods("GET", "HEAD")
 	s.Router.HandleFunc("/pop-places/county/{county:[a-z_,]+}/place/", s.PopPlacesPlacesInCounty()).Methods("GET", "HEAD")
+	s.Router.HandleFunc("/pop-places/place/{place}/", s.PopPlacesPlace()).Methods("GET", "HEAD")
 	s.Router.HandleFunc("/presbyterians/", s.PresbyteriansHandler()).Methods("GET", "HEAD")
 	s.Router.HandleFunc("/", s.EndpointsHandler()).Methods("GET", "HEAD")
 

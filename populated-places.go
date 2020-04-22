@@ -1,10 +1,12 @@
 package dataapi
 
 import (
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/gorilla/mux"
@@ -23,6 +25,15 @@ type PopPlacesCounty struct {
 type PopPlacesPlace struct {
 	PlaceID int    `json:"place_id"`
 	Place   string `json:"place"`
+}
+
+// PopPlacesPlaceDetail represents details about a place
+type PopPlacesPlaceDetail struct {
+	PlaceID    int    `json:"place_id"`
+	Place      string `json:"place"`
+	County     string `json:"county"`
+	CountyAHCB string `json:"county_ahcb"`
+	State      string `json:"state"`
 }
 
 // PopPlacesCountiesInState returns a list of all the counties in a state, with
@@ -167,6 +178,49 @@ func (s *Server) PopPlacesPlacesInState() http.HandlerFunc {
 		}
 
 		response, _ := json.Marshal(results)
+		w.Header().Set("Content-Type", "application/json")
+		fmt.Fprintf(w, string(response))
+
+	}
+}
+
+// PopPlacesPlace returns a list of all the populated places in a state.
+func (s *Server) PopPlacesPlace() http.HandlerFunc {
+
+	query := `
+		SELECT place_id, place, county, county_ahcb, state
+		FROM popplaces_1926
+		WHERE place_id = $1
+		`
+
+	stmt, err := s.Database.Prepare(query)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	s.Statements["pop-places-details"] = stmt // Will be closed at shutdown
+
+	return func(w http.ResponseWriter, r *http.Request) {
+
+		placeID, err := strconv.Atoi(mux.Vars(r)["place"])
+		if err != nil {
+			http.Error(w, "Bad request: place ID must be an integer", http.StatusBadRequest)
+			return
+		}
+
+		var result PopPlacesPlaceDetail
+
+		err = stmt.QueryRow(placeID).Scan(&result.PlaceID, &result.Place,
+			&result.County, &result.CountyAHCB, &result.State)
+		if err != nil {
+			if err == sql.ErrNoRows {
+				http.Error(w, fmt.Sprintf("Not found: No place with id %v.", placeID), http.StatusNotFound)
+				return
+			}
+			log.Println(err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		}
+
+		response, _ := json.Marshal(result)
 		w.Header().Set("Content-Type", "application/json")
 		fmt.Fprintf(w, string(response))
 
