@@ -249,11 +249,25 @@ func TestPopPlacesCountiesInState(t *testing.T) {
 
 	// Check that the data has the right content
 	expected := []dataapi.PopPlacesCounty{
-		{Name: "Alamance", CountyAHCB: "ncs_alamance"},
-		{Name: "Alexander", CountyAHCB: "ncs_alexander"},
+		{CountyAHCB: "ncs_alamance", County: "Alamance"},
+		{CountyAHCB: "ncs_alexander", County: "Alexander"},
 	}
 	if !reflect.DeepEqual(data[0:2], expected) {
 		t.Error("Values in data are not what was expected.")
+	}
+
+}
+
+func TestPopPlacesPlacesInCounty(t *testing.T) {
+	req, _ := http.NewRequest("GET", "/pop-places/county/mas_middlesex/place/", nil)
+	response := executeRequest(req)
+	checkResponseCode(t, http.StatusOK, response.Code)
+
+	// Get the data
+	var data []dataapi.PopPlacesPlace
+	err := json.Unmarshal(response.Body.Bytes(), &data)
+	if err != nil {
+		t.Error(err)
 	}
 
 }
