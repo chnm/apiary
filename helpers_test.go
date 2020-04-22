@@ -1,6 +1,8 @@
 package dataapi
 
 import (
+	"database/sql"
+	"encoding/json"
 	"reflect"
 	"testing"
 	"time"
@@ -73,5 +75,14 @@ func Test_dateInRange(t *testing.T) {
 				t.Errorf("dateInRange() = %v, want %v", got, tt.want)
 			}
 		})
+	}
+}
+
+func TestNullInt64(t *testing.T) {
+	emptyInt := NullInt64{sql.NullInt64{Int64: 0, Valid: false}}
+	out, _ := json.Marshal(emptyInt)
+	if string(out) != "null" {
+		t.Errorf("Want: null. Got: %s.", out)
+
 	}
 }

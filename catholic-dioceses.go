@@ -9,18 +9,19 @@ import (
 
 // CatholicDiocese describes a diocese of the Roman Catholic Church.
 type CatholicDiocese struct {
-	City             string  `json:"city"`
-	State            string  `json:"state"`
-	Country          string  `json:"country"`
-	Rite             string  `json:"rite"`
-	DateErected      string  `json:"date_erected"`
-	DateMetropolitan string  `json:"date_metropolitan"`
-	Lon              float32 `json:"lon"`
-	Lat              float32 `json:"lat"`
+	City             string    `json:"city"`
+	State            string    `json:"state"`
+	Country          string    `json:"country"`
+	Rite             string    `json:"rite"`
+	YearErected      int64     `json:"year_erected"`
+	YearMetropolitan NullInt64 `json:"year_metropolitan"`
+	YearDestroyed    NullInt64 `json:"year_destroyed"`
+	Lon              float32   `json:"lon"`
+	Lat              float32   `json:"lat"`
 }
 
-// CatholicDiocesesHandler returns a JSON array of Catholic dioceses. Though the
-// spatial data is stored in the database as a geometry, it is returned as
+// CatholicDiocesesHandler returns a JSON array of Catholic dioceses. Though
+// the spatial data is stored in the database as a geometry, it is returned as
 // simple lon/lat coordinates because that is easiest to process in the
 // visualizations.
 func (s *Server) CatholicDiocesesHandler() http.HandlerFunc {
@@ -33,9 +34,10 @@ func (s *Server) CatholicDiocesesHandler() http.HandlerFunc {
 	// restart.
 	query := `
 	SELECT city, state, country, rite, 
-			 to_char(date_erected, 'YYYY-MM-DD') as date_erected,
-			 COALESCE(to_char(date_metropolitan, 'YYYY-MM-DD'), '') as date_metropolitan,
-			 ST_X(geometry) as lon, ST_Y(geometry) as lat
+		date_part( 'year', date_erected) as year_erected,
+		date_part('year', date_metropolitan) as year_metropolitan,
+		date_part('year', date_destroyed) as year_destroyed,
+		ST_X(geometry) as lon, ST_Y(geometry) as lat
 	FROM catholic_dioceses
 	ORDER BY date_erected;
 	`
@@ -50,7 +52,8 @@ func (s *Server) CatholicDiocesesHandler() http.HandlerFunc {
 	defer rows.Close()
 	for rows.Next() {
 		err := rows.Scan(&row.City, &row.State, &row.Country, &row.Rite,
-			&row.DateErected, &row.DateMetropolitan, &row.Lon, &row.Lat)
+			&row.YearErected, &row.YearMetropolitan, &row.YearDestroyed,
+			&row.Lon, &row.Lat)
 		if err != nil {
 			log.Println(err)
 		}

@@ -1,6 +1,8 @@
 package dataapi
 
 import (
+	"database/sql"
+	"encoding/json"
 	"os"
 	"time"
 )
@@ -29,4 +31,19 @@ func dateInRange(d string, min, max time.Time) (time.Time, error) {
 		date = max
 	}
 	return date, nil
+}
+
+// NullInt64 embeds the sql.NullInt64 type, so that it can be extended
+// to change the JSON marshaling.
+type NullInt64 struct {
+	sql.NullInt64
+}
+
+// MarshalJSON marshalls a null integer as `{"int": null}` rather than
+// using an object inside the field.
+func (v NullInt64) MarshalJSON() ([]byte, error) {
+	if v.Valid {
+		return json.Marshal(v.Int64)
+	}
+	return json.Marshal(nil)
 }
