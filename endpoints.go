@@ -34,6 +34,8 @@ func (s *Server) EndpointsHandler() http.HandlerFunc {
 				"http://" + r.Host + "/catholic-dioceses/"},
 			{"Countries in North America from Natural Earth",
 				"http://" + r.Host + "/ne/northamerica/"},
+			{"Populated places: A list of counties in state",
+				"http://" + r.Host + "/pop-places/state/ma/county/"},
 			{"Presbyterian statistics, 1826-1926",
 				"http://" + r.Host + "/presbyterians/"},
 		}

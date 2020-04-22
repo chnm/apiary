@@ -234,3 +234,26 @@ func Test404(t *testing.T) {
 	response := executeRequest(req)
 	checkResponseCode(t, http.StatusNotFound, response.Code)
 }
+
+func TestPopPlacesCountiesInState(t *testing.T) {
+	req, _ := http.NewRequest("GET", "/pop-places/state/nc/county/", nil)
+	response := executeRequest(req)
+	checkResponseCode(t, http.StatusOK, response.Code)
+
+	// Get the data
+	var data []dataapi.PopPlacesCounty
+	err := json.Unmarshal(response.Body.Bytes(), &data)
+	if err != nil {
+		t.Error(err)
+	}
+
+	// Check that the data has the right content
+	expected := []dataapi.PopPlacesCounty{
+		{Name: "Alamance", CountyAHCB: "ncs_alamance"},
+		{Name: "Alexander", CountyAHCB: "ncs_alexander"},
+	}
+	if !reflect.DeepEqual(data[0:2], expected) {
+		t.Error("Values in data are not what was expected.")
+	}
+
+}
