@@ -46,6 +46,12 @@ func TestEndpoints(t *testing.T) {
 	checkResponseCode(t, http.StatusOK, response.Code)
 }
 
+func Test404(t *testing.T) {
+	req, _ := http.NewRequest("GET", "/nodatahere/", nil)
+	response := executeRequest(req)
+	checkResponseCode(t, http.StatusNotFound, response.Code)
+}
+
 func TestPresbyterians(t *testing.T) {
 	// Check that we get the right response
 	req, _ := http.NewRequest("GET", "/presbyterians/", nil)
@@ -229,12 +235,6 @@ func TestNorthAmerica(t *testing.T) {
 	}
 }
 
-func Test404(t *testing.T) {
-	req, _ := http.NewRequest("GET", "/nodatahere/", nil)
-	response := executeRequest(req)
-	checkResponseCode(t, http.StatusNotFound, response.Code)
-}
-
 func TestPopPlacesCountiesInState(t *testing.T) {
 	req, _ := http.NewRequest("GET", "/pop-places/state/nc/county/", nil)
 	response := executeRequest(req)
@@ -260,6 +260,20 @@ func TestPopPlacesCountiesInState(t *testing.T) {
 
 func TestPopPlacesPlacesInCounty(t *testing.T) {
 	req, _ := http.NewRequest("GET", "/pop-places/county/mas_middlesex/place/", nil)
+	response := executeRequest(req)
+	checkResponseCode(t, http.StatusOK, response.Code)
+
+	// Get the data
+	var data []dataapi.PopPlacesPlace
+	err := json.Unmarshal(response.Body.Bytes(), &data)
+	if err != nil {
+		t.Error(err)
+	}
+
+}
+
+func TestPopPlacesPlacesInState(t *testing.T) {
+	req, _ := http.NewRequest("GET", "/pop-places/state/ma/place/", nil)
 	response := executeRequest(req)
 	checkResponseCode(t, http.StatusOK, response.Code)
 
