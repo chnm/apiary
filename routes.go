@@ -9,6 +9,10 @@ func (s *Server) Routes() {
 	s.Router.HandleFunc("/ahcb/states/{date:[0-9]{4}-[0-9]{2}-[0-9]{2}}/", s.AHCBStatesHandler()).Methods("GET", "HEAD")
 	s.Router.HandleFunc("/catholic-dioceses/", s.CatholicDiocesesHandler()).Methods("GET", "HEAD")
 	s.Router.HandleFunc("/ne/northamerica/", s.NENorthAmericaHandler()).Methods("GET", "HEAD")
+	s.Router.HandleFunc("/pop-places/state/{state:[a-z]{2}}/county/", s.CountiesInState()).Methods("GET", "HEAD")
+	s.Router.HandleFunc("/pop-places/state/{state:[a-z]{2}}/place/", s.PlacesInState()).Methods("GET", "HEAD")
+	s.Router.HandleFunc("/pop-places/county/{county:[a-z_,]+}/place/", s.PlacesInCounty()).Methods("GET", "HEAD")
+	s.Router.HandleFunc("/pop-places/place/{place}/", s.Place()).Methods("GET", "HEAD")
 	s.Router.HandleFunc("/presbyterians/", s.PresbyteriansHandler()).Methods("GET", "HEAD")
 	s.Router.HandleFunc("/", s.EndpointsHandler()).Methods("GET", "HEAD")
 

@@ -46,6 +46,12 @@ func TestEndpoints(t *testing.T) {
 	checkResponseCode(t, http.StatusOK, response.Code)
 }
 
+func Test404(t *testing.T) {
+	req, _ := http.NewRequest("GET", "/nodatahere/", nil)
+	response := executeRequest(req)
+	checkResponseCode(t, http.StatusNotFound, response.Code)
+}
+
 func TestPresbyterians(t *testing.T) {
 	// Check that we get the right response
 	req, _ := http.NewRequest("GET", "/presbyterians/", nil)
@@ -140,6 +146,7 @@ func TestAHCBCounties(t *testing.T) {
 	if len(data.Features) != 3113 {
 		t.Error("Incorrect number of features returned.")
 	}
+
 }
 
 func TestAHCBCountiesByID(t *testing.T) {
@@ -229,8 +236,78 @@ func TestNorthAmerica(t *testing.T) {
 	}
 }
 
-func Test404(t *testing.T) {
-	req, _ := http.NewRequest("GET", "/nodatahere/", nil)
+func TestCountiesInState(t *testing.T) {
+	req, _ := http.NewRequest("GET", "/pop-places/state/nc/county/", nil)
 	response := executeRequest(req)
-	checkResponseCode(t, http.StatusNotFound, response.Code)
+	checkResponseCode(t, http.StatusOK, response.Code)
+
+	// Get the data
+	var data []dataapi.PlaceCounty
+	err := json.Unmarshal(response.Body.Bytes(), &data)
+	if err != nil {
+		t.Error(err)
+	}
+
+	// Check that the data has the right content
+	expected := []dataapi.PlaceCounty{
+		{CountyAHCB: "ncs_alamance", County: "Alamance"},
+		{CountyAHCB: "ncs_alexander", County: "Alexander"},
+	}
+	if !reflect.DeepEqual(data[0:2], expected) {
+		t.Error("Values in data are not what was expected.")
+	}
+
+}
+
+func TestPlacesInCounty(t *testing.T) {
+	req, _ := http.NewRequest("GET", "/pop-places/county/mas_middlesex/place/", nil)
+	response := executeRequest(req)
+	checkResponseCode(t, http.StatusOK, response.Code)
+
+	// Get the data
+	var data []dataapi.Place
+	err := json.Unmarshal(response.Body.Bytes(), &data)
+	if err != nil {
+		t.Error(err)
+	}
+
+}
+
+func TestPlacesInState(t *testing.T) {
+	req, _ := http.NewRequest("GET", "/pop-places/state/ma/place/", nil)
+	response := executeRequest(req)
+	checkResponseCode(t, http.StatusOK, response.Code)
+
+	// Get the data
+	var data []dataapi.Place
+	err := json.Unmarshal(response.Body.Bytes(), &data)
+	if err != nil {
+		t.Error(err)
+	}
+
+}
+
+func TestPlace(t *testing.T) {
+	req, _ := http.NewRequest("GET", "/pop-places/place/611119/", nil)
+	response := executeRequest(req)
+	checkResponseCode(t, http.StatusOK, response.Code)
+
+	// Get the data
+	var data dataapi.PlaceDetails
+	err := json.Unmarshal(response.Body.Bytes(), &data)
+	if err != nil {
+		t.Error(err)
+	}
+
+	expected := dataapi.PlaceDetails{
+		PlaceID:    611119,
+		Place:      "Groton",
+		County:     "Middlesex",
+		CountyAHCB: "mas_middlesex",
+		State:      "MA",
+	}
+	if !reflect.DeepEqual(data, expected) {
+		t.Error("Values in data are not what was expected.")
+	}
+
 }
