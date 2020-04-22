@@ -15,20 +15,20 @@ import (
 // This file creates a series of endpoints to return all possible names for
 // populated places, associated with their county IDs from AHCB as of 1926-1928.
 
-// PopPlacesCounty represents a county with ID and name
-type PopPlacesCounty struct {
+// PlaceCounty represents a county with ID and name
+type PlaceCounty struct {
 	CountyAHCB string `json:"county_ahcb"`
 	County     string `json:"name"`
 }
 
-// PopPlacesPlace represents a place with ID and name
-type PopPlacesPlace struct {
+// Place represents a place with ID and name
+type Place struct {
 	PlaceID int    `json:"place_id"`
 	Place   string `json:"place"`
 }
 
-// PopPlacesPlaceDetail represents details about a place
-type PopPlacesPlaceDetail struct {
+// PlaceDetails represents details about a place
+type PlaceDetails struct {
 	PlaceID    int    `json:"place_id"`
 	Place      string `json:"place"`
 	County     string `json:"county"`
@@ -36,9 +36,9 @@ type PopPlacesPlaceDetail struct {
 	State      string `json:"state"`
 }
 
-// PopPlacesCountiesInState returns a list of all the counties in a state, with
+// CountiesInState returns a list of all the counties in a state, with
 // IDs from AHCB.
-func (s *Server) PopPlacesCountiesInState() http.HandlerFunc {
+func (s *Server) CountiesInState() http.HandlerFunc {
 
 	query := `
 		SELECT DISTINCT county_ahcb, county
@@ -51,15 +51,15 @@ func (s *Server) PopPlacesCountiesInState() http.HandlerFunc {
 	if err != nil {
 		log.Fatalln(err)
 	}
-	s.Statements["pop-places-counties-in-state"] = stmt // Will be closed at shutdown
+	s.Statements["counties-in-state"] = stmt // Will be closed at shutdown
 
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		state := mux.Vars(r)["state"]
 		state = strings.ToUpper(state)
 
-		results := make([]PopPlacesCounty, 0)
-		var row PopPlacesCounty
+		results := make([]PlaceCounty, 0)
+		var row PlaceCounty
 
 		rows, err := stmt.Query(state)
 		if err != nil {
@@ -86,8 +86,8 @@ func (s *Server) PopPlacesCountiesInState() http.HandlerFunc {
 	}
 }
 
-// PopPlacesPlacesInCounty returns a list of all the populated places in a county.
-func (s *Server) PopPlacesPlacesInCounty() http.HandlerFunc {
+// PlacesInCounty returns a list of all the populated places in a county.
+func (s *Server) PlacesInCounty() http.HandlerFunc {
 
 	query := `
 		SELECT place_id, place
@@ -107,8 +107,8 @@ func (s *Server) PopPlacesPlacesInCounty() http.HandlerFunc {
 		county := mux.Vars(r)["county"]
 		county = strings.ToLower(county)
 
-		results := make([]PopPlacesPlace, 0)
-		var row PopPlacesPlace
+		results := make([]Place, 0)
+		var row Place
 
 		rows, err := stmt.Query(county)
 		if err != nil {
@@ -135,8 +135,8 @@ func (s *Server) PopPlacesPlacesInCounty() http.HandlerFunc {
 	}
 }
 
-// PopPlacesPlacesInState returns a list of all the populated places in a state.
-func (s *Server) PopPlacesPlacesInState() http.HandlerFunc {
+// PlacesInState returns a list of all the populated places in a state.
+func (s *Server) PlacesInState() http.HandlerFunc {
 
 	query := `
 		SELECT place_id, place
@@ -156,8 +156,8 @@ func (s *Server) PopPlacesPlacesInState() http.HandlerFunc {
 		state := mux.Vars(r)["state"]
 		state = strings.ToUpper(state)
 
-		results := make([]PopPlacesPlace, 0)
-		var row PopPlacesPlace
+		results := make([]Place, 0)
+		var row Place
 
 		rows, err := stmt.Query(state)
 		if err != nil {
@@ -184,8 +184,8 @@ func (s *Server) PopPlacesPlacesInState() http.HandlerFunc {
 	}
 }
 
-// PopPlacesPlace returns a list of all the populated places in a state.
-func (s *Server) PopPlacesPlace() http.HandlerFunc {
+// Place returns the details about a populated place
+func (s *Server) Place() http.HandlerFunc {
 
 	query := `
 		SELECT place_id, place, county, county_ahcb, state
@@ -207,7 +207,7 @@ func (s *Server) PopPlacesPlace() http.HandlerFunc {
 			return
 		}
 
-		var result PopPlacesPlaceDetail
+		var result PlaceDetails
 
 		err = stmt.QueryRow(placeID).Scan(&result.PlaceID, &result.Place,
 			&result.County, &result.CountyAHCB, &result.State)

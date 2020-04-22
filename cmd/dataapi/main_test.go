@@ -146,6 +146,7 @@ func TestAHCBCounties(t *testing.T) {
 	if len(data.Features) != 3113 {
 		t.Error("Incorrect number of features returned.")
 	}
+
 }
 
 func TestAHCBCountiesByID(t *testing.T) {
@@ -235,20 +236,20 @@ func TestNorthAmerica(t *testing.T) {
 	}
 }
 
-func TestPopPlacesCountiesInState(t *testing.T) {
+func TestCountiesInState(t *testing.T) {
 	req, _ := http.NewRequest("GET", "/pop-places/state/nc/county/", nil)
 	response := executeRequest(req)
 	checkResponseCode(t, http.StatusOK, response.Code)
 
 	// Get the data
-	var data []dataapi.PopPlacesCounty
+	var data []dataapi.PlaceCounty
 	err := json.Unmarshal(response.Body.Bytes(), &data)
 	if err != nil {
 		t.Error(err)
 	}
 
 	// Check that the data has the right content
-	expected := []dataapi.PopPlacesCounty{
+	expected := []dataapi.PlaceCounty{
 		{CountyAHCB: "ncs_alamance", County: "Alamance"},
 		{CountyAHCB: "ncs_alexander", County: "Alexander"},
 	}
@@ -258,13 +259,13 @@ func TestPopPlacesCountiesInState(t *testing.T) {
 
 }
 
-func TestPopPlacesPlacesInCounty(t *testing.T) {
+func TestPlacesInCounty(t *testing.T) {
 	req, _ := http.NewRequest("GET", "/pop-places/county/mas_middlesex/place/", nil)
 	response := executeRequest(req)
 	checkResponseCode(t, http.StatusOK, response.Code)
 
 	// Get the data
-	var data []dataapi.PopPlacesPlace
+	var data []dataapi.Place
 	err := json.Unmarshal(response.Body.Bytes(), &data)
 	if err != nil {
 		t.Error(err)
@@ -272,13 +273,13 @@ func TestPopPlacesPlacesInCounty(t *testing.T) {
 
 }
 
-func TestPopPlacesPlacesInState(t *testing.T) {
+func TestPlacesInState(t *testing.T) {
 	req, _ := http.NewRequest("GET", "/pop-places/state/ma/place/", nil)
 	response := executeRequest(req)
 	checkResponseCode(t, http.StatusOK, response.Code)
 
 	// Get the data
-	var data []dataapi.PopPlacesPlace
+	var data []dataapi.Place
 	err := json.Unmarshal(response.Body.Bytes(), &data)
 	if err != nil {
 		t.Error(err)
@@ -286,19 +287,19 @@ func TestPopPlacesPlacesInState(t *testing.T) {
 
 }
 
-func TestPopPlacesPlace(t *testing.T) {
+func TestPlace(t *testing.T) {
 	req, _ := http.NewRequest("GET", "/pop-places/place/611119/", nil)
 	response := executeRequest(req)
 	checkResponseCode(t, http.StatusOK, response.Code)
 
 	// Get the data
-	var data dataapi.PopPlacesPlaceDetail
+	var data dataapi.PlaceDetails
 	err := json.Unmarshal(response.Body.Bytes(), &data)
 	if err != nil {
 		t.Error(err)
 	}
 
-	expected := dataapi.PopPlacesPlaceDetail{
+	expected := dataapi.PlaceDetails{
 		PlaceID:    611119,
 		Place:      "Groton",
 		County:     "Middlesex",
