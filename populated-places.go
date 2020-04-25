@@ -135,55 +135,6 @@ func (s *Server) PlacesInCounty() http.HandlerFunc {
 	}
 }
 
-// PlacesInState returns a list of all the populated places in a state.
-func (s *Server) PlacesInState() http.HandlerFunc {
-
-	query := `
-		SELECT place_id, place
-		FROM popplaces_1926
-		WHERE state = $1
-		ORDER BY place;
-		`
-
-	stmt, err := s.Database.Prepare(query)
-	if err != nil {
-		log.Fatalln(err)
-	}
-	s.Statements["pop-places-places-in-state"] = stmt // Will be closed at shutdown
-
-	return func(w http.ResponseWriter, r *http.Request) {
-
-		state := mux.Vars(r)["state"]
-		state = strings.ToUpper(state)
-
-		results := make([]Place, 0)
-		var row Place
-
-		rows, err := stmt.Query(state)
-		if err != nil {
-			log.Println(err)
-		}
-		defer rows.Close()
-		for rows.Next() {
-			err := rows.Scan(&row.PlaceID, &row.Place)
-			if err != nil {
-				log.Println(err)
-			}
-			results = append(results, row)
-		}
-		err = rows.Err()
-		if err != nil {
-			log.Println(err)
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		}
-
-		response, _ := json.Marshal(results)
-		w.Header().Set("Content-Type", "application/json")
-		fmt.Fprintf(w, string(response))
-
-	}
-}
-
 // Place returns the details about a populated place
 func (s *Server) Place() http.HandlerFunc {
 

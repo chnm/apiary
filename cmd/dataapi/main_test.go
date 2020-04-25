@@ -260,20 +260,6 @@ func TestPlacesInCounty(t *testing.T) {
 
 }
 
-func TestPlacesInState(t *testing.T) {
-	req, _ := http.NewRequest("GET", "/pop-places/state/ma/place/", nil)
-	response := executeRequest(req)
-	checkResponseCode(t, http.StatusOK, response.Code)
-
-	// Get the data
-	var data []dataapi.Place
-	err := json.Unmarshal(response.Body.Bytes(), &data)
-	if err != nil {
-		t.Error(err)
-	}
-
-}
-
 func TestPlace(t *testing.T) {
 	req, _ := http.NewRequest("GET", "/pop-places/place/611119/", nil)
 	response := executeRequest(req)

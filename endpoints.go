@@ -38,8 +38,6 @@ func (s *Server) EndpointsHandler() http.HandlerFunc {
 				"http://" + r.Host + "/pop-places/state/ma/county/"},
 			{"Populated places: A list of places in a county",
 				"http://" + r.Host + "/pop-places/county/cas_ventura/place/"},
-			{"Populated places: A list of places in a state",
-				"http://" + r.Host + "/pop-places/state/nd/place/"},
 			{"Populated places: Information about a populated place",
 				"http://" + r.Host + "/pop-places/place/611119/"},
 			{"Presbyterian statistics, 1826-1926",
