@@ -275,6 +275,7 @@ func TestPlace(t *testing.T) {
 	expected := dataapi.PlaceDetails{
 		PlaceID:    611119,
 		Place:      "Groton",
+		MapName:    "Ayer",
 		County:     "Middlesex",
 		CountyAHCB: "mas_middlesex",
 		State:      "MA",

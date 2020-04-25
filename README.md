@@ -80,14 +80,13 @@ A JSON array of objects, each object representing a year of membership data.
 
 ### Populated places
 
-Lists of populated places from the USGS in a state or county.
+Lists of populated places from the USGS [Geographic Names Information System](https://www.usgs.gov/core-science-systems/ngp/board-on-geographic-names/domestic-names) in a state or county.
 
 ```
 GET /pop-places/state/:state/county/
 GET /pop-places/state/:state/place/
 GET /pop-places/county/:county/place/
 GET /pop-places/place/:place_id/
-
 ```
 
 Parameters:
@@ -98,7 +97,7 @@ Parameters:
 
 Response:
 
-A JSON array of objects where the objrects are all the counties in a state, or all the places in a state or county. The objects have both the unique identifiers and human-readable names. For the 
+A JSON array of objects where the objrects are all the counties in a state, or all the places in a state or county. The objects have both the unique identifiers and human-readable names.
 
 For example, you should be able to query `/pop-places/state/va/county` to get all the counties in Virginia, and then query `/pop-places/county/vas_fairfax/place` to get all the places in Fairfax county. If you had the ID for a place like Centreville, you could look up its details by querying `/pop-places/place/1491083/`.
 

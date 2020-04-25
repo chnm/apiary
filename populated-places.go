@@ -25,12 +25,14 @@ type PlaceCounty struct {
 type Place struct {
 	PlaceID int    `json:"place_id"`
 	Place   string `json:"place"`
+	MapName string `json:"map_name"`
 }
 
 // PlaceDetails represents details about a place
 type PlaceDetails struct {
 	PlaceID    int    `json:"place_id"`
 	Place      string `json:"place"`
+	MapName    string `json:"map_name"`
 	County     string `json:"county"`
 	CountyAHCB string `json:"county_ahcb"`
 	State      string `json:"state"`
@@ -90,7 +92,7 @@ func (s *Server) CountiesInState() http.HandlerFunc {
 func (s *Server) PlacesInCounty() http.HandlerFunc {
 
 	query := `
-		SELECT place_id, place
+		SELECT place_id, place, map_name
 		FROM popplaces_1926
 		WHERE county_ahcb = $1
 		ORDER BY place;
@@ -116,7 +118,7 @@ func (s *Server) PlacesInCounty() http.HandlerFunc {
 		}
 		defer rows.Close()
 		for rows.Next() {
-			err := rows.Scan(&row.PlaceID, &row.Place)
+			err := rows.Scan(&row.PlaceID, &row.Place, &row.MapName)
 			if err != nil {
 				log.Println(err)
 			}
@@ -139,7 +141,7 @@ func (s *Server) PlacesInCounty() http.HandlerFunc {
 func (s *Server) Place() http.HandlerFunc {
 
 	query := `
-		SELECT place_id, place, county, county_ahcb, state
+		SELECT place_id, place, map_name, county, county_ahcb, state
 		FROM popplaces_1926
 		WHERE place_id = $1
 		`
@@ -161,7 +163,7 @@ func (s *Server) Place() http.HandlerFunc {
 		var result PlaceDetails
 
 		err = stmt.QueryRow(placeID).Scan(&result.PlaceID, &result.Place,
-			&result.County, &result.CountyAHCB, &result.State)
+			&result.MapName, &result.County, &result.CountyAHCB, &result.State)
 		if err != nil {
 			if err == sql.ErrNoRows {
 				http.Error(w, fmt.Sprintf("Not found: No place with id %v.", placeID), http.StatusNotFound)
