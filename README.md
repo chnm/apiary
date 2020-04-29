@@ -46,6 +46,22 @@ Response:
 
 A JSON array of objects, each object representing a Catholic diocese. The date that the diocese was created (`date_erected`) is an ISO-8601 string, and the date that the diocese became an archdiocese (`date_metropolitan`) is either an ISO-8601 string or an empty string if the diocese did not become an archdiocese.
 
+### Catholic dioceses per decade
+
+Counts of the number of dioceses established per decade
+
+```
+GET /catholic-dioceses/per-decade/
+```
+
+Parameters:
+
+- None
+
+Response:
+
+A JSON array of objects, each object representing the count of dioceses per decade.
+
 ### North America
 
 Country polygons from [Natural Earth](https://www.naturalearthdata.com) for North America. 
