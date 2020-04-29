@@ -88,6 +88,31 @@ func TestCatholicDioceses(t *testing.T) {
 		t.Error(err)
 	}
 }
+
+func TestCatholicDiocesesPerDecade(t *testing.T) {
+	// Check that we get the right response
+	req, _ := http.NewRequest("GET", "/catholic-dioceses/per-decade/", nil)
+	response := executeRequest(req)
+	checkResponseCode(t, http.StatusOK, response.Code)
+
+	// Get the data
+	var data []dataapi.CatholicDiocesesPerDecade
+	err := json.Unmarshal(response.Body.Bytes(), &data)
+	if err != nil {
+		t.Error(err)
+	}
+
+	// Check that the data has the right content
+	expected := []dataapi.CatholicDiocesesPerDecade{
+		{Decade: 1500, Count: 0},
+		{Decade: 1510, Count: 1},
+		{Decade: 1520, Count: 1},
+	}
+	if !reflect.DeepEqual(data[0:3], expected) {
+		t.Error("Values in data are not what was expected.")
+	}
+}
+
 func TestAHCBStates(t *testing.T) {
 	req, _ := http.NewRequest("GET", "/ahcb/states/1789-07-04/", nil)
 	response := executeRequest(req)

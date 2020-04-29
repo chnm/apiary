@@ -20,6 +20,13 @@ type CatholicDiocese struct {
 	Lat              float32   `json:"lat"`
 }
 
+// CatholicDiocesesPerDecade shows how many dioceses were established in North
+// America per year.
+type CatholicDiocesesPerDecade struct {
+	Decade int64 `json:"decade"`
+	Count  int64 `json:"n"`
+}
+
 // CatholicDiocesesHandler returns a JSON array of Catholic dioceses. Though
 // the spatial data is stored in the database as a geometry, it is returned as
 // simple lon/lat coordinates because that is easiest to process in the
@@ -67,6 +74,58 @@ func (s *Server) CatholicDiocesesHandler() http.HandlerFunc {
 	response, _ := json.Marshal(results)
 
 	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		fmt.Fprintf(w, string(response))
+	}
+
+}
+
+// CatholicDiocesesPerDecadeHandler returns a JSON array of the number of dioceses
+// established in North America per year.
+func (s *Server) CatholicDiocesesPerDecadeHandler() http.HandlerFunc {
+
+	// This query counts the number of dioceses established per decade. But it
+	// also generates a series of decades from 1500 to 2020 so that there are
+	// no gaps between decades in the result.
+	query := `
+	SELECT 
+		series.decade,
+		coalesce(n, 0) AS n
+	FROM 
+		(SELECT generate_series(1500, 2020, 10) AS decade) AS series
+	LEFT JOIN 
+		(SELECT 
+			floor(date_part( 'year', date_erected)/10)*10 AS decade,
+			count(*) AS n
+		FROM catholic_dioceses
+		GROUP BY decade) counts 
+	ON series.decade  = counts.decade
+	ORDER BY series.decade;
+	`
+
+	return func(w http.ResponseWriter, r *http.Request) {
+		results := make([]CatholicDiocesesPerDecade, 0, 52)
+		var row CatholicDiocesesPerDecade
+
+		rows, err := s.Database.Query(query)
+		if err != nil {
+			log.Println(err)
+		}
+		defer rows.Close()
+		for rows.Next() {
+			err := rows.Scan(&row.Decade, &row.Count)
+			if err != nil {
+				log.Println(err)
+			}
+			results = append(results, row)
+		}
+		err = rows.Err()
+		if err != nil {
+			log.Println(err)
+		}
+
+		response, _ := json.Marshal(results)
+
 		w.Header().Set("Content-Type", "application/json")
 		fmt.Fprintf(w, string(response))
 	}

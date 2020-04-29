@@ -32,6 +32,8 @@ func (s *Server) EndpointsHandler() http.HandlerFunc {
 				"/ahcb/states/1820-05-10/"},
 			{"Roman Catholic Dioceses in North America",
 				"/catholic-dioceses/"},
+			{"Roman Catholic Dioceses in North America: number established per decade",
+				"/catholic-dioceses/per-decade/"},
 			{"Countries in North America from Natural Earth",
 				"/ne/northamerica/"},
 			{"Populated places: A list of counties in a state",
