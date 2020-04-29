@@ -103,11 +103,17 @@ func (s *Server) CatholicDiocesesPerDecadeHandler() http.HandlerFunc {
 	ORDER BY series.decade;
 	`
 
+	stmt, err := s.Database.Prepare(query)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	s.Statements["catholic-dioceses-per-decade"] = stmt // Will be closed at shutdown
+
 	return func(w http.ResponseWriter, r *http.Request) {
-		results := make([]CatholicDiocesesPerDecade, 0, 52)
+		results := make([]CatholicDiocesesPerDecade, 0, 52) // Preallocate slice capacity
 		var row CatholicDiocesesPerDecade
 
-		rows, err := s.Database.Query(query)
+		rows, err := stmt.Query()
 		if err != nil {
 			log.Println(err)
 		}
