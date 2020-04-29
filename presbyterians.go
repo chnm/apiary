@@ -17,18 +17,28 @@ type PresbyteriansByYear struct {
 // PresbyteriansHandler returns the aggregate data on Presbyterian memberhsip and churches.
 func (s *Server) PresbyteriansHandler() http.HandlerFunc {
 
+	query := `
+	SELECT 
+		year, 
+		SUM(members) as members, 
+		SUM(churches) as churches
+	FROM presbyterians_weber 
+	WHERE members IS NOT NULL 
+	GROUP BY year 
+	ORDER BY year;
+	`
+
+	stmt, err := s.Database.Prepare(query)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	s.Statements["presbyterians"] = stmt // Will be closed at shutdown
+
 	return func(w http.ResponseWriter, r *http.Request) {
 		results := make([]PresbyteriansByYear, 0)
 		var row PresbyteriansByYear
 
-		query := `
-		SELECT year, SUM(members) as members, SUM(churches) as churches
-		FROM presbyterians_weber 
-		WHERE members IS NOT NULL 
-		GROUP BY year ORDER BY year;
-		`
-
-		rows, err := s.Database.Query(query)
+		rows, err := stmt.Query()
 		if err != nil {
 			log.Println(err)
 		}
