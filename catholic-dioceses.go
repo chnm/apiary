@@ -49,31 +49,37 @@ func (s *Server) CatholicDiocesesHandler() http.HandlerFunc {
 	ORDER BY date_erected;
 	`
 
-	results := make([]CatholicDiocese, 0)
-	var row CatholicDiocese
-
-	rows, err := s.Database.Query(query)
+	stmt, err := s.Database.Prepare(query)
 	if err != nil {
-		log.Println(err)
+		log.Fatalln(err)
 	}
-	defer rows.Close()
-	for rows.Next() {
-		err := rows.Scan(&row.City, &row.State, &row.Country, &row.Rite,
-			&row.YearErected, &row.YearMetropolitan, &row.YearDestroyed,
-			&row.Lon, &row.Lat)
+	s.Statements["catholic-dioceses"] = stmt // Will be closed at shutdown
+
+	return func(w http.ResponseWriter, r *http.Request) {
+		results := make([]CatholicDiocese, 0)
+		var row CatholicDiocese
+
+		rows, err := stmt.Query()
 		if err != nil {
 			log.Println(err)
 		}
-		results = append(results, row)
-	}
-	err = rows.Err()
-	if err != nil {
-		log.Println(err)
-	}
+		defer rows.Close()
+		for rows.Next() {
+			err := rows.Scan(&row.City, &row.State, &row.Country, &row.Rite,
+				&row.YearErected, &row.YearMetropolitan, &row.YearDestroyed,
+				&row.Lon, &row.Lat)
+			if err != nil {
+				log.Println(err)
+			}
+			results = append(results, row)
+		}
+		err = rows.Err()
+		if err != nil {
+			log.Println(err)
+		}
 
-	response, _ := json.Marshal(results)
+		response, _ := json.Marshal(results)
 
-	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		fmt.Fprintf(w, string(response))
 	}
