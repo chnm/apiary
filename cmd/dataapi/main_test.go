@@ -105,7 +105,7 @@ func TestCatholicDiocesesPerDecade(t *testing.T) {
 	// Check that the data has the right content
 	expected := []dataapi.CatholicDiocesesPerDecade{
 		{Decade: 1500, Count: 0},
-		{Decade: 1510, Count: 1},
+		{Decade: 1510, Count: 3},
 		{Decade: 1520, Count: 1},
 	}
 	if !reflect.DeepEqual(data[0:3], expected) {
