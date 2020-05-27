@@ -33,12 +33,6 @@ type CatholicDiocesesPerDecade struct {
 // visualizations.
 func (s *Server) CatholicDiocesesHandler() http.HandlerFunc {
 
-	// All of the work of querying and marshalling to JSON is done in this closure
-	// which is called when the routes are set up. This means that the query is
-	// done only one time, at startup. Essentially this a very simple cache, but
-	// it speeds up the response to the client quite a bit. The downside is that
-	// if the data changes in the database, the API server won't pick it up until
-	// restart.
 	query := `
 	SELECT city, state, country, rite, 
 		date_part( 'year', date_erected) as year_erected,
