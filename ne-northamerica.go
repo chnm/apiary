@@ -23,18 +23,23 @@ func (s *Server) NENorthAmericaHandler() http.HandlerFunc {
 		FROM (
 			SELECT json_build_object(
 				'type', 'Feature',
-				'id', iso_a3,
+				'id', adm0_a3,
 				'properties', json_build_object(
 					'name', name),
-			  'geometry', ST_AsGeoJSON(geom_110m, 6)::json
+			  'geometry', ST_AsGeoJSON(geom_50m, 6)::json
 			) AS feature
-			FROM naturalearth.ne_countries
-			WHERE continent = 'North America' AND iso_a3 != 'GRL'
+			FROM naturalearth.countries
+			WHERE continent = 'North America' AND adm0_a3 != 'GRL' AND geom_50m IS NOT NULL
 			) AS countries;
 		`
+	stmt, err := s.Database.Prepare(query)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	s.Statements["ne-north-america"] = stmt
 
 	var result string // result will be a string containing GeoJSON
-	err := s.Database.QueryRow(query).Scan(&result)
+	err = stmt.QueryRow().Scan(&result)
 	if err != nil {
 		log.Println(err)
 	}

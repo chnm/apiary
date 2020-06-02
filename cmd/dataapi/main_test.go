@@ -243,7 +243,7 @@ func TestNorthAmerica(t *testing.T) {
 		t.Error("Data is not a FeatureCollection.")
 	}
 
-	if len(data.Features) != 17 {
+	if len(data.Features) != 37 {
 		t.Error("Incorrect number of features returned.")
 	}
 }
