@@ -1,6 +1,6 @@
 # Religious Ecologies Data API
 
-This repository contains a microservice written in Go that provides an API to data stored in a PostgreSQL database. It is a component of the [American Religious Ecologies](http://religiousecologies.org) project at the [Roy Rosenzweig Center for History and New Media](https://rrchnm.org).
+This repository provides an API to access data stored in a PostgreSQL database. It is a component of the [American Religious Ecologies](http://religiousecologies.org) project and other projects at the [Roy Rosenzweig Center for History and New Media](https://rrchnm.org).
 
 ## Endpoints
 
