@@ -30,6 +30,8 @@ func (s *Server) EndpointsHandler() http.HandlerFunc {
 				"/ahcb/counties/1844-05-08/state-code/nh,vt/"},
 			{"Historial U.S. state boundaries by date from the Atlas of Historical County Boundaries",
 				"/ahcb/states/1820-05-10/"},
+			{"APB: Verse",
+				"/apb/verse?ref=Luke+18:16"},
 			{"Roman Catholic Dioceses in North America",
 				"/catholic-dioceses/"},
 			{"Roman Catholic Dioceses in North America: number established per decade",
