@@ -16,6 +16,7 @@ func (s *Server) Routes() {
 	s.Router.HandleFunc("/presbyterians/", s.PresbyteriansHandler()).Methods("GET", "HEAD")
 	s.Router.HandleFunc("/apb/verse", s.VerseHandler()).Methods("GET", "HEAD")
 	s.Router.HandleFunc("/apb/verse-trend", s.VerseTrendHandler()).Methods("GET", "HEAD")
+	s.Router.HandleFunc("/apb/verse-quotations", s.VerseQuotationsHandler()).Methods("GET", "HEAD")
 	s.Router.HandleFunc("/", s.EndpointsHandler()).Methods("GET", "HEAD")
 
 	// Make sure to log 404 errors

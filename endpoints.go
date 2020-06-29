@@ -34,6 +34,8 @@ func (s *Server) EndpointsHandler() http.HandlerFunc {
 				"/apb/verse?ref=Luke+18:16"},
 			{"APB: Verse trend",
 				"/apb/verse-trend?ref=Luke+18:16"},
+			{"APB: Verse quotations",
+				"/apb/verse-quotations?ref=Luke+18:16"},
 			{"Roman Catholic Dioceses in North America",
 				"/catholic-dioceses/"},
 			{"Roman Catholic Dioceses in North America: number established per decade",
