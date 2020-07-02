@@ -10,7 +10,6 @@ import (
 // VerseQuotation is a single instance of a quotation
 type VerseQuotation struct {
 	Reference   string  `json:"reference"`
-	Version     string  `json:"version"`
 	DocID       string  `json:"docID"`
 	Date        string  `json:"date"`
 	Probability float32 `json:"probability"`
@@ -21,7 +20,7 @@ type VerseQuotation struct {
 func (s *Server) VerseQuotationsHandler() http.HandlerFunc {
 
 	query := `
-	SELECT q.reference_id, q.version, q.doc_id, q.date::text, q.probability,
+	SELECT q.reference_id, q.doc_id, q.date::text, q.probability,
 	 	n.title_clean
 	FROM apb.quotations q
 	LEFT JOIN chronam.pages p ON q.doc_id = p.doc_id
@@ -48,7 +47,7 @@ func (s *Server) VerseQuotationsHandler() http.HandlerFunc {
 		}
 		defer rows.Close()
 		for rows.Next() {
-			err := rows.Scan(&row.Reference, &row.Version, &row.DocID, &row.Date, &row.Probability, &row.Title)
+			err := rows.Scan(&row.Reference, &row.DocID, &row.Date, &row.Probability, &row.Title)
 			if err != nil {
 				log.Println(err)
 			}
