@@ -11,7 +11,7 @@ import (
 type VerseQuotation struct {
 	Reference   string  `json:"reference"`
 	Version     string  `json:"version"`
-	DocID       string  `json:"document"`
+	DocID       string  `json:"docID"`
 	Date        string  `json:"date"`
 	Probability float32 `json:"probability"`
 	Title       string  `json:"title"`
