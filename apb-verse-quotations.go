@@ -21,7 +21,7 @@ type VerseQuotation struct {
 func (s *Server) VerseQuotationsHandler() http.HandlerFunc {
 
 	query := `
-	SELECT q.reference_id, q.version, q.doc_id, q.date, q.probability,
+	SELECT q.reference_id, q.version, q.doc_id, q.date::text, q.probability,
 	 	n.title_clean
 	FROM apb.quotations q
 	LEFT JOIN chronam.pages p ON q.doc_id = p.doc_id
@@ -57,6 +57,11 @@ func (s *Server) VerseQuotationsHandler() http.HandlerFunc {
 		err = rows.Err()
 		if err != nil {
 			log.Println(err)
+		}
+
+		if len(results) == 0 {
+			w.WriteHeader(http.StatusNotFound)
+			w.Write([]byte("404 Not found."))
 		}
 
 		response, _ := json.Marshal(results)
