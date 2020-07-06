@@ -9,9 +9,8 @@ import (
 
 // VerseTrend is the rate of quotations in a single year for a single verse in a given corpus.
 type VerseTrend struct {
-	Reference         string  `json:"reference"`
-	Corpus            string  `json:"corpus"`
 	Year              int     `json:"year"`
+	Corpus            string  `json:"corpus"`
 	N                 int     `json:"n"`
 	QuotationsPerPage float64 `json:"q_per_page_e3"`
 	QuotationsPerWord float64 `json:"q_per_word_e6"`
@@ -21,11 +20,22 @@ type VerseTrend struct {
 func (s *Server) VerseTrendHandler() http.HandlerFunc {
 
 	query := `
-	SELECT reference_id, corpus, year, 
-				 n, q_per_page_e3, q_per_word_e6 
-	FROM apb.rate_quotations_verses 
-	WHERE reference_id = $1;
+	SELECT series.year, series.corpus,
+		COALESCE(n, 0) as N,
+		COALESCE(q_per_page_e3, 0) AS q_per_page_e3,
+		COALESCE(q_per_word_e6, 0) AS q_per_page_e6
+	FROM
+	(SELECT generate_series(1789, 1963) AS year, 'chronam'::text AS corpus
+		UNION ALL
+		SELECT generate_series(1800, 1899) AS year, 'ncnp'::text AS corpus) AS series
+	LEFT JOIN 
+	(SELECT year, corpus, n, q_per_page_e3, q_per_word_e6 
+		FROM apb.rate_quotations_verses 
+		WHERE reference_id = $1) AS q
+	ON series.year = q.year AND series.corpus = q.corpus
+	ORDER BY series.corpus, series.year
 	`
+
 	stmt, err := s.Database.Prepare(query)
 	if err != nil {
 		log.Fatalln(err)
@@ -45,7 +55,7 @@ func (s *Server) VerseTrendHandler() http.HandlerFunc {
 		}
 		defer rows.Close()
 		for rows.Next() {
-			err := rows.Scan(&row.Reference, &row.Corpus, &row.Year, &row.N, &row.QuotationsPerPage, &row.QuotationsPerWord)
+			err := rows.Scan(&row.Year, &row.Corpus, &row.N, &row.QuotationsPerPage, &row.QuotationsPerWord)
 			if err != nil {
 				log.Println(err)
 			}
