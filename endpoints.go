@@ -33,7 +33,7 @@ func (s *Server) EndpointsHandler() http.HandlerFunc {
 			{"APB: Verse",
 				"/apb/verse?ref=Luke+18:16"},
 			{"APB: Verse trend",
-				"/apb/verse-trend?ref=Luke+18:16"},
+				"/apb/verse-trend?ref=Luke+18:16&corpus=chronam"},
 			{"APB: Verse quotations",
 				"/apb/verse-quotations?ref=Luke+18:16"},
 			{"Roman Catholic Dioceses in North America",

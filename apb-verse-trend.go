@@ -10,30 +10,34 @@ import (
 // VerseTrend is the rate of quotations in a single year for a single verse in a given corpus.
 type VerseTrend struct {
 	Year              int     `json:"year"`
-	Corpus            string  `json:"corpus"`
 	N                 int     `json:"n"`
 	QuotationsPerPage float64 `json:"q_per_page_e3"`
 	QuotationsPerWord float64 `json:"q_per_word_e6"`
+}
+
+// VerseTrendResponse wraps the data with the queries that were made
+type VerseTrendResponse struct {
+	Reference string       `json:"reference"`
+	Corpus    string       `json:"corpus"`
+	Trend     []VerseTrend `json:"trend"`
 }
 
 // VerseTrendHandler returns the rates of quotation per year for a verse
 func (s *Server) VerseTrendHandler() http.HandlerFunc {
 
 	query := `
-	SELECT series.year, series.corpus,
+	SELECT series.year,
 		COALESCE(n, 0) as N,
 		COALESCE(q_per_page_e3, 0) AS q_per_page_e3,
 		COALESCE(q_per_word_e6, 0) AS q_per_page_e6
 	FROM
-	(SELECT generate_series(1789, 1963) AS year, 'chronam'::text AS corpus
-		UNION ALL
-		SELECT generate_series(1800, 1899) AS year, 'ncnp'::text AS corpus) AS series
+	(SELECT generate_series($3::int, $4::int) AS year) series
 	LEFT JOIN 
-	(SELECT year, corpus, n, q_per_page_e3, q_per_word_e6 
+	(SELECT year, n, q_per_page_e3, q_per_word_e6 
 		FROM apb.rate_quotations_verses 
-		WHERE reference_id = $1) AS q
-	ON series.year = q.year AND series.corpus = q.corpus
-	ORDER BY series.corpus, series.year
+		WHERE corpus = $1 AND reference_id = $2) AS q
+	ON series.year = q.year 
+	ORDER BY series.year
 	`
 
 	stmt, err := s.Database.Prepare(query)
@@ -44,18 +48,48 @@ func (s *Server) VerseTrendHandler() http.HandlerFunc {
 
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		refs := r.URL.Query()["ref"]
+		// Return a 404 error if we don't get exactly one reference
+		queryRef := r.URL.Query()["ref"]
+		var ref string
+		if len(queryRef) == 1 {
+			ref = queryRef[0]
+		} else {
+			w.WriteHeader(http.StatusBadRequest)
+			w.Write([]byte("400 Bad request. Please provide exactly one reference."))
+			return
+		}
 
-		results := make([]VerseTrend, 0, 128) // Preallocate slice capacity
+		// Use chronam as the default corpus
+		corpusRef := r.URL.Query()["corpus"]
+		corpus := "chronam"
+		if len(corpusRef) > 0 {
+			corpus = corpusRef[0]
+			if !(corpus == "ncnp" || corpus == "chronam") {
+				w.WriteHeader(http.StatusBadRequest)
+				w.Write([]byte("400 Bad request. Corpus must be 'ncnp' or 'chronam'."))
+				return
+			}
+		}
+
+		var minYear, maxYear int
+		if corpus == "chronam" {
+			minYear = 1789
+			maxYear = 1963
+		} else if corpus == "ncnp" {
+			minYear = 1800
+			maxYear = 1899
+		}
+
+		results := make([]VerseTrend, 0, 175) // Preallocate slice capacity
 		var row VerseTrend
 
-		rows, err := stmt.Query(refs[0])
+		rows, err := stmt.Query(corpus, ref, minYear, maxYear)
 		if err != nil {
 			log.Println(err)
 		}
 		defer rows.Close()
 		for rows.Next() {
-			err := rows.Scan(&row.Year, &row.Corpus, &row.N, &row.QuotationsPerPage, &row.QuotationsPerWord)
+			err := rows.Scan(&row.Year, &row.N, &row.QuotationsPerPage, &row.QuotationsPerWord)
 			if err != nil {
 				log.Println(err)
 			}
@@ -66,7 +100,9 @@ func (s *Server) VerseTrendHandler() http.HandlerFunc {
 			log.Println(err)
 		}
 
-		response, _ := json.Marshal(results)
+		wrapper := VerseTrendResponse{Reference: ref, Corpus: corpus, Trend: results}
+
+		response, _ := json.Marshal(wrapper)
 
 		w.Header().Set("Content-Type", "application/json")
 		fmt.Fprintf(w, string(response))
