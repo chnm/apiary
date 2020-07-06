@@ -30,7 +30,7 @@ func (s *Server) VerseTrendHandler() http.HandlerFunc {
 		year,
 		n,
 		q_per_word_e6,
-		AVG(q_per_word_e6) OVER (ORDER BY year ROWS BETWEEN 1 PRECEDING AND 1 FOLLOWING) AS q_rate_smoothed
+		AVG(q_per_word_e6) OVER (ORDER BY year ROWS BETWEEN 2 PRECEDING AND 2 FOLLOWING) AS q_rate_smoothed
   FROM
 	(SELECT series.year,
 		COALESCE(n, 0) as n,
@@ -78,10 +78,11 @@ func (s *Server) VerseTrendHandler() http.HandlerFunc {
 
 		var minYear, maxYear int
 		if corpus == "chronam" {
-			minYear = 1789
-			maxYear = 1963
+			// Years in which there is a major disjuncture in the total number of pages
+			minYear = 1836
+			maxYear = 1922
 		} else if corpus == "ncnp" {
-			minYear = 1800
+			minYear = 1836
 			maxYear = 1899
 		}
 
