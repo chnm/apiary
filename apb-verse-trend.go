@@ -7,12 +7,12 @@ import (
 	"net/http"
 )
 
-// VerseTrend is the rate of quotations in a single year for a single verse in a given corpus.
+// VerseTrend is the rate of quotations in a single year for a single verse in a given corpus. The quotation rate is expressed in quotations per million words; the smoothed rate has the same units, and is a centered three-year rolling average.
 type VerseTrend struct {
-	Year              int     `json:"year"`
-	N                 int     `json:"n"`
-	QuotationsPerPage float64 `json:"q_per_page_e3"`
-	QuotationsPerWord float64 `json:"q_per_word_e6"`
+	Year                int     `json:"year"`
+	N                   int     `json:"n"`
+	QuotationRate       float64 `json:"rate"`
+	QuotationRateSmooth float64 `json:"smoothed"`
 }
 
 // VerseTrendResponse wraps the data with the queries that were made
@@ -26,10 +26,15 @@ type VerseTrendResponse struct {
 func (s *Server) VerseTrendHandler() http.HandlerFunc {
 
 	query := `
-	SELECT series.year,
-		COALESCE(n, 0) as N,
-		COALESCE(q_per_page_e3, 0) AS q_per_page_e3,
-		COALESCE(q_per_word_e6, 0) AS q_per_page_e6
+	SELECT
+		year,
+		n,
+		q_per_word_e6,
+		AVG(q_per_word_e6) OVER (ORDER BY year ROWS BETWEEN 1 PRECEDING AND 1 FOLLOWING) AS q_rate_smoothed
+  FROM
+	(SELECT series.year,
+		COALESCE(n, 0) as n,
+		COALESCE(q_per_word_e6, 0) AS q_per_word_e6
 	FROM
 	(SELECT generate_series($3::int, $4::int) AS year) series
 	LEFT JOIN 
@@ -37,7 +42,7 @@ func (s *Server) VerseTrendHandler() http.HandlerFunc {
 		FROM apb.rate_quotations_verses 
 		WHERE corpus = $1 AND reference_id = $2) AS q
 	ON series.year = q.year 
-	ORDER BY series.year
+	ORDER BY series.year) res
 	`
 
 	stmt, err := s.Database.Prepare(query)
@@ -89,7 +94,7 @@ func (s *Server) VerseTrendHandler() http.HandlerFunc {
 		}
 		defer rows.Close()
 		for rows.Next() {
-			err := rows.Scan(&row.Year, &row.N, &row.QuotationsPerPage, &row.QuotationsPerWord)
+			err := rows.Scan(&row.Year, &row.N, &row.QuotationRate, &row.QuotationRateSmooth)
 			if err != nil {
 				log.Println(err)
 			}
