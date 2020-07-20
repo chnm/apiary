@@ -14,6 +14,7 @@ type VerseQuotation struct {
 	Date        string  `json:"date"`
 	Probability float32 `json:"probability"`
 	Title       string  `json:"title"`
+	State       string  `json:"state"`
 }
 
 // VerseQuotationsHandler returns the instances of quotations for a verse
@@ -21,10 +22,11 @@ func (s *Server) VerseQuotationsHandler() http.HandlerFunc {
 
 	query := `
 	SELECT q.reference_id, q.doc_id, q.date::text, q.probability,
-	 	n.title_clean
+	 	n.title_clean, places.state
 	FROM apb.quotations q
 	LEFT JOIN chronam.pages p ON q.doc_id = p.doc_id
 	LEFT JOIN chronam.newspapers n ON p.lccn = n.lccn
+	LEFT JOIN (SELECT DISTINCT ON (lccn) lccn, state FROM chronam.newspaper_places ORDER BY lccn) places ON p.lccn = places.lccn
 	WHERE reference_id = $1 AND corpus = 'chronam'
 	ORDER BY date;
 	`
@@ -47,7 +49,7 @@ func (s *Server) VerseQuotationsHandler() http.HandlerFunc {
 		}
 		defer rows.Close()
 		for rows.Next() {
-			err := rows.Scan(&row.Reference, &row.DocID, &row.Date, &row.Probability, &row.Title)
+			err := rows.Scan(&row.Reference, &row.DocID, &row.Date, &row.Probability, &row.Title, &row.State)
 			if err != nil {
 				log.Println(err)
 			}
