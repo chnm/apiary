@@ -32,6 +32,8 @@ func (s *Server) EndpointsHandler() http.HandlerFunc {
 				"/ahcb/states/1820-05-10/"},
 			{"APB: Featured verses",
 				"/apb/index/featured/"},
+			{"APB: Top verses",
+				"/apb/index/top/"},
 			{"APB: Verse",
 				"/apb/verse?ref=Luke+18:16"},
 			{"APB: Verse trend",

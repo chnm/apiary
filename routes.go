@@ -15,6 +15,7 @@ func (s *Server) Routes() {
 	s.Router.HandleFunc("/pop-places/place/{place}/", s.Place()).Methods("GET", "HEAD")
 	s.Router.HandleFunc("/presbyterians/", s.PresbyteriansHandler()).Methods("GET", "HEAD")
 	s.Router.HandleFunc("/apb/index/featured/", s.APBIndexFeaturedHandler()).Methods("GET", "HEAD")
+	s.Router.HandleFunc("/apb/index/top/", s.APBIndexTopHandler()).Methods("GET", "HEAD")
 	s.Router.HandleFunc("/apb/verse", s.VerseHandler()).Methods("GET", "HEAD")
 	s.Router.HandleFunc("/apb/verse-trend", s.VerseTrendHandler()).Methods("GET", "HEAD")
 	s.Router.HandleFunc("/apb/verse-quotations", s.VerseQuotationsHandler()).Methods("GET", "HEAD")

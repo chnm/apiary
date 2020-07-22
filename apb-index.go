@@ -60,3 +60,51 @@ func (s *Server) APBIndexFeaturedHandler() http.HandlerFunc {
 	}
 
 }
+
+// APBIndexTopHandler returns top verses.
+func (s *Server) APBIndexTopHandler() http.HandlerFunc {
+
+	query := `
+	SELECT t.reference_id, s.text
+	FROM apb.top_verses t
+	LEFT JOIN apb.scriptures s ON t.reference_id = s.reference_id
+	WHERE s.version = 'KJV'
+	ORDER BY t.n DESC
+	LIMIT 500;
+	`
+
+	stmt, err := s.Database.Prepare(query)
+
+	if err != nil {
+		log.Fatalln(err)
+	}
+	s.Statements["apb-index-top"] = stmt // Will be closed at shutdown
+
+	return func(w http.ResponseWriter, r *http.Request) {
+		var results []IndexItem
+		var row IndexItem
+
+		rows, err := stmt.Query()
+		if err != nil {
+			log.Println(err)
+		}
+		defer rows.Close()
+		for rows.Next() {
+			err := rows.Scan(&row.Reference, &row.Text)
+			if err != nil {
+				log.Println(err)
+			}
+			results = append(results, row)
+		}
+		err = rows.Err()
+		if err != nil {
+			log.Println(err)
+		}
+
+		response, _ := json.Marshal(results)
+
+		w.Header().Set("Content-Type", "application/json")
+		fmt.Fprintf(w, string(response))
+	}
+
+}
