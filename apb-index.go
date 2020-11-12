@@ -7,7 +7,7 @@ import (
 	"net/http"
 )
 
-// IndexItem is an entry in one of the different indexes to verses
+// APBIndexItem is an entry in one of the different indexes to verses
 type APBIndexItem struct {
 	Reference string `json:"reference"`
 	Text      string `json:"text"`
