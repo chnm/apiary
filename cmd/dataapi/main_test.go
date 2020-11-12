@@ -310,3 +310,133 @@ func TestPlace(t *testing.T) {
 	}
 
 }
+
+func TestAPBFeaturedVerses(t *testing.T) {
+	// Check that we get the right response
+	req, _ := http.NewRequest("GET", "/apb/index/featured/", nil)
+	response := executeRequest(req)
+	checkResponseCode(t, http.StatusOK, response.Code)
+
+	// Get the data
+	var data []dataapi.APBIndexItem
+	err := json.Unmarshal(response.Body.Bytes(), &data)
+	if err != nil {
+		t.Error(err)
+	}
+
+	if len(data) < 4 {
+		t.Error("Not enough verses returned.")
+	}
+
+}
+
+func TestAPBTopVerses(t *testing.T) {
+	// Check that we get the right response
+	req, _ := http.NewRequest("GET", "/apb/index/top/", nil)
+	response := executeRequest(req)
+	checkResponseCode(t, http.StatusOK, response.Code)
+
+	// Get the data
+	var data []dataapi.APBIndexItem
+	err := json.Unmarshal(response.Body.Bytes(), &data)
+	if err != nil {
+		t.Error(err)
+	}
+
+	if len(data) < 100 {
+		t.Error("Not enough verses returned.")
+	}
+
+}
+
+func TestAPBVerse(t *testing.T) {
+	// Check that we get the right response
+	req, _ := http.NewRequest("GET", "/apb/verse?ref=Genesis+1:1", nil)
+	response := executeRequest(req)
+	checkResponseCode(t, http.StatusOK, response.Code)
+
+	// Get the data
+	var data dataapi.Verse
+	err := json.Unmarshal(response.Body.Bytes(), &data)
+	if err != nil {
+		t.Error(err)
+	}
+
+	if data.Reference != "Genesis 1:1" {
+		t.Error("Wrong verse returned.")
+	}
+
+}
+
+func TestAPBVerseTrend(t *testing.T) {
+	// Check that we get the right response
+	req, _ := http.NewRequest("GET", "/apb/verse-trend?ref=Genesis+1:1&corpus=chronam", nil)
+	response := executeRequest(req)
+	checkResponseCode(t, http.StatusOK, response.Code)
+
+	// Get the data
+	var data dataapi.VerseTrendResponse
+	err := json.Unmarshal(response.Body.Bytes(), &data)
+	if err != nil {
+		t.Error(err)
+	}
+
+	if data.Reference != "Genesis 1:1" {
+		t.Error("Wrong verse returned.")
+	}
+
+	if data.Corpus != "chronam" {
+		t.Error("Wrong corpus returned.")
+	}
+
+	if len(data.Trend) < 50 {
+		t.Error("Not enough data points returned.")
+	}
+
+}
+
+func TestAPBBibleTrend(t *testing.T) {
+	// Check that we get the right response
+	req, _ := http.NewRequest("GET", "/apb/bible-trend/", nil)
+	response := executeRequest(req)
+	checkResponseCode(t, http.StatusOK, response.Code)
+
+	// Get the data
+	var data dataapi.VerseTrendResponse
+	err := json.Unmarshal(response.Body.Bytes(), &data)
+	if err != nil {
+		t.Error(err)
+	}
+
+	if data.Reference != "bible" {
+		t.Error("Wrong verse returned.")
+	}
+
+	if data.Corpus != "chronam" {
+		t.Error("Wrong corpus returned.")
+	}
+
+	if len(data.Trend) < 50 {
+		t.Error("Not enough data points returned.")
+	}
+
+}
+
+func TestAPBVerseQuotations(t *testing.T) {
+	// Check that we get the right response
+	req, _ := http.NewRequest("GET", "/apb/verse-quotations?ref=Genesis+1:1", nil)
+	response := executeRequest(req)
+	checkResponseCode(t, http.StatusOK, response.Code)
+
+	// Get the data
+	var data []dataapi.VerseQuotation
+	err := json.Unmarshal(response.Body.Bytes(), &data)
+	if err != nil {
+		t.Error(err)
+	}
+
+	if len(data) < 100 {
+		t.Error("Not enough verses returned.")
+	}
+
+}
