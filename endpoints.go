@@ -18,44 +18,50 @@ func (s *Server) EndpointsHandler() http.HandlerFunc {
 
 	return func(w http.ResponseWriter, r *http.Request) {
 
+		proto := "http://"
+		if r.TLS != nil {
+			proto = "https://"
+		}
+		baseurl := proto + r.Host
+
 		// These endpoints should correspond to the routes
 		endpoints := []Endpoint{
 			{"Historial U.S. county boundaries by date from the Atlas of Historical County Boundaries",
-				"/ahcb/counties/1844-05-08/"},
+				baseurl + "/ahcb/counties/1844-05-08/"},
 			{"Historial U.S. county boundaries by date and county ID from the Atlas of Historical County Boundaries",
-				"/ahcb/counties/1844-05-08/id/mas_essex,mas_middlesex/"},
+				baseurl + "/ahcb/counties/1844-05-08/id/mas_essex,mas_middlesex/"},
 			{"Historial U.S. county boundaries by date and state/territory ID from the Atlas of Historical County Boundaries",
-				"/ahcb/counties/1834-05-08/state-terr-id/nc_state,sc_state/"},
+				baseurl + "/ahcb/counties/1834-05-08/state-terr-id/nc_state,sc_state/"},
 			{"Historial U.S. county boundaries by date and state code from the Atlas of Historical County Boundaries",
-				"/ahcb/counties/1844-05-08/state-code/nh,vt/"},
+				baseurl + "/ahcb/counties/1844-05-08/state-code/nh,vt/"},
 			{"Historial U.S. state boundaries by date from the Atlas of Historical County Boundaries",
-				"/ahcb/states/1820-05-10/"},
+				baseurl + "/ahcb/states/1820-05-10/"},
 			{"APB: Featured verses",
-				"/apb/index/featured/"},
+				baseurl + "/apb/index/featured/"},
 			{"APB: Top verses",
-				"/apb/index/top/"},
+				baseurl + "/apb/index/top/"},
 			{"APB: Verse",
-				"/apb/verse?ref=Luke+18:16"},
+				baseurl + "/apb/verse?ref=Luke+18:16"},
 			{"APB: Verse trend",
-				"/apb/verse-trend?ref=Luke+18:16&corpus=chronam"},
+				baseurl + "/apb/verse-trend?ref=Luke+18:16&corpus=chronam"},
 			{"APB: Verse quotations",
-				"/apb/verse-quotations?ref=Luke+18:16"},
+				baseurl + "/apb/verse-quotations?ref=Luke+18:16"},
 			{"APB: Bible trend",
-				"/apb/bible-trend/"},
+				baseurl + "/apb/bible-trend/"},
 			{"Roman Catholic Dioceses in North America",
-				"/catholic-dioceses/"},
+				baseurl + "/catholic-dioceses/"},
 			{"Roman Catholic Dioceses in North America: number established per decade",
-				"/catholic-dioceses/per-decade/"},
+				baseurl + "/catholic-dioceses/per-decade/"},
 			{"Countries in North America from Natural Earth",
-				"/ne/northamerica/"},
+				baseurl + "/ne/northamerica/"},
 			{"Populated places: A list of counties in a state",
-				"/pop-places/state/ma/county/"},
+				baseurl + "/pop-places/state/ma/county/"},
 			{"Populated places: A list of places in a county",
-				"/pop-places/county/cas_ventura/place/"},
+				baseurl + "/pop-places/county/cas_ventura/place/"},
 			{"Populated places: Information about a populated place",
-				"/pop-places/place/611119/"},
+				baseurl + "/pop-places/place/611119/"},
 			{"Presbyterian statistics, 1826-1926",
-				"/presbyterians/"},
+				baseurl + "/presbyterians/"},
 		}
 
 		response, _ := json.MarshalIndent(endpoints, "", "  ")
