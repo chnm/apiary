@@ -8,7 +8,7 @@ import (
 )
 
 // IndexItem is an entry in one of the different indexes to verses
-type IndexItem struct {
+type APBIndexItem struct {
 	Reference string `json:"reference"`
 	Text      string `json:"text"`
 }
@@ -33,8 +33,8 @@ func (s *Server) APBIndexFeaturedHandler() http.HandlerFunc {
 	s.Statements["apb-index-featured"] = stmt // Will be closed at shutdown
 
 	return func(w http.ResponseWriter, r *http.Request) {
-		var results []IndexItem
-		var row IndexItem
+		var results []APBIndexItem
+		var row APBIndexItem
 
 		rows, err := stmt.Query()
 		if err != nil {
@@ -81,8 +81,8 @@ func (s *Server) APBIndexTopHandler() http.HandlerFunc {
 	s.Statements["apb-index-top"] = stmt // Will be closed at shutdown
 
 	return func(w http.ResponseWriter, r *http.Request) {
-		var results []IndexItem
-		var row IndexItem
+		var results []APBIndexItem
+		var row APBIndexItem
 
 		rows, err := stmt.Query()
 		if err != nil {
