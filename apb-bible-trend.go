@@ -24,13 +24,13 @@ func (s *Server) BibleTrendHandler() http.HandlerFunc {
 	(SELECT generate_series($2::int, $3::int) AS year) series
 	LEFT JOIN 
 	(SELECT year, n, q_per_word_e6 
-		FROM apb.rate_quotations_bible2
+		FROM apb.rate_quotations_bible
 		WHERE corpus = $1) AS q
 	ON series.year = q.year 
 	ORDER BY series.year) res
 	`
 
-	stmt, err := s.Database.Prepare(query)
+	stmt, err := s.APB.Prepare(query)
 	if err != nil {
 		log.Fatalln(err)
 	}

@@ -30,7 +30,7 @@ func (s *Server) VerseQuotationsHandler() http.HandlerFunc {
 	WHERE reference_id = $1 AND corpus = 'chronam'
 	ORDER BY date;
 	`
-	stmt, err := s.Database.Prepare(query)
+	stmt, err := s.APB.Prepare(query)
 	if err != nil {
 		log.Fatalln(err)
 	}

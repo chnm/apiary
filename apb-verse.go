@@ -31,7 +31,7 @@ func (s *Server) VerseHandler() http.HandlerFunc {
 		(v.use = TRUE OR v.use IS NULL) AND
 		s.version = 'KJV';
 	`
-	verseStmt, err := s.Database.Prepare(verseQuery)
+	verseStmt, err := s.APB.Prepare(verseQuery)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -42,7 +42,7 @@ func (s *Server) VerseHandler() http.HandlerFunc {
 	FROM apb.verse_cleanup
 	WHERE reference_use = $1 AND reference_id != reference_use
 	`
-	relatedVerseStmt, err := s.Database.Prepare(relatedVerseQuery)
+	relatedVerseStmt, err := s.APB.Prepare(relatedVerseQuery)
 	if err != nil {
 		log.Fatalln(err)
 	}

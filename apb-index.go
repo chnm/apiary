@@ -25,7 +25,7 @@ func (s *Server) APBIndexFeaturedHandler() http.HandlerFunc {
 	ORDER BY s.book_order, s.chapter, s.verse;
 	`
 
-	stmt, err := s.Database.Prepare(query)
+	stmt, err := s.APB.Prepare(query)
 
 	if err != nil {
 		log.Fatalln(err)
@@ -73,7 +73,7 @@ func (s *Server) APBIndexTopHandler() http.HandlerFunc {
 	LIMIT 500;
 	`
 
-	stmt, err := s.Database.Prepare(query)
+	stmt, err := s.APB.Prepare(query)
 
 	if err != nil {
 		log.Fatalln(err)

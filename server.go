@@ -18,10 +18,11 @@ import (
 type Config struct {
 	dbhost  string
 	dbport  string
-	dbname  string
+	dbname  string // Main DB
 	dbuser  string
 	dbpass  string
 	dbssl   string // SSL mode for the database connection
+	apb     string // Secondary DB
 	logging bool   // Whether or not to write access logs; errors/status are always logged
 	address string // The address at which this will be hosted, e.g.: localhost:8090
 }
@@ -30,6 +31,7 @@ type Config struct {
 type Server struct {
 	Server     *http.Server
 	Database   *sql.DB
+	APB        *sql.DB
 	Router     *mux.Router
 	Config     Config
 	Statements map[string]*sql.Stmt
@@ -47,6 +49,7 @@ func NewServer() *Server {
 	s.Config.dbuser = getEnv("DATAAPI_DBUSER", "")
 	s.Config.dbpass = getEnv("DATAAPI_DBPASS", "")
 	s.Config.dbssl = getEnv("DATAAPI_SSL", "require")
+	s.Config.apb = getEnv("DATAAPI_APB", "")
 	s.Config.logging = getEnv("DATAAPI_LOGGING", "on") == "on"
 	s.Config.address = getEnv("DATAAPI_INTERFACE", "0.0.0.0") + ":" + getEnv("DATAAPI_PORT", "8090")
 
@@ -62,6 +65,19 @@ func NewServer() *Server {
 		log.Fatalln(err)
 	}
 	s.Database = db
+
+	// Connect to the secondary database then store the database in the struct.
+	constr2 := fmt.Sprintf("host=%s port=%s dbname=%s user=%s password=%s sslmode=%s",
+		s.Config.dbhost, s.Config.dbport, s.Config.apb, s.Config.dbuser,
+		s.Config.dbpass, s.Config.dbssl)
+	db2, err := sql.Open("postgres", constr2)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	if err := db2.Ping(); err != nil {
+		log.Fatalln(err)
+	}
+	s.APB = db2
 
 	// Create an empty map to store prepared statements
 	s.Statements = make(map[string]*sql.Stmt)

@@ -45,7 +45,7 @@ func (s *Server) VerseTrendHandler() http.HandlerFunc {
 	ORDER BY series.year) res
 	`
 
-	stmt, err := s.Database.Prepare(query)
+	stmt, err := s.APB.Prepare(query)
 	if err != nil {
 		log.Fatalln(err)
 	}
