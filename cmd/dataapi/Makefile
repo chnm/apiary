@@ -21,9 +21,10 @@ docker-serve : docker-build
 		--publish 8090:8090 \
 		-e DATAAPI_DBHOST \
 		-e DATAAPI_DBPORT \
-		-e DATAAPI_DBNAME \
 		-e DATAAPI_DBPASS \
 		-e DATAAPI_DBUSER \
+		-e DATAAPI_DBNAME \
+		-e DATAAPI_APB \
 		--name dataapi \
 		dataapi:test
 
