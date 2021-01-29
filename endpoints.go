@@ -40,6 +40,8 @@ func (s *Server) EndpointsHandler() http.HandlerFunc {
 				baseurl + "/apb/index/featured/"},
 			{"APB: Top verses",
 				baseurl + "/apb/index/top/"},
+			{"APB: Verses in biblical order",
+				baseurl + "/apb/index/biblical-order/"},
 			{"APB: Verse",
 				baseurl + "/apb/verse?ref=Luke+18:16"},
 			{"APB: Verse trend",

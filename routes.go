@@ -10,6 +10,7 @@ func (s *Server) Routes() {
 	s.Router.HandleFunc("/apb/bible-trend/", s.BibleTrendHandler()).Methods("GET", "HEAD")
 	s.Router.HandleFunc("/apb/index/featured/", s.APBIndexFeaturedHandler()).Methods("GET", "HEAD")
 	s.Router.HandleFunc("/apb/index/top/", s.APBIndexTopHandler()).Methods("GET", "HEAD")
+	s.Router.HandleFunc("/apb/index/biblical-order/", s.APBIndexBiblicalOrderHandler()).Methods("GET", "HEAD")
 	s.Router.HandleFunc("/apb/verse", s.VerseHandler()).Methods("GET", "HEAD")
 	s.Router.HandleFunc("/apb/verse-quotations", s.VerseQuotationsHandler()).Methods("GET", "HEAD")
 	s.Router.HandleFunc("/apb/verse-trend", s.VerseTrendHandler()).Methods("GET", "HEAD")
