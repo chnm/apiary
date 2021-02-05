@@ -14,6 +14,14 @@ type APBIndexItem struct {
 	Count     int    `json:"count"`
 }
 
+// APBIndexItemWithYear is an index item with the peak year
+type APBIndexItemWithYear struct {
+	Reference string `json:"reference"`
+	Text      string `json:"text"`
+	Count     int    `json:"count"`
+	Peak      int    `json:"peak"`
+}
+
 // APBIndexFeaturedHandler returns featured verses.
 func (s *Server) APBIndexFeaturedHandler() http.HandlerFunc {
 
@@ -140,6 +148,55 @@ func (s *Server) APBIndexTopHandler() http.HandlerFunc {
 		defer rows.Close()
 		for rows.Next() {
 			err := rows.Scan(&row.Reference, &row.Text, &row.Count)
+			if err != nil {
+				log.Println(err)
+			}
+			results = append(results, row)
+		}
+		err = rows.Err()
+		if err != nil {
+			log.Println(err)
+		}
+
+		response, _ := json.Marshal(results)
+
+		w.Header().Set("Content-Type", "application/json")
+		fmt.Fprintf(w, string(response))
+	}
+
+}
+
+// APBIndexChronologicalHandler returns verses in chronological order by their peak.
+func (s *Server) APBIndexChronologicalHandler() http.HandlerFunc {
+
+	query := `
+	SELECT t.reference_id, s.text, t.n, p.year
+	FROM apb.top_verses t
+	LEFT JOIN apb.verse_cleanup c ON t.reference_id = c.reference_id
+	LEFT JOIN apb.scriptures s ON t.reference_id = s.reference_id
+  LEFT JOIN apb.verse_peaks p ON t.reference_id = p.reference_id
+	WHERE t.n > 1000 AND c.use = TRUE AND s.version = 'KJV'
+  ORDER BY p.year, t.n DESC;
+	`
+
+	stmt, err := s.APB.Prepare(query)
+
+	if err != nil {
+		log.Fatalln(err)
+	}
+	s.Statements["apb-index-chronological-order"] = stmt // Will be closed at shutdown
+
+	return func(w http.ResponseWriter, r *http.Request) {
+		var results []APBIndexItemWithYear
+		var row APBIndexItemWithYear
+
+		rows, err := stmt.Query()
+		if err != nil {
+			log.Println(err)
+		}
+		defer rows.Close()
+		for rows.Next() {
+			err := rows.Scan(&row.Reference, &row.Text, &row.Count, &row.Peak)
 			if err != nil {
 				log.Println(err)
 			}
