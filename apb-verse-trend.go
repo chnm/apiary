@@ -38,7 +38,7 @@ func (s *Server) VerseTrendHandler() http.HandlerFunc {
 	FROM
 	(SELECT generate_series($3::int, $4::int) AS year) series
 	LEFT JOIN 
-	(SELECT year, n, q_per_page_e3, q_per_word_e6 
+	(SELECT year, n, q_per_word_e6 
 		FROM apb.rate_quotations_verses 
 		WHERE corpus = $1 AND reference_id = $2) AS q
 	ON series.year = q.year 
