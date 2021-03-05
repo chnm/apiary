@@ -14,16 +14,18 @@ func (s *Server) BibleTrendHandler() http.HandlerFunc {
 	SELECT
 		year,
 		n,
-		q_per_word_e6,
-		AVG(q_per_word_e6) OVER (ORDER BY year ROWS BETWEEN 2 PRECEDING AND 2 FOLLOWING) AS q_rate_smoothed
+		SUM(n) OVER (ORDER BY year ROWS BETWEEN 2 PRECEDING AND 2 FOLLOWING) / SUM(wordcount) OVER (ORDER BY year ROWS BETWEEN 2 PRECEDING AND 2 FOLLOWING) * 1000000 AS q_rate_smoothed
   FROM
 	(SELECT series.year,
 		COALESCE(n, 0) as n,
-		COALESCE(q_per_word_e6, 0) AS q_per_word_e6
+		wordcount
 	FROM
 	(SELECT generate_series($2::int, $3::int) AS year) series
 	LEFT JOIN 
-	(SELECT year, n, q_per_word_e6 
+	(SELECT 
+		year, 
+		n, 
+		wordcount
 		FROM apb.rate_quotations_bible
 		WHERE corpus = $1) AS q
 	ON series.year = q.year 
@@ -50,7 +52,7 @@ func (s *Server) BibleTrendHandler() http.HandlerFunc {
 		}
 		defer rows.Close()
 		for rows.Next() {
-			err := rows.Scan(&row.Year, &row.N, &row.QuotationRate, &row.QuotationRateSmooth)
+			err := rows.Scan(&row.Year, &row.N, &row.QuotationRateSmooth)
 			if err != nil {
 				log.Println(err)
 			}

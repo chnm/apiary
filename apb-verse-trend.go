@@ -11,7 +11,6 @@ import (
 type VerseTrend struct {
 	Year                int     `json:"year"`
 	N                   int     `json:"n"`
-	QuotationRate       float64 `json:"rate"`
 	QuotationRateSmooth float64 `json:"smoothed"`
 }
 
@@ -29,17 +28,19 @@ func (s *Server) VerseTrendHandler() http.HandlerFunc {
 	SELECT
 		year,
 		n,
-		q_per_word_e6,
-		AVG(q_per_word_e6) OVER (ORDER BY year ROWS BETWEEN 2 PRECEDING AND 2 FOLLOWING) AS q_rate_smoothed
+		SUM(n) OVER (ORDER BY year ROWS BETWEEN 2 PRECEDING AND 2 FOLLOWING) / SUM(wordcount) OVER (ORDER BY year ROWS BETWEEN 2 PRECEDING AND 2 FOLLOWING) * 1000000 AS q_rate_smoothed
   FROM
 	(SELECT series.year,
 		COALESCE(n, 0) as n,
-		COALESCE(q_per_word_e6, 0) AS q_per_word_e6
+		wordcount
 	FROM
 	(SELECT generate_series($3::int, $4::int) AS year) series
 	LEFT JOIN 
-	(SELECT year, n, q_per_word_e6 
-		FROM apb.rate_quotations_verses 
+	(SELECT 
+		year, 
+		n, 
+		wordcount
+	 FROM apb.rate_quotations_verses 
 		WHERE corpus = $1 AND reference_id = $2) AS q
 	ON series.year = q.year 
 	ORDER BY series.year) res
@@ -95,7 +96,7 @@ func (s *Server) VerseTrendHandler() http.HandlerFunc {
 		}
 		defer rows.Close()
 		for rows.Next() {
-			err := rows.Scan(&row.Year, &row.N, &row.QuotationRate, &row.QuotationRateSmooth)
+			err := rows.Scan(&row.Year, &row.N, &row.QuotationRateSmooth)
 			if err != nil {
 				log.Println(err)
 			}
