@@ -25,25 +25,25 @@ type VerseTrendResponse struct {
 func (s *Server) VerseTrendHandler() http.HandlerFunc {
 
 	query := `
-	SELECT
-		year,
-		n,
-		SUM(n) OVER (ORDER BY year ROWS BETWEEN 2 PRECEDING AND 2 FOLLOWING) / SUM(wordcount) OVER (ORDER BY year ROWS BETWEEN 2 PRECEDING AND 2 FOLLOWING) * 1000000 AS q_rate_smoothed
-  FROM
-	(SELECT series.year,
-		COALESCE(n, 0) as n,
-		wordcount
+	SELECT 
+	res.year,
+	n,
+	SUM(n) OVER (ORDER BY res.year ROWS BETWEEN 2 PRECEDING AND 2 FOLLOWING) / SUM(wordcount) OVER (ORDER BY res.year ROWS BETWEEN 2 PRECEDING AND 2 FOLLOWING) * 1000000 AS q_rate_smoothed
 	FROM
-	(SELECT generate_series($3::int, $4::int) AS year) series
-	LEFT JOIN 
-	(SELECT 
-		year, 
-		n, 
-		wordcount
-	 FROM apb.rate_quotations_verses 
-		WHERE corpus = $1 AND reference_id = $2) AS q
-	ON series.year = q.year 
-	ORDER BY series.year) res
+		(SELECT series.year,
+			COALESCE(n, 0) as n
+			FROM
+				(SELECT generate_series($3::int, $4::int) AS year) series
+				LEFT JOIN 
+				(SELECT year, n, corpus, reference_id
+				FROM apb.count_quotations_verses 
+				WHERE corpus = $1 AND reference_id = $2) AS q
+				ON series.year = q.year 
+				ORDER BY series.year) res
+				LEFT JOIN 
+			(SELECT year, wordcount FROM apb.wordcounts
+			WHERE corpus = 'chronam') wc
+			ON res.year = wc.year
 	`
 
 	stmt, err := s.APB.Prepare(query)
