@@ -349,6 +349,25 @@ func TestAPBTopVerses(t *testing.T) {
 
 }
 
+func TestAPBVersePeaks(t *testing.T) {
+	// Check that we get the right response
+	req, _ := http.NewRequest("GET", "/apb/index/peaks/", nil)
+	response := executeRequest(req)
+	checkResponseCode(t, http.StatusOK, response.Code)
+
+	// Get the data
+	var data []dataapi.APBIndexItem
+	err := json.Unmarshal(response.Body.Bytes(), &data)
+	if err != nil {
+		t.Error(err)
+	}
+
+	if len(data) < 100 {
+		t.Error("Not enough verses returned.")
+	}
+
+}
+
 func TestAPBVerse(t *testing.T) {
 	// Check that we get the right response
 	req, _ := http.NewRequest("GET", "/apb/verse?ref=Genesis+1:1", nil)
