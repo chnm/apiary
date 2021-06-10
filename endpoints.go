@@ -52,6 +52,8 @@ func (s *Server) EndpointsHandler() http.HandlerFunc {
 				baseurl + "/apb/verse-quotations?ref=Luke+18:16"},
 			{"APB: Bible trend",
 				baseurl + "/apb/bible-trend/"},
+			{"APB: Bible similarity",
+				baseurl + "/apb/bible-similarity/"},
 			{"Roman Catholic Dioceses in North America",
 				baseurl + "/catholic-dioceses/"},
 			{"Roman Catholic Dioceses in North America: number established per decade",
