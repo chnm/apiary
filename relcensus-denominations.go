@@ -78,7 +78,7 @@ func (s *Server) DenominationsHandler() http.HandlerFunc {
 	query := `
 	SELECT denomination_id, name, family_relec
 	FROM relcensus.denominations
-	WHERE ($1::text IS NULL OR family_relec = $1::text);
+	WHERE ($1::text = '' OR family_relec = $1::text);
 	`
 	stmt, err := s.Database.Prepare(query)
 	if err != nil {
@@ -90,6 +90,7 @@ func (s *Server) DenominationsHandler() http.HandlerFunc {
 		results := make([]Denomination, 0)
 		var row Denomination
 
+		log.Printf("%#v %T", familyRelec, familyRelec)
 		rows, err := stmt.Query(familyRelec)
 		if err != nil {
 			log.Println(err)
