@@ -24,6 +24,7 @@ func (s *Server) Routes() {
 	s.Router.HandleFunc("/pop-places/state/{state:[a-z]{2}}/county/", s.CountiesInState()).Methods("GET", "HEAD")
 	s.Router.HandleFunc("/presbyterians/", s.PresbyteriansHandler()).Methods("GET", "HEAD")
 	s.Router.HandleFunc("/relcensus/denomination-families/", s.DenominationFamiliesHandler()).Methods("GET", "HEAD")
+	s.Router.HandleFunc("/relcensus/denominations", s.DenominationsHandler()).Methods("GET", "HEAD")
 	s.Router.HandleFunc("/", s.EndpointsHandler()).Methods("GET", "HEAD")
 
 	// Make sure to log 404 errors
