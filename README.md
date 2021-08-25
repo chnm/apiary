@@ -131,11 +131,13 @@ Response:
 
 A JSON array of objects. Each object is an endpoint for the API, with a sample URL for that endpoint.
 
-## Compiling
+## Compiling or running a container
 
 Using a version of Go that supports Go modules, you should be able to run `go build` in the project root to install dependencies.
 
-There is a Makefile in `cmd/dataapi/` that can be used for compiling and for running the service locally.
+There is a `Makefile` in `cmd/dataapi/` that can be used for compiling and for running the service locally.
+
+If you just need to run the Data API locally, it may be most convenient to just run a [Docker container](https://github.com/chnm/dataapi/pkgs/container/dataapi) served from the GitHub Container Registry. There are versions that are tagged with each of the GitHub branches that have been pushed, so that you can try the development version. You still need to set the environment variables, as below. It may be most convenient to run the Docker container with the `Makefile` in the root of this repository.
 
 ## Configuration
 
