@@ -181,6 +181,21 @@ Response:
 A JSON array containing objects describing the membership data for a
 denomination in a specific city in a specific year.
 
+### Census of Religious Bodies Total Data for Cities
+
+```
+GET /relcensus/city-total-membership?year=:year
+```
+
+Parameters:
+
+- `year`: An mandatory query parameter for the year of the census.
+
+Response:
+
+A JSON array containing objects describing the aggregate membership data for all
+denominations in a specific city in a specific year.
+
 ## Compiling or running a container
 
 Using a version of Go that supports Go modules, you should be able to run `go build` in the project root to install dependencies.

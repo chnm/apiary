@@ -72,8 +72,10 @@ func (s *Server) EndpointsHandler() http.HandlerFunc {
 				baseurl + "/relcensus/denomination-families"},
 			{"Religious Bodies Census denominations",
 				baseurl + "/relcensus/denominations"},
-			{"Religious Bodies Census denomination data for a city in a year",
+			{"Religious Bodies Census membership data for a denomination in a city in a year",
 				baseurl + "/relcensus/city-membership?year=1926&denomination=Protestant+Episcopal+Church"},
+			{"Religious Bodies Census membership data aggregated for all denominations in a city in a year",
+				baseurl + "/relcensus/city-total-membership?year=1926"},
 		}
 
 		response, _ := json.MarshalIndent(endpoints, "", "  ")

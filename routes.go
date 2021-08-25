@@ -26,6 +26,7 @@ func (s *Server) Routes() {
 	s.Router.HandleFunc("/relcensus/denomination-families", s.DenominationFamiliesHandler()).Methods("GET", "HEAD")
 	s.Router.HandleFunc("/relcensus/denominations", s.DenominationsHandler()).Methods("GET", "HEAD")
 	s.Router.HandleFunc("/relcensus/city-membership", s.CityMembershipHandler()).Methods("GET", "HEAD")
+	s.Router.HandleFunc("/relcensus/city-total-membership", s.CityTotalMembershipHandler()).Methods("GET", "HEAD")
 	s.Router.HandleFunc("/", s.EndpointsHandler()).Methods("GET", "HEAD")
 
 	// Make sure to log 404 errors
