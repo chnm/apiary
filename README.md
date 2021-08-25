@@ -129,7 +129,24 @@ Parameters:
 
 Response:
 
-A JSON array of objects. Each object is an endpoint for the API, with a sample URL for that endpoint.
+A JSON array of objects. Each object is an endpoint for the API, with a sample
+URL for that endpoint.
+
+### Census of Religious Bodies Endpoints
+
+```
+GET /relcensus/denomination-families/
+```
+
+Parameters:
+
+- None
+
+Response:
+
+A JSON object containing keys for different ways of classifying denominations.
+(Only the `family_relec` is implemented.) Each sub-object contains an array of
+objects describing the denomination families.
 
 ## Compiling
 
