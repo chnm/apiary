@@ -135,7 +135,7 @@ URL for that endpoint.
 ### Census of Religious Bodies Denomination Families
 
 ```
-GET /relcensus/denomination-families/
+GET /relcensus/denomination-families
 ```
 
 Parameters:

@@ -69,9 +69,9 @@ func (s *Server) EndpointsHandler() http.HandlerFunc {
 			{"Presbyterian statistics, 1826-1926",
 				baseurl + "/presbyterians/"},
 			{"Religious Bodies Census denomination families",
-				baseurl + "/relcensus/denomination-families/"},
+				baseurl + "/relcensus/denomination-families"},
 			{"Religious Bodies Census denominations",
-				baseurl + "/relcensus/denominations/"},
+				baseurl + "/relcensus/denominations"},
 			{"Religious Bodies Census denomination data for a city in a year",
 				baseurl + "/relcensus/city-membership?year=1926&denomination=Protestant+Episcopal+Church"},
 		}
