@@ -151,7 +151,7 @@ objects describing the denomination families.
 ### Census of Religious Bodies Denominations
 
 ```
-GET /relcensus/denominations?family_relec=Lutheran
+GET /relcensus/denominations?family_relec=:family
 ```
 
 Parameters:
@@ -162,7 +162,24 @@ Parameters:
 Response:
 
 A JSON array containing objects describing the denominations. If the
-`family_relec` query parameter is absent, then all of the denominations are returned.
+`family_relec` query parameter is absent, then all of the denominations are
+returned.
+
+### Census of Religious Bodies Denomination Data for Cities
+
+```
+GET /relcensus/city-membership?year=:year&denomination=:denomination
+```
+
+Parameters:
+
+- `year`: An mandatory query parameter for the year of the census.
+- `denomination`: A mandatory query parameter with the specific denomination requested.
+
+Response:
+
+A JSON array containing objects describing the membership data for a
+denomination in a specific city in a specific year.
 
 ## Compiling
 
