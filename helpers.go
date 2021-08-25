@@ -66,37 +66,3 @@ func (v *NullInt64) UnmarshalJSON(data []byte) error {
 	}
 	return nil
 }
-
-// NullString embeds the sql.NullString type, so that it can be extended
-// to change the JSON marshaling.
-type NullString struct {
-	sql.NullString
-}
-
-// MarshalJSON marshals a null string as `{"string": null}` rather than
-// using an object inside the field.
-// See https://stackoverflow.com/questions/33072172/how-can-i-work-with-sql-null-values-and-json-in-a-good-way
-func (v NullString) MarshalJSON() ([]byte, error) {
-	if v.Valid {
-		return json.Marshal(v.String)
-	}
-	return json.Marshal(nil)
-}
-
-// UnmarshalJSON unmarshals a null string represented in JSON as `{"string": null}`
-// into our embedded type that allows nulls.
-// See https://stackoverflow.com/questions/33072172/how-can-i-work-with-sql-null-values-and-json-in-a-good-way
-func (v *NullString) UnmarshalJSON(data []byte) error {
-	// Unmarshalling into a pointer will let us detect null
-	var x *string
-	if err := json.Unmarshal(data, &x); err != nil {
-		return err
-	}
-	if x != nil {
-		v.Valid = true
-		v.String = *x
-	} else {
-		v.Valid = false
-	}
-	return nil
-}
