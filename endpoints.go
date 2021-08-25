@@ -68,8 +68,6 @@ func (s *Server) EndpointsHandler() http.HandlerFunc {
 				baseurl + "/pop-places/place/611119/"},
 			{"Presbyterian statistics, 1826-1926",
 				baseurl + "/presbyterians/"},
-			{"Religious Ecologies denomination families",
-				baseurl + "/relcensus/denomination-families/"},
 		}
 
 		response, _ := json.MarshalIndent(endpoints, "", "  ")
