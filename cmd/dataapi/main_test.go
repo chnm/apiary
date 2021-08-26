@@ -313,7 +313,7 @@ func TestPlace(t *testing.T) {
 
 func TestAPBFeaturedVerses(t *testing.T) {
 	// Check that we get the right response
-	req, _ := http.NewRequest("GET", "/apb/index/featured/", nil)
+	req, _ := http.NewRequest("GET", "/apb/index/featured", nil)
 	response := executeRequest(req)
 	checkResponseCode(t, http.StatusOK, response.Code)
 
@@ -332,7 +332,7 @@ func TestAPBFeaturedVerses(t *testing.T) {
 
 func TestAPBTopVerses(t *testing.T) {
 	// Check that we get the right response
-	req, _ := http.NewRequest("GET", "/apb/index/top/", nil)
+	req, _ := http.NewRequest("GET", "/apb/index/top", nil)
 	response := executeRequest(req)
 	checkResponseCode(t, http.StatusOK, response.Code)
 
@@ -351,7 +351,7 @@ func TestAPBTopVerses(t *testing.T) {
 
 func TestAPBVersePeaks(t *testing.T) {
 	// Check that we get the right response
-	req, _ := http.NewRequest("GET", "/apb/index/peaks/", nil)
+	req, _ := http.NewRequest("GET", "/apb/index/peaks", nil)
 	response := executeRequest(req)
 	checkResponseCode(t, http.StatusOK, response.Code)
 
@@ -416,7 +416,7 @@ func TestAPBVerseTrend(t *testing.T) {
 
 func TestAPBBibleTrend(t *testing.T) {
 	// Check that we get the right response
-	req, _ := http.NewRequest("GET", "/apb/bible-trend/", nil)
+	req, _ := http.NewRequest("GET", "/apb/bible-trend", nil)
 	response := executeRequest(req)
 	checkResponseCode(t, http.StatusOK, response.Code)
 
