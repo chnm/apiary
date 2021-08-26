@@ -7,6 +7,7 @@ func (s *Server) Routes() {
 	s.Router.HandleFunc("/ahcb/counties/{date:[0-9]{4}-[0-9]{2}-[0-9]{2}}/state-code/{state-code:[a-z,]+}/", s.AHCBCountiesByStateCodeHandler()).Methods("GET", "HEAD")
 	s.Router.HandleFunc("/ahcb/counties/{date:[0-9]{4}-[0-9]{2}-[0-9]{2}}/state-terr-id/{state-terr-id:[a-z_,]+}/", s.AHCBCountiesByStateTerrIDHandler()).Methods("GET", "HEAD")
 	s.Router.HandleFunc("/ahcb/states/{date:[0-9]{4}-[0-9]{2}-[0-9]{2}}/", s.AHCBStatesHandler()).Methods("GET", "HEAD")
+	s.Router.HandleFunc("/apb/bible-books", s.BibleBooksHandler()).Methods("GET", "HEAD")
 	s.Router.HandleFunc("/apb/bible-similarity", s.BibleSimilarityHandler()).Methods("GET", "HEAD")
 	s.Router.HandleFunc("/apb/bible-trend", s.BibleTrendHandler()).Methods("GET", "HEAD")
 	s.Router.HandleFunc("/apb/index/featured", s.APBIndexFeaturedHandler()).Methods("GET", "HEAD")
