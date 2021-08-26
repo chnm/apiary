@@ -18,7 +18,7 @@ RUN go mod download
 COPY . /app
 
 # Build the Go app, making sure it is a static binary with no debugging symbols
-RUN cd cmd/dataapi && GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -a -ldflags="-w -s"
+RUN cd cmd/dataapi && CGO_ENABLED=0 go build -a -ldflags="-w -s"
 
 # Create non-root user information
 RUN echo "dataapi:x:65534:65534:Data API:/:" > /etc_passwd
