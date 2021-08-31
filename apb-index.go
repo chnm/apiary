@@ -14,6 +14,11 @@ type APBIndexItem struct {
 	Count     int    `json:"count"`
 }
 
+// APBIndexItemShort is an entry in one of the different indexes to verses, with only the reference.
+type APBIndexItemShort struct {
+	Reference string `json:"reference"`
+}
+
 // APBIndexItemWithYear is an index item with the peak year
 type APBIndexItemWithYear struct {
 	Reference string `json:"reference"`
@@ -197,6 +202,54 @@ func (s *Server) APBIndexChronologicalHandler() http.HandlerFunc {
 		defer rows.Close()
 		for rows.Next() {
 			err := rows.Scan(&row.Reference, &row.Text, &row.Count, &row.Peak)
+			if err != nil {
+				log.Println(err)
+			}
+			results = append(results, row)
+		}
+		err = rows.Err()
+		if err != nil {
+			log.Println(err)
+		}
+
+		response, _ := json.Marshal(results)
+
+		w.Header().Set("Content-Type", "application/json")
+		fmt.Fprintf(w, string(response))
+	}
+
+}
+
+// APBIndexAllHandler returns basically all available verses in their biblical order.
+func (s *Server) APBIndexAllHandler() http.HandlerFunc {
+
+	query := `
+	SELECT t.reference_id
+	FROM apb.top_verses t
+	LEFT JOIN apb.verse_cleanup c ON t.reference_id = c.reference_id
+	LEFT JOIN apb.scriptures s ON t.reference_id = s.reference_id
+	WHERE t.n > 100 AND c.use = TRUE AND s.version = 'KJV'
+  ORDER BY s.book_order, s.chapter, s.verse;
+	`
+
+	stmt, err := s.APB.Prepare(query)
+
+	if err != nil {
+		log.Fatalln(err)
+	}
+	s.Statements["apb-index-all"] = stmt // Will be closed at shutdown
+
+	return func(w http.ResponseWriter, r *http.Request) {
+		var results []APBIndexItemShort
+		var row APBIndexItemShort
+
+		rows, err := stmt.Query()
+		if err != nil {
+			log.Println(err)
+		}
+		defer rows.Close()
+		for rows.Next() {
+			err := rows.Scan(&row.Reference)
 			if err != nil {
 				log.Println(err)
 			}

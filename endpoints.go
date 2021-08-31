@@ -44,6 +44,8 @@ func (s *Server) EndpointsHandler() http.HandlerFunc {
 				baseurl + "/apb/index/biblical"},
 			{"APB: Verses in chronological order of peak quotations",
 				baseurl + "/apb/index/peaks"},
+			{"APB: All verses in biblical order",
+				baseurl + "/apb/index/all"},
 			{"APB: Verse",
 				baseurl + "/apb/verse?ref=Luke+18:16"},
 			{"APB: Verse trend",
