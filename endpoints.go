@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 )
 
 // Endpoint describes an endpoint available in this API and provides a sample path.
@@ -79,7 +80,8 @@ func (s *Server) EndpointsHandler() http.HandlerFunc {
 		}
 
 		response, _ := json.MarshalIndent(endpoints, "", "  ")
+		resp := strings.Replace(string(response), "\\u0026", "&", -1)
 		w.Header().Set("Content-Type", "application/json")
-		fmt.Fprintf(w, string(response))
+		fmt.Fprintf(w, resp)
 	}
 }
