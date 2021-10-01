@@ -36,10 +36,10 @@ func (s *Server) BibleSimilarityHandler() http.HandlerFunc {
 	apb.scriptures s2
 	ON p.b = s2.verse_id
 	WHERE 
-	p.version = 'KJV' AND p.score > 0.25
+	p.version = 'KJV' AND p.score > 0.18
 	) AS pairs
 	GROUP BY a_book, b_book
-	HAVING COUNT(*) > 5 AND a_book != b_book
+	HAVING COUNT(*) >= 5 AND a_book != b_book
 	`
 	edgeStmt, err := s.APB.Prepare(edgeQuery)
 	if err != nil {
