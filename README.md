@@ -129,7 +129,72 @@ Parameters:
 
 Response:
 
-A JSON array of objects. Each object is an endpoint for the API, with a sample URL for that endpoint.
+A JSON array of objects. Each object is an endpoint for the API, with a sample
+URL for that endpoint.
+
+### Census of Religious Bodies Denomination Families
+
+```
+GET /relcensus/denomination-families
+```
+
+Parameters:
+
+- None
+
+Response:
+
+A JSON object containing keys for different ways of classifying denominations.
+(Only the `family_relec` is implemented.) Each sub-object contains an array of
+objects describing the denomination families.
+
+### Census of Religious Bodies Denominations
+
+```
+GET /relcensus/denominations?family_relec=:family
+```
+
+Parameters:
+
+- `family_relec`: An optional query parameter to return just denominations that
+  are part of a particular family.
+
+Response:
+
+A JSON array containing objects describing the denominations. If the
+`family_relec` query parameter is absent, then all of the denominations are
+returned.
+
+### Census of Religious Bodies Denomination Data for Cities
+
+```
+GET /relcensus/city-membership?year=:year&denomination=:denomination
+```
+
+Parameters:
+
+- `year`: An mandatory query parameter for the year of the census.
+- `denomination`: A mandatory query parameter with the specific denomination requested.
+
+Response:
+
+A JSON array containing objects describing the membership data for a
+denomination in a specific city in a specific year.
+
+### Census of Religious Bodies Total Data for Cities
+
+```
+GET /relcensus/city-total-membership?year=:year
+```
+
+Parameters:
+
+- `year`: An mandatory query parameter for the year of the census.
+
+Response:
+
+A JSON array containing objects describing the aggregate membership data for all
+denominations in a specific city in a specific year.
 
 ## Compiling or running a container
 

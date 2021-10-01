@@ -83,6 +83,13 @@ func TestNullInt64(t *testing.T) {
 	out, _ := json.Marshal(emptyInt)
 	if string(out) != "null" {
 		t.Errorf("Want: null. Got: %s.", out)
+	}
+}
 
+func TestNullString(t *testing.T) {
+	emptyString := NullString{sql.NullString{String: "", Valid: false}}
+	out, _ := json.Marshal(emptyString)
+	if string(out) != "null" {
+		t.Errorf("Want: null. Got: %s.", out)
 	}
 }
