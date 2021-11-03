@@ -35,4 +35,6 @@ func (s *Server) WeekHandler() http.HandlerFunc {
 		log.Fatal(err)
 	}
 	s.Statements["totals-week"] = stmt
+
+	// . . .
 }
