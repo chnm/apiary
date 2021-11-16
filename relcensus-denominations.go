@@ -16,6 +16,7 @@ type DenominationFamily struct {
 // Denomination describes a denomination's names and various systems of classification.
 type Denomination struct {
 	Name           string     `json:"name"`
+	ShortName      string     `json:"short_name"`
 	DenominationID NullString `json:"denomination_id"`
 	FamilyCensus   NullString `json:"family_census"`
 	FamilyRelec    string     `json:"family_relec"`
@@ -76,7 +77,7 @@ func (s *Server) DenominationFamiliesHandler() http.HandlerFunc {
 // Optionally, it can be filtered to get just the denominations in a particular family.
 func (s *Server) DenominationsHandler() http.HandlerFunc {
 	query := `
-	SELECT denomination_id, name, family_census, family_relec
+	SELECT denomination_id, name, short_name, family_census, family_relec
 	FROM relcensus.denominations
 	WHERE ($1::text = '' OR family_relec = $1::text);
 	`
@@ -96,7 +97,7 @@ func (s *Server) DenominationsHandler() http.HandlerFunc {
 		}
 		defer rows.Close()
 		for rows.Next() {
-			err := rows.Scan(&row.DenominationID, &row.Name, &row.FamilyCensus, &row.FamilyRelec)
+			err := rows.Scan(&row.DenominationID, &row.Name, &row.ShortName, &row.FamilyCensus, &row.FamilyRelec)
 			if err != nil {
 				log.Println(err)
 			}
