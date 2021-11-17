@@ -29,13 +29,16 @@ type CityMembership struct {
 func (s *Server) CityMembershipHandler() http.HandlerFunc {
 	queryDenomination := `
 		SELECT m.year, m.denomination, 
-	  c.city, c.state,
-	  1::integer AS denominations,
+		c.city, c.state,
+		1::integer AS denominations,
 		m.churches, m.members_total,
-		ST_X(geometry) AS lon, ST_Y(geometry) AS lat
-		FROM relcensus.cities_25K c
-		LEFT JOIN relcensus.membership_city m
-		ON c.city = m.city AND c.state = m.state
+		p.pop_est_1926,
+		ST_X(c.geometry) AS lon, ST_Y(c.geometry) AS lat
+		FROM relcensus.membership_city m
+		LEFT JOIN relcensus.cities_25K c
+		ON m.city = c.city AND m.state = c.state
+		LEFT JOIN popplaces_1926 p
+		ON c.place_id = p.place_id
 		WHERE year = $1 AND denomination = $2
 		ORDER BY state, city;
 	`
