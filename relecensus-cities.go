@@ -80,19 +80,29 @@ func (s *Server) CityMembershipHandler() http.HandlerFunc {
 	s.Statements["city-family"] = stmtFamily
 
 	queryAll := `
-	// SELECT 
-	// 	year, 
-	// 	'All denominations' AS group,
-	// 	city,
-	// 	state,
-	// 	denominations,
-	// 	churches,
-	// 	members_total,
-	// 	population_1926,
-	//   ST_X(geometry) AS lon,
-	// 	ST_Y(geometry) AS lat
-	// FROM relcensus.membership_totals_city
-	// WHERE year = $1;
+	SELECT 
+	d.year,
+	'All denominations' AS group,
+	c.city, c.state, 
+	d.denominations, 
+	d.churches, 
+	d.members_total, 
+	p.pop_est_1926,
+	ST_X(c.geometry) AS lon, ST_Y(c.geometry) AS lat
+	FROM
+	(
+	SELECT 
+		m.year, 
+		m.city, m.state,
+		count(m.denomination) AS denominations, 
+		sum(m.churches) AS churches, 
+		sum(m.members_total) AS members_total
+	FROM relcensus.membership_city m
+	WHERE m.year = 1926 
+	GROUP BY m.year, m.city, m.state
+	) d
+	LEFT JOIN relcensus.cities_25k c ON d.city = c.city AND d.state = c.state
+	LEFT JOIN popplaces_1926 p ON c.place_id = p.place_id;
 	`
 	stmtAll, err := s.Database.Prepare(queryAll)
 	if err != nil {
