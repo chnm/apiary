@@ -35,10 +35,8 @@ func (s *Server) CityMembershipHandler() http.HandlerFunc {
 		p.pop_est_1926,
 		ST_X(c.geometry) AS lon, ST_Y(c.geometry) AS lat
 		FROM relcensus.membership_city m
-		LEFT JOIN relcensus.cities_25K c
-		ON m.city = c.city AND m.state = c.state
-		LEFT JOIN popplaces_1926 p
-		ON c.place_id = p.place_id
+		LEFT JOIN relcensus.cities_25K c ON m.city = c.city AND m.state = c.state
+		LEFT JOIN popplaces_1926 p ON c.place_id = p.place_id
 		WHERE year = $1 AND denomination = $2
 		ORDER BY state, city;
 	`
@@ -48,7 +46,33 @@ func (s *Server) CityMembershipHandler() http.HandlerFunc {
 	}
 	s.Statements["city-denomination"] = stmtDenomination
 
-	queryFamily := ``
+	queryFamily := `
+	SELECT 
+	d.year,
+	d.family_relec,
+	c.city, c.state, 
+	d.denominations, 
+	d.churches, 
+	d.members_total, 
+	p.pop_est_1926,
+	ST_X(c.geometry) AS lon, ST_Y(c.geometry) AS lat
+	FROM
+	(
+	SELECT 
+	m.year, 
+	d.family_relec, 
+	m.city, m.state,
+	count(m.denomination) AS denominations, 
+	sum(m.churches) AS churches, 
+	sum(m.members_total) AS members_total
+	FROM relcensus.membership_city m
+	LEFT JOIN relcensus.denominations d ON m.denomination_id = d.denomination_id
+	WHERE m.year = $1 AND d.family_relec = $2
+	GROUP BY m.year, d.family_relec, m.city, m.state
+	) d
+	LEFT JOIN relcensus.cities_25k c ON d.city = c.city AND d.state = c.state
+	LEFT JOIN popplaces_1926 p ON c.place_id = p.place_id;
+	`
 	stmtFamily, err := s.Database.Prepare(queryFamily)
 	if err != nil {
 		log.Fatalln(err)
