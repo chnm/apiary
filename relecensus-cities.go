@@ -98,7 +98,7 @@ func (s *Server) CityMembershipHandler() http.HandlerFunc {
 		sum(m.churches) AS churches, 
 		sum(m.members_total) AS members_total
 	FROM relcensus.membership_city m
-	WHERE m.year = 1926 
+	WHERE m.year = $1 
 	GROUP BY m.year, m.city, m.state
 	) d
 	LEFT JOIN relcensus.cities_25k c ON d.city = c.city AND d.state = c.state
@@ -140,11 +140,9 @@ func (s *Server) CityMembershipHandler() http.HandlerFunc {
 		}
 
 		// Only allow one of denomination or denominationFamily to be set
-		switch {
-		case denomination == "" && denominationFamily == "":
+		if denomination != "" && denominationFamily != "" {
 			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
-		case denomination != "" && denominationFamily != "":
-			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+			return
 		}
 
 		results := make([]CityMembership, 0)
@@ -168,8 +166,11 @@ func (s *Server) CityMembershipHandler() http.HandlerFunc {
 
 		for rows.Next() {
 			err := rows.Scan(
-				&row.Year, &row.Group, &row.City, &row.State,
+				&row.Year,
+				&row.Group,
+				&row.City, &row.State,
 				&row.Denominations, &row.Churches, &row.Members,
+				&row.Population1926,
 				&row.Lon, &row.Lat)
 			if err != nil {
 				log.Println(err)
