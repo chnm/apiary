@@ -71,7 +71,8 @@ func (s *Server) CityMembershipHandler() http.HandlerFunc {
 	GROUP BY m.year, d.family_relec, m.city, m.state
 	) d
 	LEFT JOIN relcensus.cities_25k c ON d.city = c.city AND d.state = c.state
-	LEFT JOIN popplaces_1926 p ON c.place_id = p.place_id;
+	LEFT JOIN popplaces_1926 p ON c.place_id = p.place_id
+	ORDER BY c.state, c.city;
 	`
 	stmtFamily, err := s.Database.Prepare(queryFamily)
 	if err != nil {
@@ -102,7 +103,8 @@ func (s *Server) CityMembershipHandler() http.HandlerFunc {
 	GROUP BY m.year, m.city, m.state
 	) d
 	LEFT JOIN relcensus.cities_25k c ON d.city = c.city AND d.state = c.state
-	LEFT JOIN popplaces_1926 p ON c.place_id = p.place_id;
+	LEFT JOIN popplaces_1926 p ON c.place_id = p.place_id
+	ORDER BY c.state, c.city;
 	`
 	stmtAll, err := s.Database.Prepare(queryAll)
 	if err != nil {
