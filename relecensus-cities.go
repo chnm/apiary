@@ -66,7 +66,7 @@ func (s *Server) CityMembershipHandler() http.HandlerFunc {
 	sum(m.churches) AS churches, 
 	sum(m.members_total) AS members_total
 	FROM relcensus.membership_city m
-	LEFT JOIN relcensus.denominations d ON m.denomination_id = d.denomination_id
+	LEFT JOIN relcensus.denominations d ON m.denomination = d.name
 	WHERE m.year = $1 AND d.family_relec = $2
 	GROUP BY m.year, d.family_relec, m.city, m.state
 	) d
