@@ -1,3 +1,4 @@
 cmd/dataapi/dataapi
 .env
 cmd/dataapi/.env
+cmd/dataapi/__debug_bin
