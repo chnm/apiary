@@ -8,26 +8,39 @@ import (
 	"strconv"
 )
 
-// Parish describes a parish's names and various systems of classification.
+// Parish describes a parish's names and various metadata for a given parish.
 type ParishByYear struct {
-	ParishName string `json:"name"`
-	CountType  string `json:"count_type"`
-	TotalCount int    `json:"count"`
-	Year       int    `json:"year"`
-	WeekNo     int    `json:"week_no"`
+	ParishName string    `json:"name"`
+	CountType  string    `json:"count_type"`
+	TotalCount NullInt64 `json:"count"`
+	Year       int       `json:"year"`
+	WeekNo     int       `json:"week_no"`
+	WeekID     string    `json:"week_id"`
 }
 
 // BillsHandler returns ...
 func (s *Server) BillsHandler() http.HandlerFunc {
 
 	query := `
-	SELECT b.count_type, b.count, y.year, w.week_no, p.name, b.week_id
-	FROM bom.bill_of_mortality b
-	JOIN bom.parishes p ON p.id = b.parish_id
-	JOIN bom.year y ON y.year_id = b.year_id
-	JOIN bom.week w ON w.week_id = b.week_id
-	WHERE year = $1
-	ORDER BY name;
+	SELECT
+		p.name,
+		b.count_type,
+		b.count,
+		y.year,
+		w.week_no,
+		b.week_id
+	FROM
+		bom.bill_of_mortality b
+	JOIN
+		bom.parishes p ON p.id = b.parish_id
+	JOIN
+		bom.year y ON y.year_id = b.year_id
+	JOIN
+		bom.week w ON w.week_id = b.week_id
+	WHERE
+		year = $1
+	ORDER BY
+		name;
 	`
 
 	stmt, err := s.Database.Prepare(query)
@@ -60,7 +73,7 @@ func (s *Server) BillsHandler() http.HandlerFunc {
 		defer rows.Close()
 		for rows.Next() {
 			err := rows.Scan(&row.ParishName, &row.CountType, &row.TotalCount,
-				&row.Year, &row.WeekNo, &row.WeekNo)
+				&row.Year, &row.WeekNo, &row.WeekID)
 			if err != nil {
 				log.Println(err)
 			}
