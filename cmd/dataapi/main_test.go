@@ -459,3 +459,25 @@ func TestAPBVerseQuotations(t *testing.T) {
 	}
 
 }
+
+// func TestBomParishes(t *testing.T) {
+// 	// Check that we get the right response
+// 	req, _ := http.NewRequest("GET", "/bom/parishes/", nil)
+// 	response := executeRequest(req)
+// 	checkResponseCode(t, http.StatusOK, response.Code)
+
+// 	// Get the data
+// 	var data []dataapi.Parish
+// 	err := json.Unmarshal(response.Body.Bytes(), &data)
+// 	if err != nil {
+// 		t.Error(err)
+// 	}
+
+// 	// Check that the data has the right content
+// 	expected := []dataapi.Parish{
+// 		{ParishID: 1, Name: "Alhallows Barking"},
+// 		{ParishID: 2, Name: "Alhallows Breadstreet"}}
+// 	if !reflect.DeepEqual(data[0:2], expected) {
+// 		t.Error("Values in data are not what was expected.")
+// 	}
+// }
