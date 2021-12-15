@@ -196,6 +196,39 @@ Response:
 A JSON array containing objects describing the aggregate membership data for all
 denominations in a specific city in a specific year.
 
+### Bills of Mortality Parish Data
+
+A unique list of London parishes.
+
+```
+GET /bom/parishes/
+```
+
+Parameters:
+
+- None
+
+Response:
+
+A JSON array of objects, each object representing a parish.
+
+### Bills of Mortality Data
+
+```
+GET /bom/bills?year=:year
+```
+
+Parameters:
+
+- `year`: An optional query parameter for the year or year range of the bills.
+- `count_type`: An optional query parameter with with a specific count type requested.
+- `parishes`: An optional query parameter with a specific parish or set of
+  parishes requested.
+
+Response:
+
+A JSON array containing objects describing the bills data for a given year, count (burial vs. plague), or specific parishes.
+
 ## Compiling or running a container
 
 Using a version of Go that supports Go modules, you should be able to run `go build` in the project root to install dependencies.
