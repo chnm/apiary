@@ -88,7 +88,7 @@ func (s *Server) EndpointsHandler() http.HandlerFunc {
 				baseurl + "/bom/parishes",
 				nil},
 			{"BOM: Bills of Mortality",
-				baseurl + "/bom/bills?year=1669",
+				baseurl + "/bom/bills?startYear=1669&endYear=1789",
 				nil},
 			{"Roman Catholic Dioceses in North America",
 				baseurl + "/catholic-dioceses/",

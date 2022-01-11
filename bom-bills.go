@@ -38,7 +38,8 @@ func (s *Server) BillsHandler() http.HandlerFunc {
 	JOIN
 		bom.week w ON w.week_id = b.week_id
 	WHERE
-		year = $1
+		year >= $1
+		AND year < $2
 	ORDER BY
 		name;
 	`
@@ -50,14 +51,26 @@ func (s *Server) BillsHandler() http.HandlerFunc {
 	s.Statements["bills-of-mortality"] = stmt // Will be closed at shutdown
 
 	return func(w http.ResponseWriter, r *http.Request) {
-		year := r.URL.Query().Get("year")
+		// minYear, maxYear := 1640, 1720
 
-		if year == "" {
+		// year := r.URL.Query().Get("year")
+		startYear := r.URL.Query().Get("startYear")
+		endYear := r.URL.Query().Get("endYear")
+
+		// year := r.URL.Query().Get("year")
+
+		if startYear == "" || endYear == "" {
 			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 			return
 		}
 
-		yearInt, err := strconv.Atoi(year)
+		startYearInt, err := strconv.Atoi(startYear)
+		if err != nil {
+			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+			return
+		}
+
+		endYearInt, err := strconv.Atoi(endYear)
 		if err != nil {
 			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 			return
@@ -66,14 +79,19 @@ func (s *Server) BillsHandler() http.HandlerFunc {
 		results := make([]ParishByYear, 0)
 		var row ParishByYear
 
-		rows, err := stmt.Query(yearInt)
+		rows, err := stmt.Query(startYearInt, endYearInt)
 		if err != nil {
 			log.Println(err)
 		}
 		defer rows.Close()
 		for rows.Next() {
-			err := rows.Scan(&row.ParishName, &row.CountType, &row.TotalCount,
-				&row.Year, &row.WeekNo, &row.WeekID)
+			err := rows.Scan(
+				&row.ParishName,
+				&row.CountType,
+				&row.TotalCount,
+				&row.Year,
+				&row.WeekNo,
+				&row.WeekID)
 			if err != nil {
 				log.Println(err)
 			}
