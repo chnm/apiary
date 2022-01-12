@@ -20,6 +20,7 @@ func (s *Server) Routes() {
 	s.Router.HandleFunc("/apb/verse-trend", s.VerseTrendHandler()).Methods("GET", "HEAD")
 	s.Router.HandleFunc("/bom/parishes", s.ParishesHandler()).Methods("GET", "HEAD")
 	s.Router.HandleFunc("/bom/bills", s.BillsHandler()).Methods("GET", "HEAD")
+	s.Router.HandleFunc("/bom/christenings", s.ChristeningsHandler()).Methods("GET", "HEAD")
 	s.Router.HandleFunc("/catholic-dioceses/", s.CatholicDiocesesHandler()).Methods("GET", "HEAD")
 	s.Router.HandleFunc("/catholic-dioceses/per-decade/", s.CatholicDiocesesPerDecadeHandler()).Methods("GET", "HEAD")
 	s.Router.HandleFunc("/ne/northamerica/", s.NENorthAmericaHandler()).Methods("GET", "HEAD")
