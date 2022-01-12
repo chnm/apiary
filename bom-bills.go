@@ -39,7 +39,7 @@ func (s *Server) BillsHandler() http.HandlerFunc {
 		bom.week w ON w.week_id = b.week_id
 	WHERE
 		year >= $1
-		AND year < $2
+		AND year <= $2
 	ORDER BY
 		name;
 	`
@@ -51,13 +51,8 @@ func (s *Server) BillsHandler() http.HandlerFunc {
 	s.Statements["bills-of-mortality"] = stmt // Will be closed at shutdown
 
 	return func(w http.ResponseWriter, r *http.Request) {
-		// minYear, maxYear := 1640, 1720
-
-		// year := r.URL.Query().Get("year")
 		startYear := r.URL.Query().Get("startYear")
 		endYear := r.URL.Query().Get("endYear")
-
-		// year := r.URL.Query().Get("year")
 
 		if startYear == "" || endYear == "" {
 			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
