@@ -12,9 +12,9 @@ import (
 type ChristeningsByYear struct {
 	ChristeningsDesc string    `json:"christenings_desc"`
 	TotalCount       NullInt64 `json:"count"`
-	Year             int       `json:"year"`
 	WeekNo           int       `json:"week_no"`
 	WeekID           string    `json:"week_id"`
+	Year             int       `json:"year"`
 }
 
 // ChristeningsHandler returns ...
@@ -79,9 +79,9 @@ func (s *Server) ChristeningsHandler() http.HandlerFunc {
 			err := rows.Scan(
 				&row.ChristeningsDesc,
 				&row.TotalCount,
-				&row.Year,
 				&row.WeekNo,
-				&row.WeekID)
+				&row.WeekID,
+				&row.Year)
 			if err != nil {
 				log.Println(err)
 			}
