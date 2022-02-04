@@ -9,7 +9,7 @@ import (
 )
 
 // Parish describes a parish's names and various metadata for a given parish.
-type ParishByYear struct {
+type GeneralBillsByYear struct {
 	ParishName string    `json:"name"`
 	CountType  string    `json:"count_type"`
 	TotalCount NullInt64 `json:"count"`
@@ -19,7 +19,7 @@ type ParishByYear struct {
 }
 
 // BillsHandler returns ...
-func (s *Server) BillsHandler() http.HandlerFunc {
+func (s *Server) GeneralBillsHandler() http.HandlerFunc {
 
 	query := `
 	SELECT
@@ -40,7 +40,7 @@ func (s *Server) BillsHandler() http.HandlerFunc {
 	WHERE
 		year >= $1
 		AND year <= $2
-		AND b.bill_type = 'Weekly'
+		AND b.bill_type = 'General'
 	ORDER BY
 		name;
 	`
@@ -49,7 +49,7 @@ func (s *Server) BillsHandler() http.HandlerFunc {
 	if err != nil {
 		log.Fatalln(err)
 	}
-	s.Statements["bills-of-mortality"] = stmt // Will be closed at shutdown
+	s.Statements["generalbills"] = stmt // Will be closed at shutdown
 
 	return func(w http.ResponseWriter, r *http.Request) {
 		startYear := r.URL.Query().Get("startYear")
