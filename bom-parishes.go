@@ -9,17 +9,18 @@ import (
 
 // Parish describes a denomination's names and various systems of classification.
 type Parish struct {
-	ParishID int    `json:"id"`
-	Name     string `json:"name"`
+	ParishID      int    `json:"id"`
+	Name          string `json:"name"`
+	CanonicalName string `json:"canonical_name"`
 }
 
 // DenominationFamiliesHandler returns
 func (s *Server) ParishesHandler() http.HandlerFunc {
 
 	query := `
-	SELECT id, name 
+	SELECT id, name, canonical_name 
 	FROM bom.parishes
-	ORDER BY name;
+	ORDER BY canonical_name;
 	`
 
 	stmt, err := s.Database.Prepare(query)
@@ -38,7 +39,7 @@ func (s *Server) ParishesHandler() http.HandlerFunc {
 		}
 		defer rows.Close()
 		for rows.Next() {
-			err := rows.Scan(&row.ParishID, &row.Name)
+			err := rows.Scan(&row.ParishID, &row.Name, &row.CanonicalName)
 			if err != nil {
 				log.Println(err)
 			}
