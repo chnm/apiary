@@ -13,6 +13,10 @@ type ParishByYear struct {
 	ParishName string    `json:"name"`
 	CountType  string    `json:"count_type"`
 	TotalCount NullInt64 `json:"count"`
+	StartDay   string    `json:"start_day"`
+	StartMonth string    `json:"start_month"`
+	EndDay     string    `json:"end_day"`
+	EndMonth   string    `json:"end_month"`
 	Year       int       `json:"year"`
 	WeekNo     int       `json:"week_no"`
 	WeekID     string    `json:"week_id"`
@@ -23,9 +27,13 @@ func (s *Server) BillsHandler() http.HandlerFunc {
 
 	query := `
 	SELECT
-		p.name,
+		p.canonical_name,
 		b.count_type,
 		b.count,
+		w.start_day,
+		w.start_month,
+		w.end_day,
+		w.end_month,
 		y.year,
 		w.week_no,
 		b.week_id
@@ -85,6 +93,10 @@ func (s *Server) BillsHandler() http.HandlerFunc {
 				&row.ParishName,
 				&row.CountType,
 				&row.TotalCount,
+				&row.StartDay,
+				&row.StartMonth,
+				&row.EndDay,
+				&row.EndMonth,
 				&row.Year,
 				&row.WeekNo,
 				&row.WeekID)
