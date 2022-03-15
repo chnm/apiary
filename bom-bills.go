@@ -50,7 +50,7 @@ func (s *Server) BillsHandler() http.HandlerFunc {
 		AND year <= $2
 		AND b.bill_type = 'Weekly'
 	ORDER BY
-		name;
+		canonical_name;
 	`
 
 	stmt, err := s.Database.Prepare(query)

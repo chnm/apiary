@@ -18,7 +18,7 @@ type Parish struct {
 func (s *Server) ParishesHandler() http.HandlerFunc {
 
 	query := `
-	SELECT id, name, canonical_name 
+	SELECT id, parish_name, canonical_name 
 	FROM bom.parishes
 	ORDER BY canonical_name;
 	`

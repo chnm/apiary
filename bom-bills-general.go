@@ -23,7 +23,7 @@ func (s *Server) GeneralBillsHandler() http.HandlerFunc {
 
 	query := `
 	SELECT
-		p.name,
+		p.canonical_name,
 		b.count_type,
 		b.count,
 		y.year,
@@ -42,7 +42,7 @@ func (s *Server) GeneralBillsHandler() http.HandlerFunc {
 		AND year <= $2
 		AND b.bill_type = 'General'
 	ORDER BY
-		name;
+		canonical_name;
 	`
 
 	stmt, err := s.Database.Prepare(query)
