@@ -14,7 +14,7 @@ type Parish struct {
 	CanonicalName string `json:"canonical_name"`
 }
 
-// DenominationFamiliesHandler returns
+// ParishesHandler returns
 func (s *Server) ParishesHandler() http.HandlerFunc {
 
 	query := `

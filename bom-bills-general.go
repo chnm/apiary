@@ -8,7 +8,7 @@ import (
 	"strconv"
 )
 
-// Parish describes a parish's names and various metadata for a given parish.
+// GeneralBillsByYear describes a parish's names and various metadata for a given parish.
 type GeneralBillsByYear struct {
 	ParishName string    `json:"name"`
 	CountType  string    `json:"count_type"`
@@ -18,7 +18,7 @@ type GeneralBillsByYear struct {
 	WeekID     string    `json:"week_id"`
 }
 
-// BillsHandler returns ...
+// GeneralBillsHandler returns ...
 func (s *Server) GeneralBillsHandler() http.HandlerFunc {
 
 	query := `

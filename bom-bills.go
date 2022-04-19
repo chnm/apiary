@@ -8,7 +8,7 @@ import (
 	"strconv"
 )
 
-// Parish describes a parish's names and various metadata for a given parish.
+// ParishByYear describes a parish's names and various metadata for a given parish.
 type ParishByYear struct {
 	ParishName string    `json:"name"`
 	CountType  string    `json:"count_type"`

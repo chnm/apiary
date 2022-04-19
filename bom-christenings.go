@@ -8,7 +8,7 @@ import (
 	"strconv"
 )
 
-// Christenings describes a christen's description and various metadata for a given christening.
+// ChristeningsByYear describes a christen's description and various metadata for a given christening.
 type ChristeningsByYear struct {
 	ChristeningsDesc string    `json:"christenings_desc"`
 	TotalCount       NullInt64 `json:"count"`
