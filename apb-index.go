@@ -14,9 +14,11 @@ type APBIndexItem struct {
 	Count     int    `json:"count"`
 }
 
-// APBIndexItemShort is an entry in one of the different indexes to verses, with only the reference.
-type APBIndexItemShort struct {
+// APBIndexItemText is an entry in one of the different indexes to verses, with
+// the reference and the text of the verse.
+type APBIndexItemText struct {
 	Reference string `json:"reference"`
+	Text      string `json:"text"`
 }
 
 // APBIndexItemWithYear is an index item with the peak year
@@ -224,7 +226,7 @@ func (s *Server) APBIndexChronologicalHandler() http.HandlerFunc {
 func (s *Server) APBIndexAllHandler() http.HandlerFunc {
 
 	query := `
-	SELECT t.reference_id
+	SELECT t.reference_id, s.text
 	FROM apb.top_verses t
 	LEFT JOIN apb.verse_cleanup c ON t.reference_id = c.reference_id
 	LEFT JOIN apb.scriptures s ON t.reference_id = s.reference_id
@@ -240,8 +242,8 @@ func (s *Server) APBIndexAllHandler() http.HandlerFunc {
 	s.Statements["apb-index-all"] = stmt // Will be closed at shutdown
 
 	return func(w http.ResponseWriter, r *http.Request) {
-		var results []APBIndexItemShort
-		var row APBIndexItemShort
+		var results []APBIndexItemText
+		var row APBIndexItemText
 
 		rows, err := stmt.Query()
 		if err != nil {
@@ -249,7 +251,7 @@ func (s *Server) APBIndexAllHandler() http.HandlerFunc {
 		}
 		defer rows.Close()
 		for rows.Next() {
-			err := rows.Scan(&row.Reference)
+			err := rows.Scan(&row.Reference, &row.Text)
 			if err != nil {
 				log.Println(err)
 			}
