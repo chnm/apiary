@@ -85,7 +85,7 @@ func (s *Server) APBIndexBiblicalOrderHandler() http.HandlerFunc {
 	FROM apb.top_verses t
 	LEFT JOIN apb.verse_cleanup c ON t.reference_id = c.reference_id
 	LEFT JOIN apb.scriptures s ON t.reference_id = s.reference_id
-	WHERE t.n > 500 AND c.use = TRUE AND s.version = 'KJV'
+	WHERE t.n > 500 AND c.use = TRUE AND s.version = 'KJV' AND s.part != 'Apocrypha'
   ORDER BY s.book_order, s.chapter, s.verse;
 	`
 
@@ -132,7 +132,7 @@ func (s *Server) APBIndexTopHandler() http.HandlerFunc {
 	SELECT t.reference_id, s.text, t.n
 	FROM apb.top_verses t
 	LEFT JOIN apb.scriptures s ON t.reference_id = s.reference_id
-	WHERE s.version = 'KJV'
+	WHERE s.version = 'KJV' AND s.part != 'Apocrypha'
 	ORDER BY t.n DESC
 	LIMIT 100;
 	`
@@ -182,7 +182,7 @@ func (s *Server) APBIndexChronologicalHandler() http.HandlerFunc {
 	LEFT JOIN apb.verse_cleanup c ON t.reference_id = c.reference_id
 	LEFT JOIN apb.scriptures s ON t.reference_id = s.reference_id
   LEFT JOIN apb.verse_peaks p ON t.reference_id = p.reference_id
-	WHERE t.n > 500 AND c.use = TRUE AND s.version = 'KJV'
+	WHERE t.n > 500 AND c.use = TRUE AND s.version = 'KJV' AND s.part != 'Apocrypha'
   ORDER BY p.year, t.n DESC;
 	`
 
@@ -230,7 +230,7 @@ func (s *Server) APBIndexAllHandler() http.HandlerFunc {
 	FROM apb.top_verses t
 	LEFT JOIN apb.verse_cleanup c ON t.reference_id = c.reference_id
 	LEFT JOIN apb.scriptures s ON t.reference_id = s.reference_id
-	WHERE t.n > 100 AND c.use = TRUE AND s.version = 'KJV'
+	WHERE t.n > 100 AND c.use = TRUE AND s.version = 'KJV' AND s.part != 'Apocrypha'
   ORDER BY s.book_order, s.chapter, s.verse;
 	`
 
