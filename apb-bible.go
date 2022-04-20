@@ -24,7 +24,7 @@ func (s *Server) BibleBooksHandler() http.HandlerFunc {
 	ORDER BY book_order;
 	`
 
-	stmt, err := s.APB.Prepare(query)
+	stmt, err := s.Database.Prepare(query)
 	if err != nil {
 		log.Fatalln(err)
 	}
