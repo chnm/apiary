@@ -41,7 +41,7 @@ func (s *Server) BibleSimilarityHandler() http.HandlerFunc {
 	GROUP BY a_book, b_book
 	HAVING COUNT(*) >= 5 AND a_book != b_book
 	`
-	edgeStmt, err := s.APB.Prepare(edgeQuery)
+	edgeStmt, err := s.Database.Prepare(edgeQuery)
 	if err != nil {
 		log.Fatalln(err)
 	}

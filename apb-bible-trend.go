@@ -32,7 +32,7 @@ func (s *Server) BibleTrendHandler() http.HandlerFunc {
 	ORDER BY series.year) res
 	`
 
-	stmt, err := s.APB.Prepare(query)
+	stmt, err := s.Database.Prepare(query)
 	if err != nil {
 		log.Fatalln(err)
 	}

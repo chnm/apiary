@@ -41,7 +41,7 @@ func (s *Server) APBIndexFeaturedHandler() http.HandlerFunc {
   ORDER BY s.book_order, s.chapter, s.verse;
 	`
 
-	stmt, err := s.APB.Prepare(query)
+	stmt, err := s.Database.Prepare(query)
 
 	if err != nil {
 		log.Fatalln(err)
@@ -89,7 +89,7 @@ func (s *Server) APBIndexBiblicalOrderHandler() http.HandlerFunc {
   ORDER BY s.book_order, s.chapter, s.verse;
 	`
 
-	stmt, err := s.APB.Prepare(query)
+	stmt, err := s.Database.Prepare(query)
 
 	if err != nil {
 		log.Fatalln(err)
@@ -137,7 +137,7 @@ func (s *Server) APBIndexTopHandler() http.HandlerFunc {
 	LIMIT 100;
 	`
 
-	stmt, err := s.APB.Prepare(query)
+	stmt, err := s.Database.Prepare(query)
 
 	if err != nil {
 		log.Fatalln(err)
@@ -186,7 +186,7 @@ func (s *Server) APBIndexChronologicalHandler() http.HandlerFunc {
   ORDER BY p.year, t.n DESC;
 	`
 
-	stmt, err := s.APB.Prepare(query)
+	stmt, err := s.Database.Prepare(query)
 
 	if err != nil {
 		log.Fatalln(err)
@@ -234,7 +234,7 @@ func (s *Server) APBIndexAllHandler() http.HandlerFunc {
   ORDER BY s.book_order, s.chapter, s.verse;
 	`
 
-	stmt, err := s.APB.Prepare(query)
+	stmt, err := s.Database.Prepare(query)
 
 	if err != nil {
 		log.Fatalln(err)
