@@ -23,10 +23,10 @@ func (s *Server) VerseQuotationsHandler() http.HandlerFunc {
 	query := `
 	SELECT q.reference_id, q.doc_id, q.date::text, q.probability,
 	 	n.title_clean, places.state
-	FROM apb.quotations_v q
-	LEFT JOIN chronam.pages p ON q.doc_id = p.doc_id
-	LEFT JOIN chronam.newspapers n ON p.lccn = n.lccn
-	LEFT JOIN (SELECT DISTINCT ON (lccn) lccn, state FROM chronam.newspaper_places ORDER BY lccn) places ON p.lccn = places.lccn
+	FROM apb.quotations q
+	LEFT JOIN apb.chronam_pages p ON q.doc_id = p.doc_id
+	LEFT JOIN apb.chronam_newspapers n ON p.lccn = n.lccn
+	LEFT JOIN (SELECT DISTINCT ON (lccn) lccn, state FROM apb.chronam_newspaper_places ORDER BY lccn) places ON p.lccn = places.lccn
 	WHERE reference_id = $1 AND corpus = 'chronam'
 	ORDER BY date;
 	`
