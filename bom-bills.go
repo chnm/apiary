@@ -13,7 +13,7 @@ type ParishByYear struct {
 	ParishName string    `json:"name"`
 	CountType  string    `json:"count_type"`
 	TotalCount NullInt64 `json:"count"`
-	StartDay   int       `json:"start_day"`
+	StartDay   NullInt64 `json:"start_day"`
 	StartMonth string    `json:"start_month"`
 	EndDay     int       `json:"end_day"`
 	EndMonth   string    `json:"end_month"`
