@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
-	_ "github.com/lib/pq" // Driver for database
+	_ "github.com/jackc/pgx/v4" // Driver for database
 )
 
 // The Config type stores configuration which is read from environment variables.
