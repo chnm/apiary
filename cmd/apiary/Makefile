@@ -1,5 +1,5 @@
 serve : build
-	DATAAPI_INTERFACE=localhost ./dataapi
+	DATAAPI_INTERFACE=localhost ./apiary
 
 build :
 	cd ../.. && go build
@@ -13,7 +13,7 @@ test :
 	go test -v
 
 docker-build : 
-	docker build --tag dataapi:test ../..
+	docker build --tag apiary:test ../..
 
 # This assumes that the environment variables are available
 docker-serve : docker-build
@@ -25,6 +25,6 @@ docker-serve : docker-build
 		-e DATAAPI_DBUSER \
 		-e DATAAPI_DBNAME \
 		-e DATAAPI_APB \
-		--name dataapi \
-		dataapi:test
+		--name apiary \
+		apiary:test
 
