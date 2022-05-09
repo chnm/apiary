@@ -241,15 +241,10 @@ If you just need to run the Data API locally, it may be most convenient to just 
 
 Set the following environment variables to configure the server:
 
-- `DATAAPI_DBHOST` (default: `localhost`)
-- `DATAAPI_DBPORT` (default: `5432`)
-- `DATAAPI_DBNAME` (default: none)
-- `DATAAPI_DBUSER` (default: none)
-- `DATAAPI_DBPASS` (default: none)
-- `DATAAPI_SSL` (default: `require`)
-- `DATAAPI_INTERFACE` (default: `0.0.0.0`)
-- `DATAAPI_PORT` (default: `8090`)
-- `DATAAPI_LOGGING` (default: `on`)
+- `APIARY_DB` (default: none). A connection string to the database.
+- `APIARY_INTERFACE` (default: `0.0.0.0`)
+- `APIARY_PORT` (default: `8090`). The port to serve the API on.
+- `APIARY_LOGGING` (default: `on`)
 
 If logging is on, then access logs will be written to stdout in the Apache Common Log format. Errors and status messages will always be written to stderr.
 

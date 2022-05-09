@@ -1,5 +1,5 @@
 serve : build
-	DATAAPI_INTERFACE=localhost ./apiary
+	APIARY_INTERFACE=localhost ./apiary
 
 build :
 	cd ../.. && go build
@@ -19,12 +19,10 @@ docker-build :
 docker-serve : docker-build
 	docker run --rm \
 		--publish 8090:8090 \
-		-e DATAAPI_DBHOST \
-		-e DATAAPI_DBPORT \
-		-e DATAAPI_DBPASS \
-		-e DATAAPI_DBUSER \
-		-e DATAAPI_DBNAME \
-		-e DATAAPI_APB \
+		-e APIARY_DB \
+		-e APIARY_PORT \
+		-e APIARY_INTERFACE \
+		-e APIARY_LOGGING \
 		--name apiary \
 		apiary:test
 

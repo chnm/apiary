@@ -2,7 +2,6 @@ package apiary
 
 import (
 	"database/sql"
-	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -16,12 +15,7 @@ import (
 
 // The Config type stores configuration which is read from environment variables.
 type Config struct {
-	dbhost  string
-	dbport  string
-	dbname  string
-	dbuser  string
-	dbpass  string
-	dbssl   string // SSL mode for the database connection
+	dbconn  string
 	logging bool   // Whether or not to write access logs; errors/status are always logged
 	address string // The address at which this will be hosted, e.g.: localhost:8090
 }
@@ -41,20 +35,12 @@ func NewServer() *Server {
 
 	// Read the configuration from environment variables. The `getEnv()` function
 	// will provide a default.
-	s.Config.dbhost = getEnv("DATAAPI_DBHOST", "localhost")
-	s.Config.dbport = getEnv("DATAAPI_DBPORT", "5432")
-	s.Config.dbname = getEnv("DATAAPI_DBNAME", "")
-	s.Config.dbuser = getEnv("DATAAPI_DBUSER", "")
-	s.Config.dbpass = getEnv("DATAAPI_DBPASS", "")
-	s.Config.dbssl = getEnv("DATAAPI_SSL", "require")
-	s.Config.logging = getEnv("DATAAPI_LOGGING", "on") == "on"
-	s.Config.address = getEnv("DATAAPI_INTERFACE", "0.0.0.0") + ":" + getEnv("DATAAPI_PORT", "8090")
+	s.Config.dbconn = getEnv("APIARY_DB", "")
+	s.Config.logging = getEnv("APIARY_LOGGING", "on") == "on"
+	s.Config.address = getEnv("APIARY_INTERFACE", "0.0.0.0") + ":" + getEnv("APIARY_PORT", "8090")
 
 	// Connect to the database then store the database in the struct.
-	constr := fmt.Sprintf("host=%s port=%s dbname=%s user=%s password=%s sslmode=%s",
-		s.Config.dbhost, s.Config.dbport, s.Config.dbname, s.Config.dbuser,
-		s.Config.dbpass, s.Config.dbssl)
-	db, err := sql.Open("postgres", constr)
+	db, err := sql.Open("postgres", s.Config.dbconn)
 	if err != nil {
 		log.Fatalln(err)
 	}
