@@ -4,7 +4,7 @@
 FROM golang:latest AS compiler
 
 # Add Maintainer Info
-LABEL maintainer="G Katchoua <gkatchou@gmu.edu>"
+LABEL maintainer="Lincoln Mullen <lincoln@lincolnmullen.com>"
 
 # Set the Current Working Directory inside the container
 WORKDIR /app
@@ -18,7 +18,7 @@ RUN go mod download
 COPY . /app
 
 # Build the Go app, making sure it is a static binary with no debugging symbols
-RUN cd cmd/dataapi && CGO_ENABLED=0 go build -a -ldflags="-w -s"
+RUN cd cmd/apiary && CGO_ENABLED=0 go build -a -ldflags="-w -s"
 
 # Create non-root user information
 RUN echo "dataapi:x:65534:65534:Data API:/:" > /etc_passwd
@@ -27,7 +27,7 @@ RUN echo "dataapi:x:65534:65534:Data API:/:" > /etc_passwd
 FROM scratch
 
 # Copy over just the static binary to root
-COPY --from=compiler /app/cmd/dataapi/dataapi /dataapi
+COPY --from=compiler /app/cmd/apiary/apiary /apiary
 
 # Copy over non-root user information
 COPY --from=0 /etc_passwd /etc/passwd
