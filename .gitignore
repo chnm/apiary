@@ -2,3 +2,4 @@ cmd/apiary/apiary
 .env
 cmd/apiary/.env
 cmd/apiary/__debug_bin
+
