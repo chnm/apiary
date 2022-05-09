@@ -1,7 +1,7 @@
 package main
 
-import "github.com/chnm/dataapi"
+import apiary "github.com/chnm/apiary"
 
 func main() {
-	dataapi.NewServer().Run()
+	apiary.NewServer().Run()
 }

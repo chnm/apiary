@@ -1,4 +1,4 @@
-cmd/dataapi/dataapi
+cmd/apiary/apiary
 .env
-cmd/dataapi/.env
-cmd/dataapi/__debug_bin
+cmd/apiary/.env
+cmd/apiary/__debug_bin

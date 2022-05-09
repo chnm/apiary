@@ -1,4 +1,4 @@
-package dataapi
+package apiary
 
 import (
 	"encoding/json"

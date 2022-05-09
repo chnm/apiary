@@ -1,4 +1,4 @@
-package dataapi
+package apiary
 
 import (
 	"net/http"

@@ -8,10 +8,10 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/chnm/dataapi"
+	"github.com/chnm/apiary"
 )
 
-var s *dataapi.Server
+var s *apiary.Server
 
 // Basic structure of a FeatureCollection in GeoJSON
 type GeoJSONFeatureCollection struct {
@@ -20,8 +20,8 @@ type GeoJSONFeatureCollection struct {
 }
 
 func TestMain(m *testing.M) {
-	os.Setenv("DATAAPI_LOGGING", "off") // No logs during testing
-	s = dataapi.NewServer()
+	os.Setenv("apiary_LOGGING", "off") // No logs during testing
+	s = apiary.NewServer()
 	code := m.Run()
 	os.Exit(code)
 }
@@ -59,14 +59,14 @@ func TestPresbyterians(t *testing.T) {
 	checkResponseCode(t, http.StatusOK, response.Code)
 
 	// Get the data
-	var data []dataapi.PresbyteriansByYear
+	var data []apiary.PresbyteriansByYear
 	err := json.Unmarshal(response.Body.Bytes(), &data)
 	if err != nil {
 		t.Error(err)
 	}
 
 	// Check that the data has the right content
-	expected := []dataapi.PresbyteriansByYear{
+	expected := []apiary.PresbyteriansByYear{
 		{Year: 1826, Members: 127440, Churches: 1819},
 		{Year: 1827, Members: 135285, Churches: 1887}}
 	if !reflect.DeepEqual(data[0:2], expected) {
@@ -82,7 +82,7 @@ func TestCatholicDioceses(t *testing.T) {
 	checkResponseCode(t, http.StatusOK, response.Code)
 
 	// Get the data
-	var data []dataapi.CatholicDiocese
+	var data []apiary.CatholicDiocese
 	err := json.Unmarshal(response.Body.Bytes(), &data)
 	if err != nil {
 		t.Error(err)
@@ -96,14 +96,14 @@ func TestCatholicDiocesesPerDecade(t *testing.T) {
 	checkResponseCode(t, http.StatusOK, response.Code)
 
 	// Get the data
-	var data []dataapi.CatholicDiocesesPerDecade
+	var data []apiary.CatholicDiocesesPerDecade
 	err := json.Unmarshal(response.Body.Bytes(), &data)
 	if err != nil {
 		t.Error(err)
 	}
 
 	// Check that the data has the right content
-	expected := []dataapi.CatholicDiocesesPerDecade{
+	expected := []apiary.CatholicDiocesesPerDecade{
 		{Decade: 1500, Count: 0},
 		{Decade: 1510, Count: 3},
 		{Decade: 1520, Count: 1},
@@ -254,14 +254,14 @@ func TestCountiesInState(t *testing.T) {
 	checkResponseCode(t, http.StatusOK, response.Code)
 
 	// Get the data
-	var data []dataapi.PlaceCounty
+	var data []apiary.PlaceCounty
 	err := json.Unmarshal(response.Body.Bytes(), &data)
 	if err != nil {
 		t.Error(err)
 	}
 
 	// Check that the data has the right content
-	expected := []dataapi.PlaceCounty{
+	expected := []apiary.PlaceCounty{
 		{CountyAHCB: "ncs_alamance", County: "Alamance"},
 		{CountyAHCB: "ncs_alexander", County: "Alexander"},
 	}
@@ -277,7 +277,7 @@ func TestPlacesInCounty(t *testing.T) {
 	checkResponseCode(t, http.StatusOK, response.Code)
 
 	// Get the data
-	var data []dataapi.Place
+	var data []apiary.Place
 	err := json.Unmarshal(response.Body.Bytes(), &data)
 	if err != nil {
 		t.Error(err)
@@ -291,13 +291,13 @@ func TestPlace(t *testing.T) {
 	checkResponseCode(t, http.StatusOK, response.Code)
 
 	// Get the data
-	var data dataapi.PlaceDetails
+	var data apiary.PlaceDetails
 	err := json.Unmarshal(response.Body.Bytes(), &data)
 	if err != nil {
 		t.Error(err)
 	}
 
-	expected := dataapi.PlaceDetails{
+	expected := apiary.PlaceDetails{
 		PlaceID:    611119,
 		Place:      "Groton",
 		MapName:    "Ayer",
@@ -318,7 +318,7 @@ func TestAPBFeaturedVerses(t *testing.T) {
 	checkResponseCode(t, http.StatusOK, response.Code)
 
 	// Get the data
-	var data []dataapi.APBIndexItem
+	var data []apiary.APBIndexItem
 	err := json.Unmarshal(response.Body.Bytes(), &data)
 	if err != nil {
 		t.Error(err)
@@ -337,7 +337,7 @@ func TestAPBTopVerses(t *testing.T) {
 	checkResponseCode(t, http.StatusOK, response.Code)
 
 	// Get the data
-	var data []dataapi.APBIndexItem
+	var data []apiary.APBIndexItem
 	err := json.Unmarshal(response.Body.Bytes(), &data)
 	if err != nil {
 		t.Error(err)
@@ -356,7 +356,7 @@ func TestAPBVersePeaks(t *testing.T) {
 	checkResponseCode(t, http.StatusOK, response.Code)
 
 	// Get the data
-	var data []dataapi.APBIndexItem
+	var data []apiary.APBIndexItem
 	err := json.Unmarshal(response.Body.Bytes(), &data)
 	if err != nil {
 		t.Error(err)
@@ -375,7 +375,7 @@ func TestAPBVerse(t *testing.T) {
 	checkResponseCode(t, http.StatusOK, response.Code)
 
 	// Get the data
-	var data dataapi.Verse
+	var data apiary.Verse
 	err := json.Unmarshal(response.Body.Bytes(), &data)
 	if err != nil {
 		t.Error(err)
@@ -394,7 +394,7 @@ func TestAPBVerseTrend(t *testing.T) {
 	checkResponseCode(t, http.StatusOK, response.Code)
 
 	// Get the data
-	var data dataapi.VerseTrendResponse
+	var data apiary.VerseTrendResponse
 	err := json.Unmarshal(response.Body.Bytes(), &data)
 	if err != nil {
 		t.Error(err)
@@ -421,7 +421,7 @@ func TestAPBBibleTrend(t *testing.T) {
 	checkResponseCode(t, http.StatusOK, response.Code)
 
 	// Get the data
-	var data dataapi.VerseTrendResponse
+	var data apiary.VerseTrendResponse
 	err := json.Unmarshal(response.Body.Bytes(), &data)
 	if err != nil {
 		t.Error(err)
@@ -448,7 +448,7 @@ func TestAPBVerseQuotations(t *testing.T) {
 	checkResponseCode(t, http.StatusOK, response.Code)
 
 	// Get the data
-	var data []dataapi.VerseQuotation
+	var data []apiary.VerseQuotation
 	err := json.Unmarshal(response.Body.Bytes(), &data)
 	if err != nil {
 		t.Error(err)
@@ -467,14 +467,14 @@ func TestBomParishes(t *testing.T) {
 	checkResponseCode(t, http.StatusOK, response.Code)
 
 	// Get the data
-	var data []dataapi.Parish
+	var data []apiary.Parish
 	err := json.Unmarshal(response.Body.Bytes(), &data)
 	if err != nil {
 		t.Error(err)
 	}
 
 	// Check that the data has the right content
-	expected := []dataapi.Parish{
+	expected := []apiary.Parish{
 		{ParishID: 1, Name: "Alhallows Barking", CanonicalName: "All Hallows Barking"},
 		{ParishID: 2, Name: "Alhallows Breadstreet", CanonicalName: "All Hallows Bread Street"}}
 	if !reflect.DeepEqual(data[0:2], expected) {
@@ -489,7 +489,7 @@ func TestWeeklyBomBills(t *testing.T) {
 	checkResponseCode(t, http.StatusOK, response.Code)
 
 	// Get the data
-	var data []dataapi.ParishByYear
+	var data []apiary.ParishByYear
 	err := json.Unmarshal(response.Body.Bytes(), &data)
 	if err != nil {
 		t.Error(err)
@@ -503,7 +503,7 @@ func TestGeneralBomBills(t *testing.T) {
 	checkResponseCode(t, http.StatusOK, response.Code)
 
 	// Get the data
-	var data []dataapi.ParishByYear
+	var data []apiary.ParishByYear
 	err := json.Unmarshal(response.Body.Bytes(), &data)
 	if err != nil {
 		t.Error(err)
@@ -517,7 +517,7 @@ func TestBomChristenings(t *testing.T) {
 	checkResponseCode(t, http.StatusOK, response.Code)
 
 	// Get the data
-	var data []dataapi.ParishByYear
+	var data []apiary.ParishByYear
 	err := json.Unmarshal(response.Body.Bytes(), &data)
 	if err != nil {
 		t.Error(err)
