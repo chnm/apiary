@@ -1,4 +1,4 @@
-module github.com/chnm/dataapi
+module github.com/chnm/apiary
 
 go 1.13
 
