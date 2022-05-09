@@ -39,4 +39,4 @@ USER dataapi
 EXPOSE 8090
 
 # Command to run the executable
-CMD ["/dataapi"]
+CMD ["/apiary"]
