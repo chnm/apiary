@@ -1,4 +1,4 @@
-package dataapi
+package apiary
 
 import (
 	"fmt"
@@ -162,6 +162,7 @@ func (s *Server) AHCBCountiesByIDHandler() http.HandlerFunc {
 			return
 		}
 		var result string
+
 		ids := pq.Array(strings.Split(params["id"], ","))
 		err = stmt.QueryRow(date, ids).Scan(&result)
 		if err != nil {

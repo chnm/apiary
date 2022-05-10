@@ -1,4 +1,4 @@
-package dataapi
+package apiary
 
 import (
 	"encoding/json"
@@ -10,16 +10,16 @@ import (
 
 // ParishByYear describes a parish's names and various metadata for a given parish.
 type ParishByYear struct {
-	ParishName string    `json:"name"`
-	CountType  string    `json:"count_type"`
-	TotalCount NullInt64 `json:"count"`
-	StartDay   string    `json:"start_day"`
-	StartMonth string    `json:"start_month"`
-	EndDay     string    `json:"end_day"`
-	EndMonth   string    `json:"end_month"`
-	Year       int       `json:"year"`
-	WeekNo     int       `json:"week_no"`
-	WeekID     string    `json:"week_id"`
+	ParishName string     `json:"name"`
+	CountType  string     `json:"count_type"`
+	TotalCount NullInt64  `json:"count"`
+	StartDay   NullInt64  `json:"start_day"`
+	StartMonth NullString `json:"start_month"`
+	EndDay     int        `json:"end_day"`
+	EndMonth   string     `json:"end_month"`
+	Year       int        `json:"year"`
+	WeekNo     int        `json:"week_no"`
+	WeekID     string     `json:"week_id"`
 }
 
 // BillsHandler returns ...
