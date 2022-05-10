@@ -8,7 +8,8 @@ import (
 	"strconv"
 )
 
-// ParishByYear describes a parish's names and various metadata for a given parish.
+// ParishByYear describes a parish's canoncial name, count type, total count, start day,
+// start month, end day, end month, year, week number, and week ID.
 type ParishByYear struct {
 	ParishName string     `json:"name"`
 	CountType  string     `json:"count_type"`
@@ -22,7 +23,8 @@ type ParishByYear struct {
 	WeekID     string     `json:"week_id"`
 }
 
-// BillsHandler returns ...
+// BillsHandler returns the bills for a given range of years. It expects a start year and
+// an end year. It returns a JSON array of ParishByYear objects.
 func (s *Server) BillsHandler() http.HandlerFunc {
 
 	query := `

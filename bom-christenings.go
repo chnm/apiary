@@ -8,7 +8,8 @@ import (
 	"strconv"
 )
 
-// ChristeningsByYear describes a christen's description and various metadata for a given christening.
+// ChristeningsByYear describes a christening's description, total count, week number,
+// week ID, and year.
 type ChristeningsByYear struct {
 	ChristeningsDesc string    `json:"christenings_desc"`
 	TotalCount       NullInt64 `json:"count"`
@@ -17,7 +18,8 @@ type ChristeningsByYear struct {
 	Year             int       `json:"year"`
 }
 
-// ChristeningsHandler returns ...
+// ChristeningsHandler returns the christenings for a given range of years. It expects a start year and
+// end year as query parameters.
 func (s *Server) ChristeningsHandler() http.HandlerFunc {
 
 	query := `

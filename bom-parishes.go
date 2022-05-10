@@ -7,14 +7,14 @@ import (
 	"net/http"
 )
 
-// Parish describes a denomination's names and various systems of classification.
+// Parish describes a parish name, canonical name, and unique ID.
 type Parish struct {
 	ParishID      int    `json:"id"`
 	Name          string `json:"name"`
 	CanonicalName string `json:"canonical_name"`
 }
 
-// ParishesHandler returns
+// ParishesHandler returns a list of unique parish IDs and names.
 func (s *Server) ParishesHandler() http.HandlerFunc {
 
 	query := `
