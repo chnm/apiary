@@ -1,6 +1,7 @@
 package apiary
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net/http"
@@ -8,7 +9,6 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
-	"github.com/lib/pq"
 )
 
 // AHCBStatesHandler returns a GeoJSON FeatureCollection containing states from
@@ -41,11 +41,6 @@ func (s *Server) AHCBStatesHandler() http.HandlerFunc {
 			WHERE start_date <= $1 AND end_date >= $1
 			) AS us_states;
 		`
-	stmt, err := s.Database.Prepare(query)
-	if err != nil {
-		log.Fatalln(err)
-	}
-	s.Statements["ahcb-states"] = stmt // Will be closed at shutdown
 
 	return func(w http.ResponseWriter, r *http.Request) {
 
@@ -58,7 +53,7 @@ func (s *Server) AHCBStatesHandler() http.HandlerFunc {
 		}
 
 		var result string // result will be a string containing GeoJSON
-		err = stmt.QueryRow(date).Scan(&result)
+		err = s.Pool.QueryRow(context.TODO(), query, date).Scan(&result)
 		if err != nil {
 			log.Println(err)
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -96,11 +91,7 @@ func (s *Server) AHCBCountiesHandler() http.HandlerFunc {
 			WHERE start_date <= $1 AND end_date >= $1
 		) AS us_counties;
 		`
-	stmt, err := s.Database.Prepare(query)
-	if err != nil {
-		log.Fatalln(err)
-	}
-	s.Statements["ahcb-counties"] = stmt
+
 	return func(w http.ResponseWriter, r *http.Request) {
 		params := mux.Vars(r)
 		date, err := dateInRange(params["date"], minDate, maxDate)
@@ -110,7 +101,7 @@ func (s *Server) AHCBCountiesHandler() http.HandlerFunc {
 			return
 		}
 		var result string
-		err = stmt.QueryRow(date).Scan(&result)
+		err = s.Pool.QueryRow(context.TODO(), query, date).Scan(&result)
 		if err != nil {
 			log.Println(err)
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -148,11 +139,7 @@ func (s *Server) AHCBCountiesByIDHandler() http.HandlerFunc {
 			AND id = ANY($2)
 		) AS us_counties;
 		`
-	stmt, err := s.Database.Prepare(query)
-	if err != nil {
-		log.Fatalln(err)
-	}
-	s.Statements["ahcb-counties-by-id"] = stmt
+
 	return func(w http.ResponseWriter, r *http.Request) {
 		params := mux.Vars(r)
 		date, err := dateInRange(params["date"], minDate, maxDate)
@@ -163,8 +150,9 @@ func (s *Server) AHCBCountiesByIDHandler() http.HandlerFunc {
 		}
 		var result string
 
-		ids := pq.Array(strings.Split(params["id"], ","))
-		err = stmt.QueryRow(date, ids).Scan(&result)
+		// ids := pq.Array(strings.Split(params["id"], ","))
+		ids := strings.Split(params["id"], ",")
+		err = s.Pool.QueryRow(context.TODO(), query, date, ids).Scan(&result)
 		if err != nil {
 			log.Println(err)
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -202,11 +190,7 @@ func (s *Server) AHCBCountiesByStateTerrIDHandler() http.HandlerFunc {
 			AND state_terr_id = ANY($2)
 		) AS us_counties;
 		`
-	stmt, err := s.Database.Prepare(query)
-	if err != nil {
-		log.Fatalln(err)
-	}
-	s.Statements["ahcb-counties-by-id"] = stmt
+
 	return func(w http.ResponseWriter, r *http.Request) {
 		params := mux.Vars(r)
 		date, err := dateInRange(params["date"], minDate, maxDate)
@@ -216,8 +200,9 @@ func (s *Server) AHCBCountiesByStateTerrIDHandler() http.HandlerFunc {
 			return
 		}
 		var result string
-		stateTerrIds := pq.Array(strings.Split(params["state-terr-id"], ","))
-		err = stmt.QueryRow(date, stateTerrIds).Scan(&result)
+		// stateTerrIds := pq.Array(strings.Split(params["state-terr-id"], ","))
+		stateTerrIds := strings.Split(params["state-terr-id"], ",")
+		err = s.Pool.QueryRow(context.TODO(), query, date, stateTerrIds).Scan(&result)
 		if err != nil {
 			log.Println(err)
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -255,11 +240,7 @@ func (s *Server) AHCBCountiesByStateCodeHandler() http.HandlerFunc {
 			AND state_code = ANY($2)
 		) AS us_counties;
 		`
-	stmt, err := s.Database.Prepare(query)
-	if err != nil {
-		log.Fatalln(err)
-	}
-	s.Statements["ahcb-counties-by-state-code"] = stmt
+
 	return func(w http.ResponseWriter, r *http.Request) {
 		params := mux.Vars(r)
 		date, err := dateInRange(params["date"], minDate, maxDate)
@@ -269,8 +250,9 @@ func (s *Server) AHCBCountiesByStateCodeHandler() http.HandlerFunc {
 			return
 		}
 		var result string
-		stateCodes := pq.Array(strings.Split(params["state-code"], ","))
-		err = stmt.QueryRow(date, stateCodes).Scan(&result)
+		// stateCodes := pq.Array(strings.Split(params["state-code"], ","))
+		stateCodes := strings.Split(params["state-code"], ",")
+		err = s.Pool.QueryRow(context.TODO(), query, date, stateCodes).Scan(&result)
 		if err != nil {
 			log.Println(err)
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)

@@ -1,6 +1,7 @@
 package apiary
 
 import (
+	"context"
 	"database/sql"
 	"log"
 	"net/http"
@@ -9,8 +10,10 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/chnm/apiary/db"
 	"github.com/gorilla/mux"
 	_ "github.com/jackc/pgx/v4" // Driver for database
+	"github.com/jackc/pgx/v4/pgxpool"
 )
 
 // The Config type stores configuration which is read from environment variables.
@@ -23,7 +26,8 @@ type Config struct {
 // The Server type shares access to the database.
 type Server struct {
 	Server     *http.Server
-	Database   *sql.DB
+	Pool       *pgxpool.Pool // A PGX connection pool for future handlers
+	Database   *sql.DB       // This is the SQL interface for compatibility with existing handlers
 	Router     *mux.Router
 	Config     Config
 	Statements map[string]*sql.Stmt
@@ -40,13 +44,11 @@ func NewServer() *Server {
 	s.Config.address = getEnv("APIARY_INTERFACE", "0.0.0.0") + ":" + getEnv("APIARY_PORT", "8090")
 
 	// Connect to the database then store the database in the struct.
-	db, err := sql.Open("postgres", s.Config.dbconn)
+	pool, db, err := db.Connect(context.TODO(), s.Config.dbconn)
 	if err != nil {
-		log.Fatalln(err)
+		log.Fatalln("Error connecting to the database: ", err)
 	}
-	if err := db.Ping(); err != nil {
-		log.Fatalln(err)
-	}
+	s.Pool = pool
 	s.Database = db
 
 	// Create an empty map to store prepared statements
