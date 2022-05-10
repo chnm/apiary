@@ -1,6 +1,7 @@
 package apiary
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -40,12 +41,6 @@ func (s *Server) ChristeningsHandler() http.HandlerFunc {
 		count;
 	`
 
-	stmt, err := s.Database.Prepare(query)
-	if err != nil {
-		log.Fatalln(err)
-	}
-	s.Statements["christenings"] = stmt // Will be closed at shutdown
-
 	return func(w http.ResponseWriter, r *http.Request) {
 		startYear := r.URL.Query().Get("startYear")
 		endYear := r.URL.Query().Get("endYear")
@@ -70,7 +65,7 @@ func (s *Server) ChristeningsHandler() http.HandlerFunc {
 		results := make([]ChristeningsByYear, 0)
 		var row ChristeningsByYear
 
-		rows, err := stmt.Query(startYearInt, endYearInt)
+		rows, err := s.Pool.Query(context.TODO(), query, startYearInt, endYearInt)
 		if err != nil {
 			log.Println(err)
 		}

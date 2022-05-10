@@ -1,6 +1,7 @@
 package apiary
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -18,7 +19,7 @@ type BibleSimilarityEdge struct {
 // similarities within the Bible.
 func (s *Server) APBBibleSimilarityHandler() http.HandlerFunc {
 
-	edgeQuery := `
+	query := `
 	SELECT 
 	a_book AS a,
 	b_book AS b,
@@ -41,18 +42,13 @@ func (s *Server) APBBibleSimilarityHandler() http.HandlerFunc {
 	GROUP BY a_book, b_book
 	HAVING COUNT(*) >= 5 AND a_book != b_book
 	`
-	edgeStmt, err := s.Database.Prepare(edgeQuery)
-	if err != nil {
-		log.Fatalln(err)
-	}
-	s.Statements["apb-edges"] = edgeStmt // Will be closed at shutdown
 
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		var edge BibleSimilarityEdge
 		var result []BibleSimilarityEdge
 
-		rows, err := edgeStmt.Query()
+		rows, err := s.Pool.Query(context.TODO(), query)
 		if err != nil {
 			log.Println(err)
 		}

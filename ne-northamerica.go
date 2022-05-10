@@ -1,6 +1,7 @@
 package apiary
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net/http"
@@ -32,14 +33,9 @@ func (s *Server) NENorthAmericaHandler() http.HandlerFunc {
 			WHERE continent = 'North America' AND adm0_a3 != 'GRL' AND geom_50m IS NOT NULL
 			) AS countries;
 		`
-	stmt, err := s.Database.Prepare(query)
-	if err != nil {
-		log.Fatalln(err)
-	}
-	s.Statements["ne-north-america"] = stmt
 
 	var result string // result will be a string containing GeoJSON
-	err = stmt.QueryRow().Scan(&result)
+	err := s.Pool.QueryRow(context.TODO(), query).Scan(&result)
 	if err != nil {
 		log.Println(err)
 	}

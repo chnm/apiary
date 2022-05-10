@@ -1,6 +1,7 @@
 package apiary
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -28,17 +29,11 @@ func (s *Server) PresbyteriansHandler() http.HandlerFunc {
 	ORDER BY year;
 	`
 
-	stmt, err := s.Database.Prepare(query)
-	if err != nil {
-		log.Fatalln(err)
-	}
-	s.Statements["presbyterians"] = stmt // Will be closed at shutdown
-
 	return func(w http.ResponseWriter, r *http.Request) {
 		results := make([]PresbyteriansByYear, 0)
 		var row PresbyteriansByYear
 
-		rows, err := stmt.Query()
+		rows, err := s.Pool.Query(context.TODO(), query)
 		if err != nil {
 			log.Println(err)
 		}

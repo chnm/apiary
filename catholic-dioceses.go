@@ -1,6 +1,7 @@
 package apiary
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -43,17 +44,11 @@ func (s *Server) CatholicDiocesesHandler() http.HandlerFunc {
 	ORDER BY date_erected;
 	`
 
-	stmt, err := s.Database.Prepare(query)
-	if err != nil {
-		log.Fatalln(err)
-	}
-	s.Statements["catholic-dioceses"] = stmt // Will be closed at shutdown
-
 	return func(w http.ResponseWriter, r *http.Request) {
 		results := make([]CatholicDiocese, 0)
 		var row CatholicDiocese
 
-		rows, err := stmt.Query()
+		rows, err := s.Pool.Query(context.TODO(), query)
 		if err != nil {
 			log.Println(err)
 		}
@@ -103,17 +98,11 @@ func (s *Server) CatholicDiocesesPerDecadeHandler() http.HandlerFunc {
 	ORDER BY series.decade;
 	`
 
-	stmt, err := s.Database.Prepare(query)
-	if err != nil {
-		log.Fatalln(err)
-	}
-	s.Statements["catholic-dioceses-per-decade"] = stmt // Will be closed at shutdown
-
 	return func(w http.ResponseWriter, r *http.Request) {
 		results := make([]CatholicDiocesesPerDecade, 0, 52) // Preallocate slice capacity
 		var row CatholicDiocesesPerDecade
 
-		rows, err := stmt.Query()
+		rows, err := s.Pool.Query(context.TODO(), query)
 		if err != nil {
 			log.Println(err)
 		}

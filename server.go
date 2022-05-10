@@ -2,7 +2,6 @@ package apiary
 
 import (
 	"context"
-	"database/sql"
 	"log"
 	"net/http"
 	"os"
@@ -25,12 +24,10 @@ type Config struct {
 
 // The Server type shares access to the database.
 type Server struct {
-	Server     *http.Server
-	Pool       *pgxpool.Pool // A PGX connection pool for future handlers
-	Database   *sql.DB       // This is the SQL interface for compatibility with existing handlers
-	Router     *mux.Router
-	Config     Config
-	Statements map[string]*sql.Stmt
+	Server *http.Server
+	Pool   *pgxpool.Pool
+	Router *mux.Router
+	Config Config
 }
 
 // NewServer creates a new Server and connects to the database or fails trying.
@@ -44,15 +41,11 @@ func NewServer() *Server {
 	s.Config.address = getEnv("APIARY_INTERFACE", "0.0.0.0") + ":" + getEnv("APIARY_PORT", "8090")
 
 	// Connect to the database then store the database in the struct.
-	pool, db, err := db.Connect(context.TODO(), s.Config.dbconn)
+	pool, err := db.Connect(context.TODO(), s.Config.dbconn)
 	if err != nil {
 		log.Fatalln("Error connecting to the database: ", err)
 	}
 	s.Pool = pool
-	s.Database = db
-
-	// Create an empty map to store prepared statements
-	s.Statements = make(map[string]*sql.Stmt)
 
 	// Create the router, store it in the struct, initialize the routes, and
 	// register the middleware.
@@ -81,7 +74,7 @@ func (s *Server) Run() {
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
 
-	log.Printf("Starting the server on http://%s.\n", s.Config.address)
+	log.Printf("Starting the server on http://%s\n", s.Config.address)
 
 	go func() {
 		if err := s.Server.ListenAndServe(); err != nil {
@@ -95,18 +88,7 @@ func (s *Server) Run() {
 
 // Shutdown closes the connection to the database and shutsdown the server.
 func (s *Server) Shutdown() {
-	// Close any prepared statements
-	for _, v := range s.Statements {
-		err := v.Close()
-		if err != nil {
-			log.Println(err)
-		}
-	}
-	log.Println("Closing the connection to the database.")
+	log.Println("Closing the connection to the database")
 	s.Pool.Close()
-	err := s.Database.Close()
-	if err != nil {
-		log.Fatalln(err)
-	}
-	log.Println("Shutting down the server.")
+	log.Println("Shutting down the server")
 }

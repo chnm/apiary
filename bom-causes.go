@@ -8,7 +8,7 @@ import (
 	"net/http"
 )
 
-// TODO: Describe
+// DeathCauses TODO: Describe
 type DeathCauses struct {
 	DeathID    int        `json:"death_id"`
 	Death      string     `json:"death"`
@@ -21,7 +21,7 @@ type DeathCauses struct {
 	Year       string     `json:"year"`
 }
 
-// TODO: Describe
+// DeathCausesHandler TODO: Describe
 func (s *Server) DeathCausesHandler() http.HandlerFunc {
 
 	query := `

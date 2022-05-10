@@ -1,6 +1,7 @@
 package apiary
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -32,12 +33,6 @@ func (s *Server) APBBibleTrendHandler() http.HandlerFunc {
 	ORDER BY series.year) res
 	`
 
-	stmt, err := s.Database.Prepare(query)
-	if err != nil {
-		log.Fatalln(err)
-	}
-	s.Statements["apb-bible-trend"] = stmt // Will be closed at shutdown
-
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		corpus := "chronam"
@@ -46,7 +41,7 @@ func (s *Server) APBBibleTrendHandler() http.HandlerFunc {
 		results := make([]VerseTrend, 0, 87) // Preallocate slice capacity
 		var row VerseTrend
 
-		rows, err := stmt.Query(corpus, minYear, maxYear)
+		rows, err := s.Pool.Query(context.TODO(), query, corpus, minYear, maxYear)
 		if err != nil {
 			log.Println(err)
 		}

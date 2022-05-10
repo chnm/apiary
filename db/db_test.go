@@ -37,7 +37,7 @@ func TestDBConnection(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	pool, _, err := Connect(ctx, connstr)
+	pool, err := Connect(ctx, connstr)
 	require.NoError(t, err)
 
 	err = pool.Ping(ctx)
