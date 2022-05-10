@@ -21,52 +21,39 @@ func TestRelCensusDenominations(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-
-	// Check that the data has the right content
-	expected := []apiary.Denomination{
-		{
-			Name:           "Duck River and Kindred Associations of Baptists (Baptist Church of Christ)",
-			ShortName:      "Duck River and Kindred Associations of Baptists",
-			DenominationID: "0-2-2",
-			FamilyCensus:   "Baptist bodies",
-			FamilyRelec:    "Baptist",
-		},
-		{
-			Name:           "Advent Christian Church",
-			ShortName:      "Advent Christian Church",
-			DenominationID: "0-0-0",
-			FamilyCensus:   "Adventist bodies",
-			FamilyRelec:    "Adventist",
-		},
-	}
-	if !reflect.DeepEqual(data[0:2], expected) {
-		t.Error("Values in data are not what was expected.")
-	}
 }
 
-// func TestRelCensusFamilies(t *testing.T) {
-// 	// Check that we get the right response
-// 	req, _ := http.NewRequest("GET", "/relcensus/denomination-families", nil)
-// 	response := executeRequest(req)
-// 	checkResponseCode(t, http.StatusOK, response.Code)
+type FamilyMap struct {
+	Param map[string]string `json:"family_relec"`
+}
 
-// 	// Get the data
-// 	var data []apiary.DenominationFamily
-// 	err := json.Unmarshal(response.Body.Bytes(), &data)
-// 	if err != nil {
-// 		t.Error(err)
-// 	}
+func TestRelCensusFamilies(t *testing.T) {
+	// Check that we get the right response
+	req, _ := http.NewRequest("GET", "/relcensus/denomination-families", nil)
+	response := executeRequest(req)
+	checkResponseCode(t, http.StatusOK, response.Code)
 
-// 	// Check that the data has the right content
-// 	expected := []apiary.DenominationFamily{
-// 		{Name: "Adventist"},
-// 		{Name: "Anabaptist"},
-// 		{Name: "Baptist"},
-// 	}
-// 	if !reflect.DeepEqual(data[0:3], expected) {
-// 		t.Error("Values in data are not what was expected.")
-// 	}
-// }
+	// Get the data
+	// var data []apiary.DenominationFamily
+	data := struct {
+		FamilyRelec []apiary.DenominationFamily `json:"family_relec"`
+	}{}
+	err := json.Unmarshal(response.Body.Bytes(), &data)
+	if err != nil {
+		t.Error(err)
+	}
+
+	// Check that the data has the right content
+	expected := []apiary.DenominationFamily{
+		{Name: "Adventist"},
+		{Name: "Anabaptist"},
+		{Name: "Baptist"},
+	}
+
+	if !reflect.DeepEqual(data.FamilyRelec[0:3], expected) {
+		t.Errorf("Expected %v, got %v", expected, data.FamilyRelec)
+	}
+}
 
 func TestRelCensusCityDenominations(t *testing.T) {
 	// Check that we get the right response
