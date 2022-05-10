@@ -137,7 +137,7 @@ func (s *Server) PlacesInCounty() http.HandlerFunc {
 	}
 }
 
-// Place returns the details about a populated place
+// Place returns the details about a populated place.
 func (s *Server) Place() http.HandlerFunc {
 
 	query := `

@@ -17,7 +17,7 @@ type VerseQuotation struct {
 	State       string  `json:"state"`
 }
 
-// VerseQuotationsHandler returns the instances of quotations for a verse
+// VerseQuotationsHandler returns the instances of quotations for a verse.
 func (s *Server) VerseQuotationsHandler() http.HandlerFunc {
 
 	query := `
