@@ -4,9 +4,6 @@ import (
 	"context"
 	"log"
 	"net/http"
-	"os"
-	"os/signal"
-	"syscall"
 	"time"
 
 	"github.com/chnm/apiary/db"
@@ -31,7 +28,7 @@ type Server struct {
 }
 
 // NewServer creates a new Server and connects to the database or fails trying.
-func NewServer() *Server {
+func NewServer(ctx context.Context) *Server {
 	s := Server{}
 
 	// Read the configuration from environment variables. The `getEnv()` function
@@ -41,9 +38,12 @@ func NewServer() *Server {
 	s.Config.address = getEnv("APIARY_INTERFACE", "0.0.0.0") + ":" + getEnv("APIARY_PORT", "8090")
 
 	// Connect to the database then store the database in the struct.
-	pool, err := db.Connect(context.TODO(), s.Config.dbconn)
+	log.Println("connecting to the database")
+	dbTimeout, cancel := context.WithTimeout(ctx, 60*time.Second)
+	defer cancel()
+	pool, err := db.Connect(dbTimeout, s.Config.dbconn)
 	if err != nil {
-		log.Fatalln("Error connecting to the database: ", err)
+		log.Fatalln("error connecting to the database:", err)
 	}
 	s.DB = pool
 
@@ -66,29 +66,22 @@ func NewServer() *Server {
 }
 
 // Run starts the API server.
-func (s *Server) Run() {
-	defer s.Shutdown() // Make sure we shutdown.
-
-	// Run the server in a go routine, using a blocking channel to listen for interrupts.
-	// Stop gracefully for SIGTERM and SIGINT.
-	stop := make(chan os.Signal, 1)
-	signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
-
-	log.Printf("Starting the server on http://%s\n", s.Config.address)
-
-	go func() {
-		if err := s.Server.ListenAndServe(); err != nil {
-			log.Println(err)
-		}
-	}()
-
-	<-stop
-
+func (s *Server) Run() error {
+	log.Printf("starting the server on http://%s\n", s.Config.address)
+	err := s.Server.ListenAndServe()
+	if err == http.ErrServerClosed {
+		return nil
+	}
+	return err
 }
 
 // Shutdown closes the connection to the database and shutsdown the server.
 func (s *Server) Shutdown() {
-	log.Println("Closing the connection to the database")
+	log.Println("closing the connection to the database")
 	s.DB.Close()
-	log.Println("Shutting down the server")
+	log.Println("shutting down the web server")
+	err := s.Server.Shutdown(context.TODO())
+	if err != nil {
+		log.Println("error shutting down web server:", err)
+	}
 }
