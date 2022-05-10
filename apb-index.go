@@ -46,7 +46,7 @@ func (s *Server) APBIndexFeaturedHandler() http.HandlerFunc {
 		var results []APBIndexItem
 		var row APBIndexItem
 
-		rows, err := s.Pool.Query(context.TODO(), query)
+		rows, err := s.DB.Query(context.TODO(), query)
 		if err != nil {
 			log.Println(err)
 		}
@@ -87,7 +87,7 @@ func (s *Server) APBIndexBiblicalOrderHandler() http.HandlerFunc {
 		var results []APBIndexItem
 		var row APBIndexItem
 
-		rows, err := s.Pool.Query(context.TODO(), query)
+		rows, err := s.DB.Query(context.TODO(), query)
 		if err != nil {
 			log.Println(err)
 		}
@@ -128,7 +128,7 @@ func (s *Server) APBIndexTopHandler() http.HandlerFunc {
 		var results []APBIndexItem
 		var row APBIndexItem
 
-		rows, err := s.Pool.Query(context.TODO(), query)
+		rows, err := s.DB.Query(context.TODO(), query)
 		if err != nil {
 			log.Println(err)
 		}
@@ -170,7 +170,7 @@ func (s *Server) APBIndexChronologicalHandler() http.HandlerFunc {
 		var results []APBIndexItemWithYear
 		var row APBIndexItemWithYear
 
-		rows, err := s.Pool.Query(context.TODO(), query)
+		rows, err := s.DB.Query(context.TODO(), query)
 		if err != nil {
 			log.Println(err)
 		}
@@ -211,7 +211,7 @@ func (s *Server) APBIndexAllHandler() http.HandlerFunc {
 		var results []APBIndexItemText
 		var row APBIndexItemText
 
-		rows, err := s.Pool.Query(context.TODO(), query)
+		rows, err := s.DB.Query(context.TODO(), query)
 		if err != nil {
 			log.Println(err)
 		}

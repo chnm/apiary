@@ -65,7 +65,7 @@ func (s *Server) ChristeningsHandler() http.HandlerFunc {
 		results := make([]ChristeningsByYear, 0)
 		var row ChristeningsByYear
 
-		rows, err := s.Pool.Query(context.TODO(), query, startYearInt, endYearInt)
+		rows, err := s.DB.Query(context.TODO(), query, startYearInt, endYearInt)
 		if err != nil {
 			log.Println(err)
 		}

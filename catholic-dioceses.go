@@ -48,7 +48,7 @@ func (s *Server) CatholicDiocesesHandler() http.HandlerFunc {
 		results := make([]CatholicDiocese, 0)
 		var row CatholicDiocese
 
-		rows, err := s.Pool.Query(context.TODO(), query)
+		rows, err := s.DB.Query(context.TODO(), query)
 		if err != nil {
 			log.Println(err)
 		}
@@ -102,7 +102,7 @@ func (s *Server) CatholicDiocesesPerDecadeHandler() http.HandlerFunc {
 		results := make([]CatholicDiocesesPerDecade, 0, 52) // Preallocate slice capacity
 		var row CatholicDiocesesPerDecade
 
-		rows, err := s.Pool.Query(context.TODO(), query)
+		rows, err := s.DB.Query(context.TODO(), query)
 		if err != nil {
 			log.Println(err)
 		}

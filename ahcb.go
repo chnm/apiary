@@ -53,7 +53,7 @@ func (s *Server) AHCBStatesHandler() http.HandlerFunc {
 		}
 
 		var result string // result will be a string containing GeoJSON
-		err = s.Pool.QueryRow(context.TODO(), query, date).Scan(&result)
+		err = s.DB.QueryRow(context.TODO(), query, date).Scan(&result)
 		if err != nil {
 			log.Println(err)
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -101,7 +101,7 @@ func (s *Server) AHCBCountiesHandler() http.HandlerFunc {
 			return
 		}
 		var result string
-		err = s.Pool.QueryRow(context.TODO(), query, date).Scan(&result)
+		err = s.DB.QueryRow(context.TODO(), query, date).Scan(&result)
 		if err != nil {
 			log.Println(err)
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -152,7 +152,7 @@ func (s *Server) AHCBCountiesByIDHandler() http.HandlerFunc {
 
 		// ids := pq.Array(strings.Split(params["id"], ","))
 		ids := strings.Split(params["id"], ",")
-		err = s.Pool.QueryRow(context.TODO(), query, date, ids).Scan(&result)
+		err = s.DB.QueryRow(context.TODO(), query, date, ids).Scan(&result)
 		if err != nil {
 			log.Println(err)
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -202,7 +202,7 @@ func (s *Server) AHCBCountiesByStateTerrIDHandler() http.HandlerFunc {
 		var result string
 		// stateTerrIds := pq.Array(strings.Split(params["state-terr-id"], ","))
 		stateTerrIds := strings.Split(params["state-terr-id"], ",")
-		err = s.Pool.QueryRow(context.TODO(), query, date, stateTerrIds).Scan(&result)
+		err = s.DB.QueryRow(context.TODO(), query, date, stateTerrIds).Scan(&result)
 		if err != nil {
 			log.Println(err)
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -252,7 +252,7 @@ func (s *Server) AHCBCountiesByStateCodeHandler() http.HandlerFunc {
 		var result string
 		// stateCodes := pq.Array(strings.Split(params["state-code"], ","))
 		stateCodes := strings.Split(params["state-code"], ",")
-		err = s.Pool.QueryRow(context.TODO(), query, date, stateCodes).Scan(&result)
+		err = s.DB.QueryRow(context.TODO(), query, date, stateCodes).Scan(&result)
 		if err != nil {
 			log.Println(err)
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)

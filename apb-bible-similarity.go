@@ -48,7 +48,7 @@ func (s *Server) APBBibleSimilarityHandler() http.HandlerFunc {
 		var edge BibleSimilarityEdge
 		var result []BibleSimilarityEdge
 
-		rows, err := s.Pool.Query(context.TODO(), query)
+		rows, err := s.DB.Query(context.TODO(), query)
 		if err != nil {
 			log.Println(err)
 		}

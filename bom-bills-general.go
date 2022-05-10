@@ -70,7 +70,7 @@ func (s *Server) GeneralBillsHandler() http.HandlerFunc {
 		results := make([]ParishByYear, 0)
 		var row ParishByYear
 
-		rows, err := s.Pool.Query(context.TODO(), query, startYearInt, endYearInt)
+		rows, err := s.DB.Query(context.TODO(), query, startYearInt, endYearInt)
 		if err != nil {
 			log.Println(err)
 		}

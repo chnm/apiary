@@ -85,7 +85,7 @@ func (s *Server) APBVerseTrendHandler() http.HandlerFunc {
 		results := make([]VerseTrend, 0, 175) // Preallocate slice capacity
 		var row VerseTrend
 
-		rows, err := s.Pool.Query(context.TODO(), query, corpus, ref, minYear, maxYear)
+		rows, err := s.DB.Query(context.TODO(), query, corpus, ref, minYear, maxYear)
 		if err != nil {
 			log.Println(err)
 		}

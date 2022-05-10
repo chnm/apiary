@@ -33,7 +33,7 @@ func (s *Server) PresbyteriansHandler() http.HandlerFunc {
 		results := make([]PresbyteriansByYear, 0)
 		var row PresbyteriansByYear
 
-		rows, err := s.Pool.Query(context.TODO(), query)
+		rows, err := s.DB.Query(context.TODO(), query)
 		if err != nil {
 			log.Println(err)
 		}

@@ -38,7 +38,7 @@ func (s *Server) RelCensusDenominationFamiliesHandler() http.HandlerFunc {
 		results := make([]DenominationFamily, 0)
 		var row DenominationFamily
 
-		rows, err := s.Pool.Query(context.TODO(), query)
+		rows, err := s.DB.Query(context.TODO(), query)
 		if err != nil {
 			log.Println(err)
 		}
@@ -82,7 +82,7 @@ func (s *Server) RelCensusDenominationsHandler() http.HandlerFunc {
 		results := make([]Denomination, 0)
 		var row Denomination
 
-		rows, err := s.Pool.Query(context.TODO(), query, familyRelec)
+		rows, err := s.DB.Query(context.TODO(), query, familyRelec)
 		if err != nil {
 			log.Println(err)
 		}

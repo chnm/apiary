@@ -28,7 +28,7 @@ func (s *Server) ParishesHandler() http.HandlerFunc {
 		results := make([]Parish, 0)
 		var row Parish
 
-		rows, err := s.Pool.Query(context.TODO(), query)
+		rows, err := s.DB.Query(context.TODO(), query)
 		if err != nil {
 			log.Println(err)
 		}

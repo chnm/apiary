@@ -39,7 +39,7 @@ func (s *Server) DeathCausesHandler() http.HandlerFunc {
 		results := make([]DeathCauses, 0)
 		var row DeathCauses
 
-		rows, err := s.Pool.Query(context.TODO(), query)
+		rows, err := s.DB.Query(context.TODO(), query)
 		if err != nil {
 			log.Println(err)
 		}

@@ -35,7 +35,7 @@ func (s *Server) NENorthAmericaHandler() http.HandlerFunc {
 		`
 
 	var result string // result will be a string containing GeoJSON
-	err := s.Pool.QueryRow(context.TODO(), query).Scan(&result)
+	err := s.DB.QueryRow(context.TODO(), query).Scan(&result)
 	if err != nil {
 		log.Println(err)
 	}

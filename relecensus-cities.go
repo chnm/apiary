@@ -142,11 +142,11 @@ func (s *Server) RelCensusCityMembershipHandler() http.HandlerFunc {
 		// just use the right query as necessary.
 		switch {
 		case denomination != "":
-			rows, err = s.Pool.Query(context.TODO(), queryDenomination, yearInt, denomination)
+			rows, err = s.DB.Query(context.TODO(), queryDenomination, yearInt, denomination)
 		case denominationFamily != "":
-			rows, err = s.Pool.Query(context.TODO(), queryFamily, yearInt, denominationFamily)
+			rows, err = s.DB.Query(context.TODO(), queryFamily, yearInt, denominationFamily)
 		case denomination == "" && denominationFamily == "":
-			rows, err = s.Pool.Query(context.TODO(), queryAll, yearInt)
+			rows, err = s.DB.Query(context.TODO(), queryAll, yearInt)
 		}
 		if err != nil {
 			log.Println(err)

@@ -25,7 +25,7 @@ type Config struct {
 // The Server type shares access to the database.
 type Server struct {
 	Server *http.Server
-	Pool   *pgxpool.Pool
+	DB     *pgxpool.Pool
 	Router *mux.Router
 	Config Config
 }
@@ -45,7 +45,7 @@ func NewServer() *Server {
 	if err != nil {
 		log.Fatalln("Error connecting to the database: ", err)
 	}
-	s.Pool = pool
+	s.DB = pool
 
 	// Create the router, store it in the struct, initialize the routes, and
 	// register the middleware.
@@ -89,6 +89,6 @@ func (s *Server) Run() {
 // Shutdown closes the connection to the database and shutsdown the server.
 func (s *Server) Shutdown() {
 	log.Println("Closing the connection to the database")
-	s.Pool.Close()
+	s.DB.Close()
 	log.Println("Shutting down the server")
 }

@@ -39,7 +39,7 @@ func (s *Server) APBVerseQuotationsHandler() http.HandlerFunc {
 		results := make([]VerseQuotation, 0)
 		var row VerseQuotation
 
-		rows, err := s.Pool.Query(context.TODO(), query, refs[0])
+		rows, err := s.DB.Query(context.TODO(), query, refs[0])
 		if err != nil {
 			log.Println(err)
 		}

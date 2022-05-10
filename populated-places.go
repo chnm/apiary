@@ -58,7 +58,7 @@ func (s *Server) CountiesInState() http.HandlerFunc {
 		results := make([]PlaceCounty, 0)
 		var row PlaceCounty
 
-		rows, err := s.Pool.Query(context.TODO(), query, state)
+		rows, err := s.DB.Query(context.TODO(), query, state)
 		if err != nil {
 			log.Println(err)
 		}
@@ -101,7 +101,7 @@ func (s *Server) PlacesInCounty() http.HandlerFunc {
 		results := make([]Place, 0)
 		var row Place
 
-		rows, err := s.Pool.Query(context.TODO(), query, county)
+		rows, err := s.DB.Query(context.TODO(), query, county)
 		if err != nil {
 			log.Println(err)
 		}
@@ -145,7 +145,7 @@ func (s *Server) Place() http.HandlerFunc {
 
 		var result PlaceDetails
 
-		err = s.Pool.QueryRow(context.TODO(), query, placeID).Scan(&result.PlaceID, &result.Place,
+		err = s.DB.QueryRow(context.TODO(), query, placeID).Scan(&result.PlaceID, &result.Place,
 			&result.MapName, &result.County, &result.CountyAHCB, &result.State)
 		if err != nil {
 			if err == sql.ErrNoRows {

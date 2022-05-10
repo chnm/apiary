@@ -30,7 +30,7 @@ func (s *Server) APBBibleBooksHandler() http.HandlerFunc {
 		var result []BibleBook
 		var book BibleBook
 
-		rows, err := s.Pool.Query(context.TODO(), query)
+		rows, err := s.DB.Query(context.TODO(), query)
 		if err != nil {
 			log.Println(err)
 		}
