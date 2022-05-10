@@ -103,6 +103,7 @@ func (s *Server) Shutdown() {
 		}
 	}
 	log.Println("Closing the connection to the database.")
+	s.Pool.Close()
 	err := s.Database.Close()
 	if err != nil {
 		log.Fatalln(err)
