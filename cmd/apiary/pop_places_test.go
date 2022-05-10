@@ -43,7 +43,6 @@ func TestPlacesInCounty(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-
 }
 
 func TestPlace(t *testing.T) {

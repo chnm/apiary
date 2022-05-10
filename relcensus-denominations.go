@@ -20,8 +20,6 @@ type Denomination struct {
 	DenominationID NullString `json:"denomination_id"`
 	FamilyCensus   NullString `json:"family_census"`
 	FamilyRelec    string     `json:"family_relec"`
-	// FamilyARDA     NullString `json:"family_arda"`
-	// ID             string `json:"id"`
 }
 
 // DenominationFamiliesHandler returns
