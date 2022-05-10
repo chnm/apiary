@@ -28,8 +28,7 @@ There is a `Makefile` in `cmd/dataapi/` that can be used for compiling and for r
 - `make serve` will serve the API locally.
 - `make docker-build` will create a Docker container for the API.
 - `make docker-serve` will create the container and run it locally via Docker.
-
-If you just need to run the Data API locally, it may be most convenient to just run a [Docker container](https://github.com/chnm/dataapi/pkgs/container/dataapi) served from the GitHub Container Registry. There are versions that are tagged with each of the GitHub branches that have been pushed, so that you can try the development version. You still need to set the environment variables, as below. It may be most convenient to run the Docker container with the `Makefile` in the root of this repository.
+- `make serve-ghcr`.  If you just need to run the Data API locally, it may be most convenient to just run a [Docker container](https://github.com/chnm/dataapi/pkgs/container/apiary) served from the GitHub Container Registry. There are versions that are tagged with each of the GitHub branches that have been pushed, so that you can try the development version from your current branch. You still need to set the environment variables.
 
 ## Testing
 
