@@ -22,16 +22,16 @@ func Connect(ctx context.Context, connstr string) (*pgxpool.Pool, error) {
 	connectWithRetry := func() error {
 		select {
 		case <-ctx.Done():
-			return backoff.Permanent(errors.New("Cancelled attempt to connect to database"))
+			return backoff.Permanent(errors.New("cancelled attempt to connect to database"))
 		default:
 			conn, err := pgxpool.ConnectConfig(ctx, cfg)
 			if err != nil {
-				return fmt.Errorf("Error creating connection pool: %w", err)
+				return fmt.Errorf("error creating connection pool: %w", err)
 			}
 
 			err = conn.Ping(ctx)
 			if err != nil {
-				return fmt.Errorf("Error pinging database: %w", err)
+				return fmt.Errorf("error pinging database: %w", err)
 			}
 			pool = conn
 		}
@@ -41,7 +41,7 @@ func Connect(ctx context.Context, connstr string) (*pgxpool.Pool, error) {
 	policy := backoff.WithMaxRetries(backoff.NewExponentialBackOff(), 5)
 	err = backoff.Retry(connectWithRetry, policy)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to connect to database: %w", err)
+		return nil, fmt.Errorf("failed to connect to database: %w", err)
 	}
 
 	return pool, nil
