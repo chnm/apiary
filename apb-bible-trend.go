@@ -7,8 +7,8 @@ import (
 	"net/http"
 )
 
-// BibleTrendHandler returns the rates of quotation per year for a verse.
-func (s *Server) BibleTrendHandler() http.HandlerFunc {
+// APBBibleTrendHandler returns the rates of quotation per year for a verse.
+func (s *Server) APBBibleTrendHandler() http.HandlerFunc {
 
 	query := `
 	SELECT

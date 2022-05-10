@@ -17,8 +17,8 @@ type VerseQuotation struct {
 	State       string  `json:"state"`
 }
 
-// VerseQuotationsHandler returns the instances of quotations for a verse.
-func (s *Server) VerseQuotationsHandler() http.HandlerFunc {
+// APBVerseQuotationsHandler returns the instances of quotations for a verse.
+func (s *Server) APBVerseQuotationsHandler() http.HandlerFunc {
 
 	query := `
 	SELECT q.reference_id, q.doc_id, q.date::text, q.probability,

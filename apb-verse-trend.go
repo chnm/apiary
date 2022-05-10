@@ -21,8 +21,8 @@ type VerseTrendResponse struct {
 	Trend     []VerseTrend `json:"trend"`
 }
 
-// VerseTrendHandler returns the rates of quotation per year for a verse.
-func (s *Server) VerseTrendHandler() http.HandlerFunc {
+// APBVerseTrendHandler returns the rates of quotation per year for a verse.
+func (s *Server) APBVerseTrendHandler() http.HandlerFunc {
 
 	query := `
 	SELECT 

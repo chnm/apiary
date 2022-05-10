@@ -15,8 +15,8 @@ type Verse struct {
 	Related   []string `json:"related"`
 }
 
-// VerseHandler returns information about a verse, and other verses which are related to it, if any.
-func (s *Server) VerseHandler() http.HandlerFunc {
+// APBVerseHandler returns information about a verse, and other verses which are related to it, if any.
+func (s *Server) APBVerseHandler() http.HandlerFunc {
 
 	// This query currently returns all verses which have not been
 	// explicitly disallowed, rather than returning only verses which
