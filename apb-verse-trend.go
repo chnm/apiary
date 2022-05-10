@@ -14,14 +14,14 @@ type VerseTrend struct {
 	QuotationRateSmooth float64 `json:"smoothed"`
 }
 
-// VerseTrendResponse wraps the data with the queries that were made
+// VerseTrendResponse wraps the data with the queries that were made.
 type VerseTrendResponse struct {
 	Reference string       `json:"reference"`
 	Corpus    string       `json:"corpus"`
 	Trend     []VerseTrend `json:"trend"`
 }
 
-// VerseTrendHandler returns the rates of quotation per year for a verse
+// VerseTrendHandler returns the rates of quotation per year for a verse.
 func (s *Server) VerseTrendHandler() http.HandlerFunc {
 
 	query := `

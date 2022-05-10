@@ -29,7 +29,7 @@ type APBIndexItemWithYear struct {
 	Peak      int    `json:"peak"`
 }
 
-// APBIndexFeaturedHandler returns featured verses.
+// APBIndexFeaturedHandler returns featured verses for APB.
 func (s *Server) APBIndexFeaturedHandler() http.HandlerFunc {
 
 	query := `
@@ -125,7 +125,7 @@ func (s *Server) APBIndexBiblicalOrderHandler() http.HandlerFunc {
 
 }
 
-// APBIndexTopHandler returns top verses.
+// APBIndexTopHandler returns top verses for APB.
 func (s *Server) APBIndexTopHandler() http.HandlerFunc {
 
 	query := `
