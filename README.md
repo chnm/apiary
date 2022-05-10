@@ -6,7 +6,9 @@ You can read more about the rationale for this piece of RRCHNM's infrastructure 
 
 ## Documentation 
 
-Documentation for the various endpoints and parameters to them can be found on the [Go package website](https://pkg.go.dev/github.com/chnm/apiary). Note that the root of the API lists out all the endpoints and sample URLs, and may be more useful than the documentation for understanding how to use the API.
+Documentation for the various endpoints and parameters to them can be found on the [Go package website](https://pkg.go.dev/github.com/chnm/apiary). Handlers are all methods on the main server type, so you can find [any endpoint specific documentation](https://pkg.go.dev/github.com/chnm/apiary#Server) on that type.
+
+Note that the root of the API lists out all the endpoints and sample URLs, and may be more useful than the documentation for understanding how to use the API.
 
 ## Configuration
 
