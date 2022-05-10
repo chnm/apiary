@@ -1,6 +1,7 @@
 package apiary
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -41,18 +42,11 @@ func (s *Server) APBIndexFeaturedHandler() http.HandlerFunc {
   ORDER BY s.book_order, s.chapter, s.verse;
 	`
 
-	stmt, err := s.Database.Prepare(query)
-
-	if err != nil {
-		log.Fatalln(err)
-	}
-	s.Statements["apb-index-featured"] = stmt // Will be closed at shutdown
-
 	return func(w http.ResponseWriter, r *http.Request) {
 		var results []APBIndexItem
 		var row APBIndexItem
 
-		rows, err := stmt.Query()
+		rows, err := s.DB.Query(context.TODO(), query)
 		if err != nil {
 			log.Println(err)
 		}
@@ -72,7 +66,7 @@ func (s *Server) APBIndexFeaturedHandler() http.HandlerFunc {
 		response, _ := json.Marshal(results)
 
 		w.Header().Set("Content-Type", "application/json")
-		fmt.Fprintf(w, string(response))
+		fmt.Fprint(w, string(response))
 	}
 
 }
@@ -89,18 +83,11 @@ func (s *Server) APBIndexBiblicalOrderHandler() http.HandlerFunc {
   ORDER BY s.book_order, s.chapter, s.verse;
 	`
 
-	stmt, err := s.Database.Prepare(query)
-
-	if err != nil {
-		log.Fatalln(err)
-	}
-	s.Statements["apb-index-biblical-order"] = stmt // Will be closed at shutdown
-
 	return func(w http.ResponseWriter, r *http.Request) {
 		var results []APBIndexItem
 		var row APBIndexItem
 
-		rows, err := stmt.Query()
+		rows, err := s.DB.Query(context.TODO(), query)
 		if err != nil {
 			log.Println(err)
 		}
@@ -120,7 +107,7 @@ func (s *Server) APBIndexBiblicalOrderHandler() http.HandlerFunc {
 		response, _ := json.Marshal(results)
 
 		w.Header().Set("Content-Type", "application/json")
-		fmt.Fprintf(w, string(response))
+		fmt.Fprint(w, string(response))
 	}
 
 }
@@ -137,18 +124,11 @@ func (s *Server) APBIndexTopHandler() http.HandlerFunc {
 	LIMIT 100;
 	`
 
-	stmt, err := s.Database.Prepare(query)
-
-	if err != nil {
-		log.Fatalln(err)
-	}
-	s.Statements["apb-index-top"] = stmt // Will be closed at shutdown
-
 	return func(w http.ResponseWriter, r *http.Request) {
 		var results []APBIndexItem
 		var row APBIndexItem
 
-		rows, err := stmt.Query()
+		rows, err := s.DB.Query(context.TODO(), query)
 		if err != nil {
 			log.Println(err)
 		}
@@ -168,7 +148,7 @@ func (s *Server) APBIndexTopHandler() http.HandlerFunc {
 		response, _ := json.Marshal(results)
 
 		w.Header().Set("Content-Type", "application/json")
-		fmt.Fprintf(w, string(response))
+		fmt.Fprint(w, string(response))
 	}
 
 }
@@ -186,18 +166,11 @@ func (s *Server) APBIndexChronologicalHandler() http.HandlerFunc {
   ORDER BY p.year, t.n DESC;
 	`
 
-	stmt, err := s.Database.Prepare(query)
-
-	if err != nil {
-		log.Fatalln(err)
-	}
-	s.Statements["apb-index-chronological-order"] = stmt // Will be closed at shutdown
-
 	return func(w http.ResponseWriter, r *http.Request) {
 		var results []APBIndexItemWithYear
 		var row APBIndexItemWithYear
 
-		rows, err := stmt.Query()
+		rows, err := s.DB.Query(context.TODO(), query)
 		if err != nil {
 			log.Println(err)
 		}
@@ -217,7 +190,7 @@ func (s *Server) APBIndexChronologicalHandler() http.HandlerFunc {
 		response, _ := json.Marshal(results)
 
 		w.Header().Set("Content-Type", "application/json")
-		fmt.Fprintf(w, string(response))
+		fmt.Fprint(w, string(response))
 	}
 
 }
@@ -234,18 +207,11 @@ func (s *Server) APBIndexAllHandler() http.HandlerFunc {
   ORDER BY s.book_order, s.chapter, s.verse;
 	`
 
-	stmt, err := s.Database.Prepare(query)
-
-	if err != nil {
-		log.Fatalln(err)
-	}
-	s.Statements["apb-index-all"] = stmt // Will be closed at shutdown
-
 	return func(w http.ResponseWriter, r *http.Request) {
 		var results []APBIndexItemText
 		var row APBIndexItemText
 
-		rows, err := stmt.Query()
+		rows, err := s.DB.Query(context.TODO(), query)
 		if err != nil {
 			log.Println(err)
 		}
@@ -265,7 +231,7 @@ func (s *Server) APBIndexAllHandler() http.HandlerFunc {
 		response, _ := json.Marshal(results)
 
 		w.Header().Set("Content-Type", "application/json")
-		fmt.Fprintf(w, string(response))
+		fmt.Fprint(w, string(response))
 	}
 
 }

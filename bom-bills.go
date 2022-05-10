@@ -1,6 +1,7 @@
 package apiary
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -55,12 +56,6 @@ func (s *Server) BillsHandler() http.HandlerFunc {
 		canonical_name;
 	`
 
-	stmt, err := s.Database.Prepare(query)
-	if err != nil {
-		log.Fatalln(err)
-	}
-	s.Statements["bills-of-mortality"] = stmt // Will be closed at shutdown
-
 	return func(w http.ResponseWriter, r *http.Request) {
 		startYear := r.URL.Query().Get("startYear")
 		endYear := r.URL.Query().Get("endYear")
@@ -85,7 +80,7 @@ func (s *Server) BillsHandler() http.HandlerFunc {
 		results := make([]ParishByYear, 0)
 		var row ParishByYear
 
-		rows, err := stmt.Query(startYearInt, endYearInt)
+		rows, err := s.DB.Query(context.TODO(), query, startYearInt, endYearInt)
 		if err != nil {
 			log.Println(err)
 		}
@@ -115,7 +110,7 @@ func (s *Server) BillsHandler() http.HandlerFunc {
 
 		response, _ := json.Marshal(results)
 		w.Header().Set("Content-Type", "application/json")
-		fmt.Fprintf(w, string(response))
+		fmt.Fprint(w, string(response))
 	}
 
 }

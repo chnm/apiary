@@ -1,6 +1,7 @@
 package apiary
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
 	"fmt"
@@ -31,22 +32,12 @@ func (s *Server) APBVerseHandler() http.HandlerFunc {
 		(v.use = TRUE OR v.use IS NULL) AND
 		s.version = 'KJV';
 	`
-	verseStmt, err := s.Database.Prepare(verseQuery)
-	if err != nil {
-		log.Fatalln(err)
-	}
-	s.Statements["apb-verse"] = verseStmt // Will be closed at shutdown
 
 	relatedVerseQuery := `
 	SELECT reference_id
 	FROM apb.verse_cleanup
 	WHERE reference_use = $1 AND reference_id != reference_use
 	`
-	relatedVerseStmt, err := s.Database.Prepare(relatedVerseQuery)
-	if err != nil {
-		log.Fatalln(err)
-	}
-	s.Statements["apb-related-verse"] = relatedVerseStmt // Will be closed at shutdown
 
 	return func(w http.ResponseWriter, r *http.Request) {
 
@@ -54,7 +45,7 @@ func (s *Server) APBVerseHandler() http.HandlerFunc {
 
 		var result Verse
 
-		err := verseStmt.QueryRow(refs[0]).Scan(&result.Reference, &result.Text)
+		err := s.DB.QueryRow(context.TODO(), verseQuery, refs[0]).Scan(&result.Reference, &result.Text)
 		if err == sql.ErrNoRows {
 			w.WriteHeader(http.StatusNotFound)
 			w.Write([]byte("404 Not found."))
@@ -64,7 +55,7 @@ func (s *Server) APBVerseHandler() http.HandlerFunc {
 		}
 
 		related := make([]string, 0)
-		rows, err := relatedVerseStmt.Query(refs[0])
+		rows, err := s.DB.Query(context.TODO(), relatedVerseQuery, refs[0])
 		if err != nil {
 			log.Println(err)
 		}
@@ -87,7 +78,7 @@ func (s *Server) APBVerseHandler() http.HandlerFunc {
 		response, _ := json.Marshal(result)
 
 		w.Header().Set("Content-Type", "application/json")
-		fmt.Fprintf(w, string(response))
+		fmt.Fprint(w, string(response))
 	}
 
 }

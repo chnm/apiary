@@ -1,16 +1,15 @@
 package apiary
 
 import (
-	"database/sql"
+	"context"
 	"log"
 	"net/http"
-	"os"
-	"os/signal"
-	"syscall"
 	"time"
 
+	"github.com/chnm/apiary/db"
 	"github.com/gorilla/mux"
 	_ "github.com/jackc/pgx/v4" // Driver for database
+	"github.com/jackc/pgx/v4/pgxpool"
 )
 
 // The Config type stores configuration which is read from environment variables.
@@ -22,15 +21,14 @@ type Config struct {
 
 // The Server type shares access to the database.
 type Server struct {
-	Server     *http.Server
-	Database   *sql.DB
-	Router     *mux.Router
-	Config     Config
-	Statements map[string]*sql.Stmt
+	Server *http.Server
+	DB     *pgxpool.Pool
+	Router *mux.Router
+	Config Config
 }
 
 // NewServer creates a new Server and connects to the database or fails trying.
-func NewServer() *Server {
+func NewServer(ctx context.Context) *Server {
 	s := Server{}
 
 	// Read the configuration from environment variables. The `getEnv()` function
@@ -40,17 +38,14 @@ func NewServer() *Server {
 	s.Config.address = getEnv("APIARY_INTERFACE", "0.0.0.0") + ":" + getEnv("APIARY_PORT", "8090")
 
 	// Connect to the database then store the database in the struct.
-	db, err := sql.Open("postgres", s.Config.dbconn)
+	log.Println("connecting to the database")
+	dbTimeout, cancel := context.WithTimeout(ctx, 60*time.Second)
+	defer cancel()
+	pool, err := db.Connect(dbTimeout, s.Config.dbconn)
 	if err != nil {
-		log.Fatalln(err)
+		log.Fatalln("error connecting to the database:", err)
 	}
-	if err := db.Ping(); err != nil {
-		log.Fatalln(err)
-	}
-	s.Database = db
-
-	// Create an empty map to store prepared statements
-	s.Statements = make(map[string]*sql.Stmt)
+	s.DB = pool
 
 	// Create the router, store it in the struct, initialize the routes, and
 	// register the middleware.
@@ -71,39 +66,22 @@ func NewServer() *Server {
 }
 
 // Run starts the API server.
-func (s *Server) Run() {
-	defer s.Shutdown() // Make sure we shutdown.
-
-	// Run the server in a go routine, using a blocking channel to listen for interrupts.
-	// Stop gracefully for SIGTERM and SIGINT.
-	stop := make(chan os.Signal, 1)
-	signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
-
-	log.Printf("Starting the server on http://%s.\n", s.Config.address)
-
-	go func() {
-		if err := s.Server.ListenAndServe(); err != nil {
-			log.Println(err)
-		}
-	}()
-
-	<-stop
-
+func (s *Server) Run() error {
+	log.Printf("starting the server on http://%s\n", s.Config.address)
+	err := s.Server.ListenAndServe()
+	if err == http.ErrServerClosed {
+		return nil
+	}
+	return err
 }
 
 // Shutdown closes the connection to the database and shutsdown the server.
 func (s *Server) Shutdown() {
-	// Close any prepared statements
-	for _, v := range s.Statements {
-		err := v.Close()
-		if err != nil {
-			log.Println(err)
-		}
-	}
-	log.Println("Closing the connection to the database.")
-	err := s.Database.Close()
+	log.Println("closing the connection to the database")
+	s.DB.Close()
+	log.Println("shutting down the web server")
+	err := s.Server.Shutdown(context.TODO())
 	if err != nil {
-		log.Fatalln(err)
+		log.Println("error shutting down web server:", err)
 	}
-	log.Println("Shutting down the server.")
 }

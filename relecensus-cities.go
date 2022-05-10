@@ -1,12 +1,14 @@
 package apiary
 
 import (
-	"database/sql"
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
 	"strconv"
+
+	"github.com/jackc/pgx/v4"
 )
 
 // CityMembership gives the membership (and population) statistics for some
@@ -40,11 +42,6 @@ func (s *Server) RelCensusCityMembershipHandler() http.HandlerFunc {
 		WHERE year = $1 AND denomination = $2
 		ORDER BY state, city;
 	`
-	stmtDenomination, err := s.Database.Prepare(queryDenomination)
-	if err != nil {
-		log.Fatalln(err)
-	}
-	s.Statements["city-denomination"] = stmtDenomination
 
 	queryFamily := `
 	SELECT 
@@ -74,11 +71,6 @@ func (s *Server) RelCensusCityMembershipHandler() http.HandlerFunc {
 	LEFT JOIN popplaces_1926 p ON c.place_id = p.place_id
 	ORDER BY c.state, c.city;
 	`
-	stmtFamily, err := s.Database.Prepare(queryFamily)
-	if err != nil {
-		log.Fatalln(err)
-	}
-	s.Statements["city-family"] = stmtFamily
 
 	queryAll := `
 	SELECT 
@@ -106,11 +98,6 @@ func (s *Server) RelCensusCityMembershipHandler() http.HandlerFunc {
 	LEFT JOIN popplaces_1926 p ON c.place_id = p.place_id
 	ORDER BY c.state, c.city;
 	`
-	stmtAll, err := s.Database.Prepare(queryAll)
-	if err != nil {
-		log.Fatalln(err)
-	}
-	s.Statements["city-all-denominations"] = stmtAll
 
 	return func(w http.ResponseWriter, r *http.Request) {
 		year := r.URL.Query().Get("year")
@@ -149,17 +136,17 @@ func (s *Server) RelCensusCityMembershipHandler() http.HandlerFunc {
 
 		results := make([]CityMembership, 0)
 		var row CityMembership
-		var rows *sql.Rows
+		var rows pgx.Rows
 
 		// We've already done the error checking for the call to the API, so we can
 		// just use the right query as necessary.
 		switch {
 		case denomination != "":
-			rows, err = stmtDenomination.Query(yearInt, denomination)
+			rows, err = s.DB.Query(context.TODO(), queryDenomination, yearInt, denomination)
 		case denominationFamily != "":
-			rows, err = stmtFamily.Query(yearInt, denominationFamily)
+			rows, err = s.DB.Query(context.TODO(), queryFamily, yearInt, denominationFamily)
 		case denomination == "" && denominationFamily == "":
-			rows, err = stmtAll.Query(yearInt)
+			rows, err = s.DB.Query(context.TODO(), queryAll, yearInt)
 		}
 		if err != nil {
 			log.Println(err)
@@ -189,7 +176,7 @@ func (s *Server) RelCensusCityMembershipHandler() http.HandlerFunc {
 
 		response, _ := json.Marshal(results)
 		w.Header().Set("Content-Type", "application/json")
-		fmt.Fprintf(w, string(response))
+		fmt.Fprint(w, string(response))
 	}
 
 }

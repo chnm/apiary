@@ -1,6 +1,7 @@
 package apiary
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -31,17 +32,11 @@ func (s *Server) RelCensusDenominationFamiliesHandler() http.HandlerFunc {
 	ORDER BY family_relec;
 	`
 
-	stmt, err := s.Database.Prepare(query)
-	if err != nil {
-		log.Fatalln(err)
-	}
-	s.Statements["denomination-families"] = stmt // Will be closed at shutdown
-
 	return func(w http.ResponseWriter, r *http.Request) {
 		results := make([]DenominationFamily, 0)
 		var row DenominationFamily
 
-		rows, err := stmt.Query()
+		rows, err := s.DB.Query(context.TODO(), query)
 		if err != nil {
 			log.Println(err)
 		}
@@ -67,7 +62,7 @@ func (s *Server) RelCensusDenominationFamiliesHandler() http.HandlerFunc {
 
 		response, _ := json.Marshal(container)
 		w.Header().Set("Content-Type", "application/json")
-		fmt.Fprintf(w, string(response))
+		fmt.Fprint(w, string(response))
 	}
 }
 
@@ -79,17 +74,13 @@ func (s *Server) RelCensusDenominationsHandler() http.HandlerFunc {
 	FROM relcensus.denominations
 	WHERE ($1::text = '' OR family_relec = $1::text);
 	`
-	stmt, err := s.Database.Prepare(query)
-	if err != nil {
-		log.Fatalln(err)
-	}
-	s.Statements["denominations"] = stmt
+
 	return func(w http.ResponseWriter, r *http.Request) {
 		familyRelec := r.URL.Query().Get("family_relec")
 		results := make([]Denomination, 0)
 		var row Denomination
 
-		rows, err := stmt.Query(familyRelec)
+		rows, err := s.DB.Query(context.TODO(), query, familyRelec)
 		if err != nil {
 			log.Println(err)
 		}
@@ -110,7 +101,7 @@ func (s *Server) RelCensusDenominationsHandler() http.HandlerFunc {
 
 		response, _ := json.Marshal(results)
 		w.Header().Set("Content-Type", "application/json")
-		fmt.Fprintf(w, string(response))
+		fmt.Fprint(w, string(response))
 	}
 
 }

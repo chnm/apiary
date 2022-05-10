@@ -1,6 +1,7 @@
 package apiary
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
 	"fmt"
@@ -49,12 +50,6 @@ func (s *Server) CountiesInState() http.HandlerFunc {
 		ORDER BY county;
 		`
 
-	stmt, err := s.Database.Prepare(query)
-	if err != nil {
-		log.Fatalln(err)
-	}
-	s.Statements["counties-in-state"] = stmt // Will be closed at shutdown
-
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		state := mux.Vars(r)["state"]
@@ -63,7 +58,7 @@ func (s *Server) CountiesInState() http.HandlerFunc {
 		results := make([]PlaceCounty, 0)
 		var row PlaceCounty
 
-		rows, err := stmt.Query(state)
+		rows, err := s.DB.Query(context.TODO(), query, state)
 		if err != nil {
 			log.Println(err)
 		}
@@ -83,7 +78,7 @@ func (s *Server) CountiesInState() http.HandlerFunc {
 
 		response, _ := json.Marshal(results)
 		w.Header().Set("Content-Type", "application/json")
-		fmt.Fprintf(w, string(response))
+		fmt.Fprint(w, string(response))
 
 	}
 }
@@ -98,12 +93,6 @@ func (s *Server) PlacesInCounty() http.HandlerFunc {
 		ORDER BY place;
 		`
 
-	stmt, err := s.Database.Prepare(query)
-	if err != nil {
-		log.Fatalln(err)
-	}
-	s.Statements["pop-places-places-in-county"] = stmt // Will be closed at shutdown
-
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		county := mux.Vars(r)["county"]
@@ -112,7 +101,7 @@ func (s *Server) PlacesInCounty() http.HandlerFunc {
 		results := make([]Place, 0)
 		var row Place
 
-		rows, err := stmt.Query(county)
+		rows, err := s.DB.Query(context.TODO(), query, county)
 		if err != nil {
 			log.Println(err)
 		}
@@ -132,7 +121,7 @@ func (s *Server) PlacesInCounty() http.HandlerFunc {
 
 		response, _ := json.Marshal(results)
 		w.Header().Set("Content-Type", "application/json")
-		fmt.Fprintf(w, string(response))
+		fmt.Fprint(w, string(response))
 
 	}
 }
@@ -146,12 +135,6 @@ func (s *Server) Place() http.HandlerFunc {
 		WHERE place_id = $1
 		`
 
-	stmt, err := s.Database.Prepare(query)
-	if err != nil {
-		log.Fatalln(err)
-	}
-	s.Statements["pop-places-details"] = stmt // Will be closed at shutdown
-
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		placeID, err := strconv.Atoi(mux.Vars(r)["place"])
@@ -162,7 +145,7 @@ func (s *Server) Place() http.HandlerFunc {
 
 		var result PlaceDetails
 
-		err = stmt.QueryRow(placeID).Scan(&result.PlaceID, &result.Place,
+		err = s.DB.QueryRow(context.TODO(), query, placeID).Scan(&result.PlaceID, &result.Place,
 			&result.MapName, &result.County, &result.CountyAHCB, &result.State)
 		if err != nil {
 			if err == sql.ErrNoRows {
@@ -175,7 +158,7 @@ func (s *Server) Place() http.HandlerFunc {
 
 		response, _ := json.Marshal(result)
 		w.Header().Set("Content-Type", "application/json")
-		fmt.Fprintf(w, string(response))
+		fmt.Fprint(w, string(response))
 
 	}
 }

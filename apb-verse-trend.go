@@ -1,6 +1,7 @@
 package apiary
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -46,12 +47,6 @@ func (s *Server) APBVerseTrendHandler() http.HandlerFunc {
 			ON res.year = wc.year
 	`
 
-	stmt, err := s.Database.Prepare(query)
-	if err != nil {
-		log.Fatalln(err)
-	}
-	s.Statements["apb-verse-trend"] = stmt // Will be closed at shutdown
-
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		// Return a 404 error if we don't get exactly one reference
@@ -90,7 +85,7 @@ func (s *Server) APBVerseTrendHandler() http.HandlerFunc {
 		results := make([]VerseTrend, 0, 175) // Preallocate slice capacity
 		var row VerseTrend
 
-		rows, err := stmt.Query(corpus, ref, minYear, maxYear)
+		rows, err := s.DB.Query(context.TODO(), query, corpus, ref, minYear, maxYear)
 		if err != nil {
 			log.Println(err)
 		}
@@ -112,7 +107,7 @@ func (s *Server) APBVerseTrendHandler() http.HandlerFunc {
 		response, _ := json.Marshal(wrapper)
 
 		w.Header().Set("Content-Type", "application/json")
-		fmt.Fprintf(w, string(response))
+		fmt.Fprint(w, string(response))
 	}
 
 }

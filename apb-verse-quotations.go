@@ -1,6 +1,7 @@
 package apiary
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -30,11 +31,6 @@ func (s *Server) APBVerseQuotationsHandler() http.HandlerFunc {
 	WHERE reference_id = $1 AND corpus = 'chronam'
 	ORDER BY date;
 	`
-	stmt, err := s.Database.Prepare(query)
-	if err != nil {
-		log.Fatalln(err)
-	}
-	s.Statements["apb-verse-quotations"] = stmt // Will be closed at shutdown
 
 	return func(w http.ResponseWriter, r *http.Request) {
 
@@ -43,7 +39,7 @@ func (s *Server) APBVerseQuotationsHandler() http.HandlerFunc {
 		results := make([]VerseQuotation, 0)
 		var row VerseQuotation
 
-		rows, err := stmt.Query(refs[0])
+		rows, err := s.DB.Query(context.TODO(), query, refs[0])
 		if err != nil {
 			log.Println(err)
 		}
@@ -68,7 +64,7 @@ func (s *Server) APBVerseQuotationsHandler() http.HandlerFunc {
 		response, _ := json.Marshal(results)
 
 		w.Header().Set("Content-Type", "application/json")
-		fmt.Fprintf(w, string(response))
+		fmt.Fprint(w, string(response))
 	}
 
 }

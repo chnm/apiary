@@ -93,6 +93,9 @@ func (s *Server) EndpointsHandler() http.HandlerFunc {
 			{"BOM: General Bills of Mortality",
 				baseurl + "/bom/generalbills?startYear=1669&endYear=1754",
 				nil},
+			{"BOM: Causes of Death",
+				baseurl + "/bom/causes",
+				nil},
 			{"BOM: Christenings",
 				baseurl + "/bom/christenings?startYear=1669&endYear=1754",
 				nil},
@@ -138,7 +141,7 @@ func (s *Server) EndpointsHandler() http.HandlerFunc {
 		response, _ := json.MarshalIndent(endpoints, "", "  ")
 		resp := strings.Replace(string(response), "\\u0026", "&", -1)
 		w.Header().Set("Content-Type", "application/json")
-		fmt.Fprintf(w, resp)
+		fmt.Fprint(w, resp)
 	}
 }
 

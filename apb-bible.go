@@ -1,6 +1,7 @@
 package apiary
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -24,18 +25,12 @@ func (s *Server) APBBibleBooksHandler() http.HandlerFunc {
 	ORDER BY book_order;
 	`
 
-	stmt, err := s.Database.Prepare(query)
-	if err != nil {
-		log.Fatalln(err)
-	}
-	s.Statements["bible-books"] = stmt // Will be closed at shutdown
-
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		var result []BibleBook
 		var book BibleBook
 
-		rows, err := stmt.Query()
+		rows, err := s.DB.Query(context.TODO(), query)
 		if err != nil {
 			log.Println(err)
 		}
@@ -56,7 +51,7 @@ func (s *Server) APBBibleBooksHandler() http.HandlerFunc {
 		response, _ := json.Marshal(result)
 
 		w.Header().Set("Content-Type", "application/json")
-		fmt.Fprintf(w, string(response))
+		fmt.Fprint(w, string(response))
 	}
 
 }
