@@ -1,24 +1,24 @@
 .PHONY : serve
 serve : build
-	APIARY_INTERFACE=localhost ./apiary
+	APIARY_INTERFACE=localhost ./cmd/apiary/apiary
 
 .PHONY : build
 build :
-	cd ../.. && go build
 	go build
+	cd cmd/apiary && go build
 
 .PHONY : install
 install :
-	cd ../.. && go build
-	go install
+	go build
+	cd cmd/apiary && go install
 
 .PHONY : test
 test :
-	go test -v
+	go test ./...
 
 .PHONY : docker-build
 docker-build : 
-	docker build --tag apiary:test ../..
+	docker build --tag apiary:test .
 
 # This assumes that the environment variables are available
 .PHONY : docker-serve

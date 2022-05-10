@@ -21,7 +21,7 @@ Set the following environment variables to configure the server:
 
 ## Compiling or running a container
 
-There is a `Makefile` in `cmd/dataapi/` that can be used for compiling and for running the service locally.
+There is a `Makefile` in the root of the repository that can be used for compiling and for running the service locally.
 
 - `make build` will build the binary.
 - `make install` will build the binary and install it under the name `apiary` to your `$GOPATH`.
@@ -32,4 +32,4 @@ There is a `Makefile` in `cmd/dataapi/` that can be used for compiling and for r
 
 ## Testing
 
-In side the `cmd/dataapi/` directory, you can run `make test` to run integration tests with the database.
+You can run `make test` to run integration tests with the database. Or run `go test -v ./...` to get more verbose tests.
