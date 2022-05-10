@@ -156,3 +156,59 @@ func TestAPBVerseQuotations(t *testing.T) {
 	}
 
 }
+
+func TestBiblicalIndex(t *testing.T) {
+	// Check that we get the right response
+	req, _ := http.NewRequest("GET", "/apb/index/biblical", nil)
+	response := executeRequest(req)
+	checkResponseCode(t, http.StatusOK, response.Code)
+
+	// Get the data
+	var data []apiary.BibleBook
+	err := json.Unmarshal(response.Body.Bytes(), &data)
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+func TestBibleAllIndex(t *testing.T) {
+	// Check that we get the right response
+	req, _ := http.NewRequest("GET", "/apb/index/all", nil)
+	response := executeRequest(req)
+	checkResponseCode(t, http.StatusOK, response.Code)
+
+	// Get the data
+	var data []apiary.APBIndexItemText
+	err := json.Unmarshal(response.Body.Bytes(), &data)
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+func TestBibleSimilarity(t *testing.T) {
+	// Check that we get the right response
+	req, _ := http.NewRequest("GET", "/apb/bible-similarity", nil)
+	response := executeRequest(req)
+	checkResponseCode(t, http.StatusOK, response.Code)
+
+	// Get the data
+	var data []apiary.BibleSimilarityEdge
+	err := json.Unmarshal(response.Body.Bytes(), &data)
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+func TestBibleBooks(t *testing.T) {
+	// Check that we get the right response
+	req, _ := http.NewRequest("GET", "/apb/bible-books", nil)
+	response := executeRequest(req)
+	checkResponseCode(t, http.StatusOK, response.Code)
+
+	// Get the data
+	var data []apiary.BibleBook
+	err := json.Unmarshal(response.Body.Bytes(), &data)
+	if err != nil {
+		t.Error(err)
+	}
+}
