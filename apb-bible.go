@@ -14,8 +14,8 @@ type BibleBook struct {
 	Order int    `json:"order"`
 }
 
-// BibleBooksHandler returns the books of the Bible (in the KJV).
-func (s *Server) BibleBooksHandler() http.HandlerFunc {
+// APBBibleBooksHandler returns the books of the Bible (in the KJV).
+func (s *Server) APBBibleBooksHandler() http.HandlerFunc {
 
 	query := `
 	SELECT DISTINCT book, part, book_order

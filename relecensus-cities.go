@@ -24,9 +24,9 @@ type CityMembership struct {
 	Lat            float64   `json:"lat"`
 }
 
-// CityMembershipHandler returns the statistics for all the cities for a single
+// RelCensusCityMembershipHandler returns the statistics for all the cities for a single
 // denomination in a single year. It must be filtered by year and denomination.
-func (s *Server) CityMembershipHandler() http.HandlerFunc {
+func (s *Server) RelCensusCityMembershipHandler() http.HandlerFunc {
 	queryDenomination := `
 		SELECT m.year, m.denomination, 
 		c.city, c.state,

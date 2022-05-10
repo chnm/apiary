@@ -22,8 +22,8 @@ type Denomination struct {
 	FamilyRelec    string     `json:"family_relec"`
 }
 
-// DenominationFamiliesHandler returns
-func (s *Server) DenominationFamiliesHandler() http.HandlerFunc {
+// RelCensusDenominationFamiliesHandler returns
+func (s *Server) RelCensusDenominationFamiliesHandler() http.HandlerFunc {
 
 	query := `
 	SELECT DISTINCT family_relec 
@@ -71,9 +71,9 @@ func (s *Server) DenominationFamiliesHandler() http.HandlerFunc {
 	}
 }
 
-// DenominationsHandler returns the denominations that are available.
+// RelCensusDenominationsHandler returns the denominations that are available.
 // Optionally, it can be filtered to get just the denominations in a particular family.
-func (s *Server) DenominationsHandler() http.HandlerFunc {
+func (s *Server) RelCensusDenominationsHandler() http.HandlerFunc {
 	query := `
 	SELECT denomination_id, name, short_name, family_census, family_relec
 	FROM relcensus.denominations

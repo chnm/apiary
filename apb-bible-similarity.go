@@ -14,9 +14,9 @@ type BibleSimilarityEdge struct {
 	N int    `json:"n"`
 }
 
-// BibleSimilarityHandler returns the information about the network of
+// APBBibleSimilarityHandler returns the information about the network of
 // similarities within the Bible.
-func (s *Server) BibleSimilarityHandler() http.HandlerFunc {
+func (s *Server) APBBibleSimilarityHandler() http.HandlerFunc {
 
 	edgeQuery := `
 	SELECT 
