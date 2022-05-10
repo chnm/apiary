@@ -141,7 +141,7 @@ func (s *Server) EndpointsHandler() http.HandlerFunc {
 		response, _ := json.MarshalIndent(endpoints, "", "  ")
 		resp := strings.Replace(string(response), "\\u0026", "&", -1)
 		w.Header().Set("Content-Type", "application/json")
-		fmt.Fprintf(w, resp)
+		fmt.Fprint(w, resp)
 	}
 }
 

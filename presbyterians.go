@@ -54,6 +54,6 @@ func (s *Server) PresbyteriansHandler() http.HandlerFunc {
 
 		response, _ := json.Marshal(results)
 		w.Header().Set("Content-Type", "application/json")
-		fmt.Fprintf(w, string(response))
+		fmt.Fprint(w, string(response))
 	}
 }

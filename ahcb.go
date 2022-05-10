@@ -60,7 +60,7 @@ func (s *Server) AHCBStatesHandler() http.HandlerFunc {
 		}
 
 		w.Header().Set("Content-Type", "application/json")
-		fmt.Fprintf(w, result)
+		fmt.Fprint(w, result)
 
 	}
 }
@@ -107,7 +107,7 @@ func (s *Server) AHCBCountiesHandler() http.HandlerFunc {
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		}
 		w.Header().Set("Content-Type", "application/json")
-		fmt.Fprintf(w, result)
+		fmt.Fprint(w, result)
 	}
 }
 
@@ -158,7 +158,7 @@ func (s *Server) AHCBCountiesByIDHandler() http.HandlerFunc {
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		}
 		w.Header().Set("Content-Type", "application/json")
-		fmt.Fprintf(w, result)
+		fmt.Fprint(w, result)
 	}
 }
 
@@ -208,7 +208,7 @@ func (s *Server) AHCBCountiesByStateTerrIDHandler() http.HandlerFunc {
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		}
 		w.Header().Set("Content-Type", "application/json")
-		fmt.Fprintf(w, result)
+		fmt.Fprint(w, result)
 	}
 }
 
@@ -258,6 +258,6 @@ func (s *Server) AHCBCountiesByStateCodeHandler() http.HandlerFunc {
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		}
 		w.Header().Set("Content-Type", "application/json")
-		fmt.Fprintf(w, result)
+		fmt.Fprint(w, result)
 	}
 }

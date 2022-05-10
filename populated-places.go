@@ -78,7 +78,7 @@ func (s *Server) CountiesInState() http.HandlerFunc {
 
 		response, _ := json.Marshal(results)
 		w.Header().Set("Content-Type", "application/json")
-		fmt.Fprintf(w, string(response))
+		fmt.Fprint(w, string(response))
 
 	}
 }
@@ -121,7 +121,7 @@ func (s *Server) PlacesInCounty() http.HandlerFunc {
 
 		response, _ := json.Marshal(results)
 		w.Header().Set("Content-Type", "application/json")
-		fmt.Fprintf(w, string(response))
+		fmt.Fprint(w, string(response))
 
 	}
 }
@@ -158,7 +158,7 @@ func (s *Server) Place() http.HandlerFunc {
 
 		response, _ := json.Marshal(result)
 		w.Header().Set("Content-Type", "application/json")
-		fmt.Fprintf(w, string(response))
+		fmt.Fprint(w, string(response))
 
 	}
 }

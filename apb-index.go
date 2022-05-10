@@ -66,7 +66,7 @@ func (s *Server) APBIndexFeaturedHandler() http.HandlerFunc {
 		response, _ := json.Marshal(results)
 
 		w.Header().Set("Content-Type", "application/json")
-		fmt.Fprintf(w, string(response))
+		fmt.Fprint(w, string(response))
 	}
 
 }
@@ -107,7 +107,7 @@ func (s *Server) APBIndexBiblicalOrderHandler() http.HandlerFunc {
 		response, _ := json.Marshal(results)
 
 		w.Header().Set("Content-Type", "application/json")
-		fmt.Fprintf(w, string(response))
+		fmt.Fprint(w, string(response))
 	}
 
 }
@@ -148,7 +148,7 @@ func (s *Server) APBIndexTopHandler() http.HandlerFunc {
 		response, _ := json.Marshal(results)
 
 		w.Header().Set("Content-Type", "application/json")
-		fmt.Fprintf(w, string(response))
+		fmt.Fprint(w, string(response))
 	}
 
 }
@@ -190,7 +190,7 @@ func (s *Server) APBIndexChronologicalHandler() http.HandlerFunc {
 		response, _ := json.Marshal(results)
 
 		w.Header().Set("Content-Type", "application/json")
-		fmt.Fprintf(w, string(response))
+		fmt.Fprint(w, string(response))
 	}
 
 }
@@ -231,7 +231,7 @@ func (s *Server) APBIndexAllHandler() http.HandlerFunc {
 		response, _ := json.Marshal(results)
 
 		w.Header().Set("Content-Type", "application/json")
-		fmt.Fprintf(w, string(response))
+		fmt.Fprint(w, string(response))
 	}
 
 }

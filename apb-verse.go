@@ -78,7 +78,7 @@ func (s *Server) APBVerseHandler() http.HandlerFunc {
 		response, _ := json.Marshal(result)
 
 		w.Header().Set("Content-Type", "application/json")
-		fmt.Fprintf(w, string(response))
+		fmt.Fprint(w, string(response))
 	}
 
 }

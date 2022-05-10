@@ -42,7 +42,7 @@ func (s *Server) NENorthAmericaHandler() http.HandlerFunc {
 
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		fmt.Fprintf(w, result)
+		fmt.Fprint(w, result)
 	}
 
 }

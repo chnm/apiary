@@ -51,7 +51,7 @@ func (s *Server) APBBibleBooksHandler() http.HandlerFunc {
 		response, _ := json.Marshal(result)
 
 		w.Header().Set("Content-Type", "application/json")
-		fmt.Fprintf(w, string(response))
+		fmt.Fprint(w, string(response))
 	}
 
 }

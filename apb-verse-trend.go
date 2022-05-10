@@ -107,7 +107,7 @@ func (s *Server) APBVerseTrendHandler() http.HandlerFunc {
 		response, _ := json.Marshal(wrapper)
 
 		w.Header().Set("Content-Type", "application/json")
-		fmt.Fprintf(w, string(response))
+		fmt.Fprint(w, string(response))
 	}
 
 }
