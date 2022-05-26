@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -19,7 +20,7 @@ type GeoJSONFeatureCollection struct {
 
 func TestMain(m *testing.M) {
 	os.Setenv("apiary_LOGGING", "off") // No logs during testing
-	s = apiary.NewServer()
+	s = apiary.NewServer(context.TODO())
 	code := m.Run()
 	os.Exit(code)
 }
