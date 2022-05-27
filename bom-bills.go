@@ -17,8 +17,8 @@ type ParishByYear struct {
 	TotalCount NullInt64  `json:"count"`
 	StartDay   NullInt64  `json:"start_day"`
 	StartMonth NullString `json:"start_month"`
-	EndDay     int        `json:"end_day"`
-	EndMonth   string     `json:"end_month"`
+	EndDay     NullInt64  `json:"end_day"`
+	EndMonth   NullString `json:"end_month"`
 	Year       int        `json:"year"`
 	WeekNo     int        `json:"week_no"`
 	WeekID     string     `json:"week_id"`
