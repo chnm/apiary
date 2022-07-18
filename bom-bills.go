@@ -177,10 +177,15 @@ func (s *Server) BillsHandler() http.HandlerFunc {
 	`
 
 	return func(w http.ResponseWriter, r *http.Request) {
-		startYear := r.URL.Query().Get("startYear")
-		endYear := r.URL.Query().Get("endYear")
-		billType := r.URL.Query().Get("bill_type")
-		countType := r.URL.Query().Get("count_type")
+		// We use hyphen-separated strings since URLs can be case-sensitive.
+		// https://www.rfc-editor.org/rfc/rfc3986
+		// https://developers.google.com/search/docs/advanced/guidelines/url-structure?hl=en&visit_id=637937657362879240-859683351&rd=1
+		// TODO: Down the line, we may want to change this to group common resources together. For
+		// example, if we have a /bills/year/start endpoint, we can have a /bills/year/end/.
+		startYear := r.URL.Query().Get("start-year")
+		endYear := r.URL.Query().Get("end-year")
+		billType := r.URL.Query().Get("bill-type")
+		countType := r.URL.Query().Get("count-type")
 		limit := r.URL.Query().Get("limit")
 		offset := r.URL.Query().Get("offset")
 
