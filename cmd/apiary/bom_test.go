@@ -31,23 +31,9 @@ func TestBomParishes(t *testing.T) {
 	}
 }
 
-func TestWeeklyBomBills(t *testing.T) {
+func TestBomBills(t *testing.T) {
 	// Check that we get the right response
-	req, _ := http.NewRequest("GET", "/bom/bills?startYear=1669&endYear=1754", nil)
-	response := executeRequest(req)
-	checkResponseCode(t, http.StatusOK, response.Code)
-
-	// Get the data
-	var data []apiary.ParishByYear
-	err := json.Unmarshal(response.Body.Bytes(), &data)
-	if err != nil {
-		t.Error(err)
-	}
-}
-
-func TestGeneralBomBills(t *testing.T) {
-	// Check that we get the right response
-	req, _ := http.NewRequest("GET", "/bom/generalbills?startYear=1669&endYear=1754", nil)
+	req, _ := http.NewRequest("GET", "/bom/bills?start-year=1669&end-year=1754&bill-type=All&count-type=All&limit=50&offset=0", nil)
 	response := executeRequest(req)
 	checkResponseCode(t, http.StatusOK, response.Code)
 
@@ -61,7 +47,7 @@ func TestGeneralBomBills(t *testing.T) {
 
 func TestBomChristenings(t *testing.T) {
 	// Check that we get the right response
-	req, _ := http.NewRequest("GET", "/bom/christenings?startYear=1669&endYear=1754", nil)
+	req, _ := http.NewRequest("GET", "/bom/christenings?start-year=1669&end-year=1754", nil)
 	response := executeRequest(req)
 	checkResponseCode(t, http.StatusOK, response.Code)
 
