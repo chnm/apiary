@@ -44,8 +44,8 @@ func (s *Server) ChristeningsHandler() http.HandlerFunc {
 	`
 
 	return func(w http.ResponseWriter, r *http.Request) {
-		startYear := r.URL.Query().Get("startYear")
-		endYear := r.URL.Query().Get("endYear")
+		startYear := r.URL.Query().Get("start-year")
+		endYear := r.URL.Query().Get("end-year")
 
 		if startYear == "" || endYear == "" {
 			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
