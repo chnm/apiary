@@ -373,7 +373,7 @@ func (s *Server) BillsHandler() http.HandlerFunc {
 		}
 
 		if limit == "" {
-			limit = "10000"
+			limit = "25"
 		}
 		if offset == "" {
 			offset = "0"
@@ -514,25 +514,77 @@ func (s *Server) BillsHandler() http.HandlerFunc {
 // This number is required for pagination in the web application.
 func (s *Server) TotalBillsHandler() http.HandlerFunc {
 
-	query := `
+	queryWeekly := `
 	SELECT
 		COUNT(*)
 	FROM
-		bom.bill_of_mortality;
+		bom.bill_of_mortality
+	WHERE 
+		bill_type = 'Weekly';
+	`
+
+	queryGeneral := `
+	SELECT
+		COUNT(*)
+	FROM
+		bom.bill_of_mortality
+	WHERE	
+		bill_type = 'General';
+	`
+
+	queryChristenings := `
+	SELECT
+		COUNT(*)
+	FROM	
+		bom.christenings;
+	`
+
+	queryCauses := `
+	SELECT
+		COUNT(*)
+	FROM 
+		bom.causes_of_death;
 	`
 
 	return func(w http.ResponseWriter, r *http.Request) {
-		var totalBills TotalBills
+		totalValues := r.URL.Query().Get("type")
 
-		row := s.DB.QueryRow(context.TODO(), query)
-		err := row.Scan(&totalBills.TotalRecords)
-		if err != nil {
-			log.Println(err)
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		if totalValues == "" {
+			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 			return
 		}
 
-		response, _ := json.Marshal(totalBills)
+		results := make([]TotalBills, 0)
+		var row TotalBills
+		var rows pgx.Rows
+		var err error
+
+		switch {
+		case totalValues == "Weekly":
+			rows, err = s.DB.Query(context.TODO(), queryWeekly)
+		case totalValues == "General":
+			rows, err = s.DB.Query(context.TODO(), queryGeneral)
+		case totalValues == "Christenings":
+			rows, err = s.DB.Query(context.TODO(), queryChristenings)
+		case totalValues == "Causes":
+			rows, err = s.DB.Query(context.TODO(), queryCauses)
+		}
+		if err != nil {
+			log.Println(err)
+		}
+		defer rows.Close()
+
+		for rows.Next() {
+			err := rows.Scan(&row.TotalRecords)
+			if err != nil {
+				log.Println(err)
+				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+				return
+			}
+			results = append(results, row)
+		}
+
+		response, _ := json.Marshal(results)
 		w.Header().Set("Content-Type", "application/json")
 		fmt.Fprint(w, string(response))
 	}
