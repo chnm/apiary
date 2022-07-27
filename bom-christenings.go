@@ -40,12 +40,16 @@ func (s *Server) ChristeningsHandler() http.HandlerFunc {
 		year >= $1
 		AND year < $2
 	ORDER BY
-		count;
+		count
+	LIMIT $3
+	OFFSET $4;
 	`
 
 	return func(w http.ResponseWriter, r *http.Request) {
 		startYear := r.URL.Query().Get("start-year")
 		endYear := r.URL.Query().Get("end-year")
+		limit := r.URL.Query().Get("limit")
+		offset := r.URL.Query().Get("offset")
 
 		if startYear == "" || endYear == "" {
 			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
@@ -64,10 +68,29 @@ func (s *Server) ChristeningsHandler() http.HandlerFunc {
 			return
 		}
 
+		if limit == "" {
+			limit = "25"
+		}
+		if offset == "" {
+			offset = "0"
+		}
+
+		limitInt, err := strconv.Atoi(limit)
+		if err != nil {
+			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+			return
+		}
+
+		offsetInt, err := strconv.Atoi(offset)
+		if err != nil {
+			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+			return
+		}
+
 		results := make([]ChristeningsByYear, 0)
 		var row ChristeningsByYear
 
-		rows, err := s.DB.Query(context.TODO(), query, startYearInt, endYearInt)
+		rows, err := s.DB.Query(context.TODO(), query, startYearInt, endYearInt, limitInt, offsetInt)
 		if err != nil {
 			log.Println(err)
 		}

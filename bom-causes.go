@@ -56,7 +56,9 @@ func (s *Server) DeathCausesHandler() http.HandlerFunc {
 		)
 	ORDER BY 
 		y.year ASC,
-		c.death ASC;
+		c.death ASC
+	LIMIT $4
+	OFFSET $5;
 	`
 
 	queryNoCause := `
@@ -82,13 +84,17 @@ func (s *Server) DeathCausesHandler() http.HandlerFunc {
 		AND y.year <= $2
 	ORDER BY 
 		y.year ASC,
-		c.death ASC;
+		c.death ASC
+	LIMIT $3
+	OFFSET $4;
 	`
 
 	return func(w http.ResponseWriter, r *http.Request) {
 		startYear := r.URL.Query().Get("start-year")
 		endYear := r.URL.Query().Get("end-year")
 		causes := r.URL.Query().Get("causes")
+		limit := r.URL.Query().Get("limit")
+		offset := r.URL.Query().Get("offset")
 
 		if startYear == "" || endYear == "" {
 			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
@@ -111,17 +117,36 @@ func (s *Server) DeathCausesHandler() http.HandlerFunc {
 		// returns '{1, 2, 3}' to give the query a literal array.
 		causes = fmt.Sprintf("{%s}", strings.TrimSpace(causes))
 
+		if limit == "" {
+			limit = "25"
+		}
+		if offset == "" {
+			offset = "0"
+		}
+
+		limitInt, err := strconv.Atoi(limit)
+		if err != nil {
+			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+			return
+		}
+
+		offsetInt, err := strconv.Atoi(offset)
+		if err != nil {
+			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+			return
+		}
+
 		results := make([]DeathCauses, 0)
 		var row DeathCauses
 		var rows pgx.Rows
 
 		switch {
 		case causes == "{}":
-			rows, err = s.DB.Query(context.TODO(), queryNoCause, startYearInt, endYearInt)
+			rows, err = s.DB.Query(context.TODO(), queryNoCause, startYearInt, endYearInt, limitInt, offsetInt)
 		case causes != "{}":
-			rows, err = s.DB.Query(context.TODO(), queryCause, startYearInt, endYearInt, causes)
+			rows, err = s.DB.Query(context.TODO(), queryCause, startYearInt, endYearInt, causes, limitInt, offsetInt)
 		default:
-			rows, err = s.DB.Query(context.TODO(), queryNoCause, startYearInt, endYearInt)
+			rows, err = s.DB.Query(context.TODO(), queryNoCause, startYearInt, endYearInt, limitInt, offsetInt)
 		}
 
 		if err != nil {
