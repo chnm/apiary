@@ -19,6 +19,11 @@ type ChristeningsByYear struct {
 	Year             int       `json:"year"`
 }
 
+// Christenings describes a christening.
+type Christenings struct {
+	Name string `json:"name"`
+}
+
 // ChristeningsHandler returns the christenings for a given range of years. It expects a start year and
 // end year as query parameters.
 func (s *Server) ChristeningsHandler() http.HandlerFunc {
@@ -102,6 +107,46 @@ func (s *Server) ChristeningsHandler() http.HandlerFunc {
 				&row.WeekNo,
 				&row.WeekID,
 				&row.Year)
+			if err != nil {
+				log.Println(err)
+			}
+			results = append(results, row)
+		}
+		err = rows.Err()
+		if err != nil {
+			log.Println(err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		}
+
+		response, _ := json.Marshal(results)
+		w.Header().Set("Content-Type", "application/json")
+		fmt.Fprint(w, string(response))
+	}
+
+}
+
+func (s *Server) ListChristeningsHandler() http.HandlerFunc {
+
+	query := `
+	SELECT DISTINCT
+		christening_desc
+	FROM 
+		bom.christenings
+	ORDER BY 
+		christening_desc ASC
+	`
+
+	return func(w http.ResponseWriter, r *http.Request) {
+		results := make([]Christenings, 0)
+		var row Christenings
+
+		rows, err := s.DB.Query(context.TODO(), query)
+		if err != nil {
+			log.Println(err)
+		}
+		defer rows.Close()
+		for rows.Next() {
+			err := rows.Scan(&row.Name)
 			if err != nil {
 				log.Println(err)
 			}

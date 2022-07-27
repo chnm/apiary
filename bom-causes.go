@@ -26,6 +26,11 @@ type DeathCauses struct {
 	SplitYear  string     `json:"split_year"`
 }
 
+// Causes describes a cause of death.
+type Causes struct {
+	Name string `json:"name"`
+}
+
 // DeathCausesHandler TODO: Describe
 func (s *Server) DeathCausesHandler() http.HandlerFunc {
 
@@ -182,4 +187,44 @@ func (s *Server) DeathCausesHandler() http.HandlerFunc {
 		w.Header().Set("Content-Type", "application/json")
 		fmt.Fprint(w, string(response))
 	}
+}
+
+func (s *Server) ListCausesHandler() http.HandlerFunc {
+
+	query := `
+	SELECT DISTINCT
+		death
+	FROM 
+		bom.causes_of_death
+	ORDER BY 
+		death ASC
+	`
+
+	return func(w http.ResponseWriter, r *http.Request) {
+		results := make([]Causes, 0)
+		var row Causes
+
+		rows, err := s.DB.Query(context.TODO(), query)
+		if err != nil {
+			log.Println(err)
+		}
+		defer rows.Close()
+		for rows.Next() {
+			err := rows.Scan(&row.Name)
+			if err != nil {
+				log.Println(err)
+			}
+			results = append(results, row)
+		}
+		err = rows.Err()
+		if err != nil {
+			log.Println(err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		}
+
+		response, _ := json.Marshal(results)
+		w.Header().Set("Content-Type", "application/json")
+		fmt.Fprint(w, string(response))
+	}
+
 }
