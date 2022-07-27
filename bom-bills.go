@@ -39,6 +39,10 @@ type TotalBills struct {
 // an end year. It returns a JSON array of ParishByYear objects.
 func (s *Server) BillsHandler() http.HandlerFunc {
 
+	// The minimum and maximum parish ID values.
+	// minParishID := 1
+	// maxParishID := 149
+
 	// Query for specific bill types and count
 	query := `
 	SELECT
@@ -123,7 +127,7 @@ func (s *Server) BillsHandler() http.HandlerFunc {
 	SELECT
 		p.canonical_name,
 		b.bill_type,
-		'All' AS count_type,
+		b.count_type,
 		b.count,
 		w.start_day,
 		w.start_month,
@@ -271,7 +275,7 @@ func (s *Server) BillsHandler() http.HandlerFunc {
 	SELECT
 		p.canonical_name,
 		b.bill_type,
-		'All' AS count_type,
+		b.count_type,
 		b.count,
 		w.start_day,
 		w.start_month,
@@ -401,6 +405,17 @@ func (s *Server) BillsHandler() http.HandlerFunc {
 			return
 		}
 
+		// ParishID must be between the minParishID and maxParishID range. Otherwise, it's a bad request.
+		// parishIDsInt, err := strconv.Atoi(parishIDs)
+		// if err != nil {
+		// 	http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		// 	return
+		// }
+		// if parishIDsInt < minParishID || parishIDsInt > maxParishID {
+		// 	http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		// 	return
+		// }
+
 		// TODO: We want the ability to sort the following columns:
 		// 1. Parish name (canonical_name)
 		// 2. Week number (week_no)
@@ -433,7 +448,7 @@ func (s *Server) BillsHandler() http.HandlerFunc {
 		// 		GET /bom/bills?start-year=1669&end-year=1754&bill-type=General&count-type=Total&limit=50&offset=0
 		// 		GET /bom/bills?start-year=1669&end-year=1754&bill-type=Weekly&count-type=Plague&parishes=1,5,9&limit=50&offset=0
 
-		// If parish ids are not provided:
+		// If parish ids are provided:
 		case billType == "All" && countType == "All" && parishIDs != "{}":
 			rows, err = s.DB.Query(context.TODO(), queryAll, startYearInt, endYearInt, parishIDs, limitInt, offsetInt)
 		case countType != "" && billType != "" && parishIDs != "{}":
@@ -443,7 +458,7 @@ func (s *Server) BillsHandler() http.HandlerFunc {
 		case countType != "" && billType == "" && parishIDs != "{}":
 			rows, err = s.DB.Query(context.TODO(), queryAllBillTypes, startYearInt, endYearInt, countType, parishIDs, limitInt, offsetInt)
 
-		// If parish ids are provided:
+		// If parish ids are not provided:
 		case billType == "All" && countType == "All" && parishIDs == "{}":
 			rows, err = s.DB.Query(context.TODO(), queryAllNoParishes, startYearInt, endYearInt, limitInt, offsetInt)
 		case countType != "" && billType != "" && parishIDs == "{}":
