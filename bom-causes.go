@@ -18,6 +18,7 @@ type DeathCauses struct {
 	Death      string     `json:"death"`
 	Count      NullInt64  `json:"count"`
 	WeekID     string     `json:"week_id"`
+	WeekNo     int        `json:"week_no"`
 	StartDay   NullInt64  `json:"start_day"`
 	StartMonth NullString `json:"start_month"`
 	EndDay     NullInt64  `json:"end_day"`
@@ -40,6 +41,7 @@ func (s *Server) DeathCausesHandler() http.HandlerFunc {
 		c.death, 
 		c.count, 
 		c.week_id, 
+		w.week_no,
 		w.start_day, 
 		w.start_month, 
 		w.end_day, 
@@ -61,6 +63,7 @@ func (s *Server) DeathCausesHandler() http.HandlerFunc {
 		)
 	ORDER BY 
 		y.year ASC,
+		w.week_no ASC,
 		c.death ASC
 	LIMIT $4
 	OFFSET $5;
@@ -72,6 +75,7 @@ func (s *Server) DeathCausesHandler() http.HandlerFunc {
 		c.death, 
 		c.count, 
 		c.week_id, 
+		w.week_no,
 		w.start_day, 
 		w.start_month, 
 		w.end_day, 
@@ -89,6 +93,7 @@ func (s *Server) DeathCausesHandler() http.HandlerFunc {
 		AND y.year <= $2
 	ORDER BY 
 		y.year ASC,
+		w.week_no ASC,
 		c.death ASC
 	LIMIT $3
 	OFFSET $4;
@@ -164,6 +169,7 @@ func (s *Server) DeathCausesHandler() http.HandlerFunc {
 				&row.Death,
 				&row.Count,
 				&row.WeekID,
+				&row.WeekNo,
 				&row.StartDay,
 				&row.StartMonth,
 				&row.EndDay,
