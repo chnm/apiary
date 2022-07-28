@@ -30,6 +30,7 @@ type DeathCauses struct {
 // Causes describes a cause of death.
 type Causes struct {
 	Name string `json:"name"`
+	ID   int    `json:"id"`
 }
 
 // DeathCausesHandler TODO: Describe
@@ -37,8 +38,8 @@ func (s *Server) DeathCausesHandler() http.HandlerFunc {
 
 	queryCause := `
 	SELECT 
-		c.id, 
-		c.death, 
+		c.death_id,
+		c.death,
 		c.count, 
 		c.week_id, 
 		w.week_no,
@@ -58,8 +59,8 @@ func (s *Server) DeathCausesHandler() http.HandlerFunc {
 		y.year >= $1
 		AND y.year <= $2
 		AND (
-			$3::text[] IS NULL
-			OR c.death = ANY($3::text[])
+			$3::int[] IS NULL
+			OR c.death_id = ANY($3::int[])
 		)
 	ORDER BY 
 		y.year ASC,
@@ -71,8 +72,8 @@ func (s *Server) DeathCausesHandler() http.HandlerFunc {
 
 	queryNoCause := `
 	SELECT 
-		c.id, 
-		c.death, 
+		c.death_id, 
+		c.death,
 		c.count, 
 		c.week_id, 
 		w.week_no,
@@ -102,7 +103,7 @@ func (s *Server) DeathCausesHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		startYear := r.URL.Query().Get("start-year")
 		endYear := r.URL.Query().Get("end-year")
-		causes := r.URL.Query().Get("causes")
+		causes := r.URL.Query().Get("id")
 		limit := r.URL.Query().Get("limit")
 		offset := r.URL.Query().Get("offset")
 
@@ -199,7 +200,8 @@ func (s *Server) ListCausesHandler() http.HandlerFunc {
 
 	query := `
 	SELECT DISTINCT
-		death
+		death,
+		death_id
 	FROM 
 		bom.causes_of_death
 	ORDER BY 
@@ -216,7 +218,7 @@ func (s *Server) ListCausesHandler() http.HandlerFunc {
 		}
 		defer rows.Close()
 		for rows.Next() {
-			err := rows.Scan(&row.Name)
+			err := rows.Scan(&row.Name, &row.ID)
 			if err != nil {
 				log.Println(err)
 			}
