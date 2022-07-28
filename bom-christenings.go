@@ -7,6 +7,9 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"strings"
+
+	"github.com/jackc/pgx/v4"
 )
 
 // ChristeningsByYear describes a christening's description, total count, week number,
@@ -15,8 +18,9 @@ type ChristeningsByYear struct {
 	ChristeningsDesc string    `json:"christenings_desc"`
 	TotalCount       NullInt64 `json:"count"`
 	WeekNo           int       `json:"week_no"`
-	WeekID           string    `json:"week_id"`
 	Year             int       `json:"year"`
+	SplitYear        string    `json:"split_year"`
+	LocationID       int       `json:"location_id"`
 }
 
 // Christenings describes a christening.
@@ -28,24 +32,58 @@ type Christenings struct {
 // end year as query parameters.
 func (s *Server) ChristeningsHandler() http.HandlerFunc {
 
-	query := `
+	queryLocation := `
 	SELECT
 		c.christening_desc,
 		c.count,
 		w.week_no,
-		c.week_id,
-		y.year
+		y.year,
+		y.split_year,
+		l.id
 	FROM
 		bom.christenings c
 	JOIN
 		bom.year y ON y.year_id = c.year_id
 	JOIN
 		bom.week w ON w.week_id = c.week_id
+	JOIN
+		bom.christening_locations l ON l.name = c.christening_desc
+	WHERE
+		year >= $1
+		AND year < $2
+		AND (
+			$3::int[] IS NULL
+			OR l.id = ANY($3::int[])
+		)
+	ORDER BY
+		year ASC,
+		week_no ASC
+	LIMIT $4
+	OFFSET $5;
+	`
+
+	query := `
+	SELECT
+		c.christening_desc,
+		c.count,
+		w.week_no,
+		y.year,
+		y.split_year,
+		l.id
+	FROM
+		bom.christenings c
+	JOIN
+		bom.year y ON y.year_id = c.year_id
+	JOIN
+		bom.week w ON w.week_id = c.week_id
+	JOIN
+		bom.christening_locations l ON l.name = c.christening_desc
 	WHERE
 		year >= $1
 		AND year < $2
 	ORDER BY
-		count
+		year ASC,
+		week_no ASC
 	LIMIT $3
 	OFFSET $4;
 	`
@@ -53,6 +91,7 @@ func (s *Server) ChristeningsHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		startYear := r.URL.Query().Get("start-year")
 		endYear := r.URL.Query().Get("end-year")
+		location := r.URL.Query().Get("id")
 		limit := r.URL.Query().Get("limit")
 		offset := r.URL.Query().Get("offset")
 
@@ -80,6 +119,9 @@ func (s *Server) ChristeningsHandler() http.HandlerFunc {
 			offset = "0"
 		}
 
+		// location needs to be a postgres array
+		location = fmt.Sprintf("{%s}", strings.TrimSpace(location))
+
 		limitInt, err := strconv.Atoi(limit)
 		if err != nil {
 			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
@@ -94,8 +136,17 @@ func (s *Server) ChristeningsHandler() http.HandlerFunc {
 
 		results := make([]ChristeningsByYear, 0)
 		var row ChristeningsByYear
+		var rows pgx.Rows
 
-		rows, err := s.DB.Query(context.TODO(), query, startYearInt, endYearInt, limitInt, offsetInt)
+		switch {
+		case location == "{}":
+			rows, err = s.DB.Query(context.TODO(), query, startYearInt, endYearInt, limitInt, offsetInt)
+		case location != "{}":
+			rows, err = s.DB.Query(context.TODO(), queryLocation, startYearInt, endYearInt, location, limitInt, offsetInt)
+		default:
+			rows, err = s.DB.Query(context.TODO(), query, startYearInt, endYearInt, limitInt, offsetInt)
+		}
+
 		if err != nil {
 			log.Println(err)
 		}
@@ -105,8 +156,10 @@ func (s *Server) ChristeningsHandler() http.HandlerFunc {
 				&row.ChristeningsDesc,
 				&row.TotalCount,
 				&row.WeekNo,
-				&row.WeekID,
-				&row.Year)
+				&row.Year,
+				&row.SplitYear,
+				&row.LocationID,
+			)
 			if err != nil {
 				log.Println(err)
 			}
@@ -116,6 +169,7 @@ func (s *Server) ChristeningsHandler() http.HandlerFunc {
 		if err != nil {
 			log.Println(err)
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
 		}
 
 		response, _ := json.Marshal(results)
