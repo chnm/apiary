@@ -26,6 +26,7 @@ type ChristeningsByYear struct {
 // Christenings describes a christening.
 type Christenings struct {
 	Name string `json:"name"`
+	ID   int    `json:"id"`
 }
 
 // ChristeningsHandler returns the christenings for a given range of years. It expects a start year and
@@ -183,11 +184,12 @@ func (s *Server) ListChristeningsHandler() http.HandlerFunc {
 
 	query := `
 	SELECT DISTINCT
-		christening_desc
+		name,
+		id
 	FROM 
-		bom.christenings
+		bom.christening_locations
 	ORDER BY 
-		christening_desc ASC
+		id ASC
 	`
 
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -200,7 +202,7 @@ func (s *Server) ListChristeningsHandler() http.HandlerFunc {
 		}
 		defer rows.Close()
 		for rows.Next() {
-			err := rows.Scan(&row.Name)
+			err := rows.Scan(&row.Name, &row.ID)
 			if err != nil {
 				log.Println(err)
 			}
