@@ -21,7 +21,6 @@ func (s *Server) Routes() {
 	s.Router.HandleFunc("/bom/parishes", s.ParishesHandler()).Methods("GET", "HEAD")
 	s.Router.HandleFunc("/bom/totalbills", s.TotalBillsHandler()).Methods("GET", "HEAD")
 	s.Router.HandleFunc("/bom/bills", s.BillsHandler()).Methods("GET", "HEAD")
-	s.Router.HandleFunc("/bom/generalbills", s.GeneralBillsHandler()).Methods("GET", "HEAD")
 	s.Router.HandleFunc("/bom/christenings", s.ChristeningsHandler()).Methods("GET", "HEAD")
 	s.Router.HandleFunc("/bom/causes", s.DeathCausesHandler()).Methods("GET", "HEAD")
 	s.Router.HandleFunc("/bom/list-deaths", s.ListCausesHandler()).Methods("GET", "HEAD")
