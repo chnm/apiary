@@ -52,7 +52,43 @@ func TestBomChristenings(t *testing.T) {
 	checkResponseCode(t, http.StatusOK, response.Code)
 
 	// Get the data
-	var data []apiary.ParishByYear
+	var data []apiary.ChristeningsByYear
+	err := json.Unmarshal(response.Body.Bytes(), &data)
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+func TestBomCauses(t *testing.T) {
+	req, _ := http.NewRequest("GET", "/bom/causes?start-year=1669&end-year=1754", nil)
+	response := executeRequest(req)
+	checkResponseCode(t, http.StatusOK, response.Code)
+
+	var data []apiary.DeathCauses
+	err := json.Unmarshal(response.Body.Bytes(), &data)
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+func TestBomListChristenings(t *testing.T) {
+	req, _ := http.NewRequest("GET", "/bom/list-christenings", nil)
+	response := executeRequest(req)
+	checkResponseCode(t, http.StatusOK, response.Code)
+
+	var data []apiary.Christenings
+	err := json.Unmarshal(response.Body.Bytes(), &data)
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+func TestBomListCauses(t *testing.T) {
+	req, _ := http.NewRequest("GET", "/bom/list-deaths", nil)
+	response := executeRequest(req)
+	checkResponseCode(t, http.StatusOK, response.Code)
+
+	var data []apiary.Causes
 	err := json.Unmarshal(response.Body.Bytes(), &data)
 	if err != nil {
 		t.Error(err)
