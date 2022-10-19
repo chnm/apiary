@@ -16,6 +16,10 @@ install :
 test :
 	go test ./...
 
+.PHONY : vuln
+vuln : 
+	govulncheck ./...
+
 .PHONY : docker-build
 docker-build : 
 	docker build --tag apiary:test .
