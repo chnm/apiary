@@ -29,6 +29,7 @@ func (s *Server) RelCensusDenominationFamiliesHandler() http.HandlerFunc {
 	query := `
 	SELECT DISTINCT family_relec 
 	FROM relcensus.denominations 
+	WHERE year = 1926
 	ORDER BY family_relec;
 	`
 
@@ -72,7 +73,7 @@ func (s *Server) RelCensusDenominationsHandler() http.HandlerFunc {
 	query := `
 	SELECT denomination_id, name, short_name, family_census, family_relec
 	FROM relcensus.denominations
-	WHERE ($1::text = '' OR family_relec = $1::text);
+	WHERE ($1::text = '' OR family_relec = $1::text) AND year = 1926;
 	`
 
 	return func(w http.ResponseWriter, r *http.Request) {
