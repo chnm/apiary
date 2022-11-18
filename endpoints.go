@@ -181,5 +181,3 @@ func (s *Server) EndpointsHandler() http.HandlerFunc {
 		fmt.Fprint(w, resp)
 	}
 }
-
-// []ExampleURL{{baseurl + "/ahcb/counties/1844-05-08/", "County on a specific date"}},
