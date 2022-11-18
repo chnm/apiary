@@ -166,6 +166,12 @@ func (s *Server) EndpointsHandler() http.HandlerFunc {
 					{baseurl + "/relcensus/city-membership?year=1926",
 						"Membership data aggregated for all denominations in each city"},
 				}},
+			{"Cache test",
+				baseurl + "/cache",
+				[]ExampleURL{
+					{baseurl + "/cache", "Cached response"},
+					{baseurl + "/cache?nocache", "Uncached response"},
+				},
 		}
 
 		response, _ := json.MarshalIndent(endpoints, "", "  ")
