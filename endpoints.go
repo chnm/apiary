@@ -172,6 +172,7 @@ func (s *Server) EndpointsHandler() http.HandlerFunc {
 					{baseurl + "/cache", "Cached response"},
 					{baseurl + "/cache?nocache", "Uncached response"},
 				},
+			},
 		}
 
 		response, _ := json.MarshalIndent(endpoints, "", "  ")

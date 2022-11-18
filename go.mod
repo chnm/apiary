@@ -9,6 +9,7 @@ require (
 	github.com/jackc/pgx/v4 v4.17.2
 	github.com/orlangure/gnomock v0.21.1
 	github.com/stretchr/testify v1.8.0
+	github.com/victorspringer/http-cache v0.0.0-20221006212759-e323d9f0f0c4
 )
 
 require (
@@ -38,7 +39,6 @@ require (
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/sirupsen/logrus v1.9.0 // indirect
-	github.com/victorspringer/http-cache v0.0.0-20221006212759-e323d9f0f0c4 // indirect
 	go.uber.org/atomic v1.10.0 // indirect
 	go.uber.org/multierr v1.8.0 // indirect
 	go.uber.org/zap v1.23.0 // indirect
