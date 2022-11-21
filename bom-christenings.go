@@ -39,7 +39,7 @@ func (s *Server) ChristeningsHandler() http.HandlerFunc {
 		c.count,
 		w.week_no,
 		y.year,
-		y.split_year,
+		w.split_year,
 		l.id
 	FROM
 		bom.christenings c
@@ -69,7 +69,7 @@ func (s *Server) ChristeningsHandler() http.HandlerFunc {
 		c.count,
 		w.week_no,
 		y.year,
-		y.split_year,
+		w.split_year,
 		l.id
 	FROM
 		bom.christenings c

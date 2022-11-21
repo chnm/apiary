@@ -27,6 +27,7 @@ type ParishByYear struct {
 	SplitYear  string     `json:"split_year"`
 	WeekNo     int        `json:"week_no"`
 	WeekID     string     `json:"week_id"`
+	UniqueID   string     `json:"unique_identifier"`
 }
 
 // TotalBills returns to the total number of records in the database. We need this
@@ -55,9 +56,10 @@ func (s *Server) BillsHandler() http.HandlerFunc {
 		w.end_day,
 		w.end_month,
 		y.year,
-		y.split_year,
+		w.split_year,
 		w.week_no,
-		b.week_id
+		b.week_id,
+		b.unique_identifier
 	FROM
 		bom.bill_of_mortality b
 	JOIN
@@ -95,9 +97,10 @@ func (s *Server) BillsHandler() http.HandlerFunc {
 		w.end_day,
 		w.end_month,
 		y.year,
-		y.split_year,
+		w.split_year,
 		w.week_no,
-		b.week_id
+		b.week_id,
+		b.unique_identifier
 	FROM
 		bom.bill_of_mortality b
 	JOIN
@@ -134,9 +137,10 @@ func (s *Server) BillsHandler() http.HandlerFunc {
 		w.end_day,
 		w.end_month,
 		y.year,
-		y.split_year,
+		w.split_year,
 		w.week_no,
-		b.week_id
+		b.week_id,
+		b.unique_identifier
 	FROM
 		bom.bill_of_mortality b
 	JOIN
@@ -173,9 +177,10 @@ func (s *Server) BillsHandler() http.HandlerFunc {
 		w.end_day,
 		w.end_month,
 		y.year,
-		y.split_year,
+		w.split_year,
 		w.week_no,
-		b.week_id
+		b.week_id,
+		b.unique_identifier
 	FROM
 		bom.bill_of_mortality b
 	JOIN
@@ -211,9 +216,10 @@ func (s *Server) BillsHandler() http.HandlerFunc {
 		w.end_day,
 		w.end_month,
 		y.year,
-		y.split_year,
+		w.split_year,
 		w.week_no,
-		b.week_id
+		b.week_id,
+		b.unique_identifier
 	FROM
 		bom.bill_of_mortality b
 	JOIN
@@ -247,9 +253,10 @@ func (s *Server) BillsHandler() http.HandlerFunc {
 		w.end_day,
 		w.end_month,
 		y.year,
-		y.split_year,
+		w.split_year,
 		w.week_no,
-		b.week_id
+		b.week_id,
+		b.unique_identifier
 	FROM
 		bom.bill_of_mortality b
 	JOIN
@@ -282,9 +289,10 @@ func (s *Server) BillsHandler() http.HandlerFunc {
 		w.end_day,
 		w.end_month,
 		y.year,
-		y.split_year,
+		w.split_year,
 		w.week_no,
-		b.week_id
+		b.week_id,
+		b.unique_identifier
 	FROM
 		bom.bill_of_mortality b
 	JOIN
@@ -317,9 +325,10 @@ func (s *Server) BillsHandler() http.HandlerFunc {
 		w.end_day,
 		w.end_month,
 		y.year,
-		y.split_year,
+		w.split_year,
 		w.week_no,
-		b.week_id
+		b.week_id,
+		b.unique_identifier
 	FROM
 		bom.bill_of_mortality b
 	JOIN
@@ -490,7 +499,8 @@ func (s *Server) BillsHandler() http.HandlerFunc {
 				&row.Year,
 				&row.SplitYear,
 				&row.WeekNo,
-				&row.WeekID)
+				&row.WeekID,
+				&row.UniqueID)
 			if err != nil {
 				log.Println(err)
 			}

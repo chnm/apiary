@@ -48,7 +48,7 @@ func (s *Server) DeathCausesHandler() http.HandlerFunc {
 		w.end_day, 
 		w.end_month, 
 		y.year,
-		y.split_year
+		w.split_year
 	FROM 
 		bom.causes_of_death c
 	JOIN 
@@ -82,7 +82,7 @@ func (s *Server) DeathCausesHandler() http.HandlerFunc {
 		w.end_day, 
 		w.end_month, 
 		y.year,
-		y.split_year
+		w.split_year
 	FROM 
 		bom.causes_of_death c
 	JOIN 
