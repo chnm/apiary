@@ -55,7 +55,7 @@ func (s *Server) BillsHandler() http.HandlerFunc {
 		w.end_day,
 		w.end_month,
 		y.year,
-		y.split_year,
+		w.split_year,
 		w.week_no,
 		b.week_id
 	FROM
@@ -95,7 +95,7 @@ func (s *Server) BillsHandler() http.HandlerFunc {
 		w.end_day,
 		w.end_month,
 		y.year,
-		y.split_year,
+		w.split_year,
 		w.week_no,
 		b.week_id
 	FROM
@@ -134,7 +134,7 @@ func (s *Server) BillsHandler() http.HandlerFunc {
 		w.end_day,
 		w.end_month,
 		y.year,
-		y.split_year,
+		w.split_year,
 		w.week_no,
 		b.week_id
 	FROM
@@ -173,7 +173,7 @@ func (s *Server) BillsHandler() http.HandlerFunc {
 		w.end_day,
 		w.end_month,
 		y.year,
-		y.split_year,
+		w.split_year,
 		w.week_no,
 		b.week_id
 	FROM
@@ -211,7 +211,7 @@ func (s *Server) BillsHandler() http.HandlerFunc {
 		w.end_day,
 		w.end_month,
 		y.year,
-		y.split_year,
+		w.split_year,
 		w.week_no,
 		b.week_id
 	FROM
@@ -247,7 +247,7 @@ func (s *Server) BillsHandler() http.HandlerFunc {
 		w.end_day,
 		w.end_month,
 		y.year,
-		y.split_year,
+		w.split_year,
 		w.week_no,
 		b.week_id
 	FROM
@@ -282,7 +282,7 @@ func (s *Server) BillsHandler() http.HandlerFunc {
 		w.end_day,
 		w.end_month,
 		y.year,
-		y.split_year,
+		w.split_year,
 		w.week_no,
 		b.week_id
 	FROM
@@ -317,7 +317,7 @@ func (s *Server) BillsHandler() http.HandlerFunc {
 		w.end_day,
 		w.end_month,
 		y.year,
-		y.split_year,
+		w.split_year,
 		w.week_no,
 		b.week_id
 	FROM
