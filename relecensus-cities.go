@@ -64,7 +64,7 @@ func (s *Server) RelCensusCityMembershipHandler() http.HandlerFunc {
 	sum(m.members_total) AS members_total
 	FROM relcensus.membership_city m
 	LEFT JOIN relcensus.denominations d ON m.denomination = d.name
-	WHERE m.year = $1 AND d.family_relec = $2
+	WHERE m.year = $1 AND d.family_relec = $2 AND m.churches IS NOT NULL
 	GROUP BY m.year, d.family_relec, m.city, m.state
 	) d
 	LEFT JOIN relcensus.cities_25k c ON d.city = c.city AND d.state = c.state
@@ -163,6 +163,7 @@ func (s *Server) RelCensusCityMembershipHandler() http.HandlerFunc {
 				&row.Lon, &row.Lat)
 			if err != nil {
 				log.Println(err)
+				log.Println(row)
 			}
 			results = append(results, row)
 
