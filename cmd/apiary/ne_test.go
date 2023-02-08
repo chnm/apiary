@@ -44,7 +44,7 @@ func TestNorthAmerica(t *testing.T) {
 	}
 
 	if len(data.Features) != 38 {
-		t.Error("Incorrect number of features returned. Got: ", len(data.Features), " Expected: 37")
+		t.Error("Incorrect number of features returned. Got: ", len(data.Features), " Expected: 38")
 	}
 }
 
