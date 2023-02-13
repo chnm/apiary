@@ -27,8 +27,6 @@ func (s *Server) Routes() {
 	s.Router.HandleFunc("/bom/list-christenings", s.ListChristeningsHandler()).Methods("GET", "HEAD")
 	s.Router.HandleFunc("/catholic-dioceses/", s.CatholicDiocesesHandler()).Methods("GET", "HEAD")
 	s.Router.HandleFunc("/catholic-dioceses/per-decade/", s.CatholicDiocesesPerDecadeHandler()).Methods("GET", "HEAD")
-	s.Router.HandleFunc("/ne/northamerica/", s.NENorthAmericaHandler()).Methods("GET", "HEAD")
-	s.Router.HandleFunc("/ne/southamerica/", s.NESouthAmericaHandler()).Methods("GET", "HEAD")
 	s.Router.HandleFunc("/ne/globe", s.NaturalEarthHandler()).Methods("GET", "HEAD")
 	s.Router.HandleFunc("/pop-places/county/{county:[a-z_,]+}/place/", s.PlacesInCounty()).Methods("GET", "HEAD")
 	s.Router.HandleFunc("/pop-places/place/{place}/", s.Place()).Methods("GET", "HEAD")
