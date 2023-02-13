@@ -3,9 +3,8 @@ package apiary
 import (
 	"context"
 	"fmt"
+	"log"
 	"net/http"
-
-	log "github.com/sirupsen/logrus"
 )
 
 // NaturalEarthHandler returns a GeoJSON FeatureCollection containing country
