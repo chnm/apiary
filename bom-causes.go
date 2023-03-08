@@ -52,11 +52,11 @@ func (s *Server) DeathCausesHandler() http.HandlerFunc {
 		y.year,
 		w.split_year
 	FROM 
-		bom.test_causes_of_death c
+		bom.causes_of_death c
 	JOIN 
-		bom.test_week w ON w.joinid = c.week_id
+		bom.week w ON w.joinid = c.week_id
 	JOIN
-		bom.test_year y ON y.year = w.year
+		bom.year y ON y.year = w.year
 	WHERE 
 		y.year::int >= $1
 		AND y.year::int <= $2
@@ -84,11 +84,11 @@ func (s *Server) DeathCausesHandler() http.HandlerFunc {
 		y.year,
 		w.split_year
 	FROM 
-		bom.test_causes_of_death c
+		bom.causes_of_death c
 	JOIN 
-		bom.test_week w ON w.joinid = c.week_id
+		bom.week w ON w.joinid = c.week_id
 	JOIN
-		bom.test_year y ON y.year = w.year
+		bom.year y ON y.year = w.year
 	WHERE
 		y.year::int >= $1
 		AND y.year::int <= $2
@@ -202,7 +202,7 @@ func (s *Server) ListCausesHandler() http.HandlerFunc {
 	SELECT DISTINCT
 		death
 	FROM 
-		bom.test_causes_of_death
+		bom.causes_of_death
 	ORDER BY 
 		death ASC
 	`

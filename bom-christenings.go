@@ -41,21 +41,18 @@ func (s *Server) ChristeningsHandler() http.HandlerFunc {
 	SELECT
 		c.christening,
 		c.count,
-		w.week_no,
-		w.start_day,
-		w.start_month,
-		w.end_day,
-		w.end_month,
-		y.year,
-		w.split_year
+		c.week_number,
+		c.start_day,
+		c.start_month,
+		c.end_day,
+		c.end_month,
+		y.year
 	FROM
-		bom.test_christenings c
+		bom.christenings c
 	JOIN
-		bom.test_year y ON y.year = c.year
-	JOIN 
-		bom.test_week w ON w.joinid = c.week_id
+		bom.year y ON y.year = c.year
 	JOIN
-		bom.test_christening_locations l ON l.name = c.christening
+		bom.christening_locations l ON l.name = c.christening
 	WHERE
 		y.year >= $1
 		AND y.year < $2
@@ -65,7 +62,7 @@ func (s *Server) ChristeningsHandler() http.HandlerFunc {
 		)	
 	ORDER BY
 		year ASC,
-		week_no ASC
+		week_number ASC
 	LIMIT $4
 	OFFSET $5;
 	`
@@ -74,25 +71,22 @@ func (s *Server) ChristeningsHandler() http.HandlerFunc {
 	SELECT
 		c.christening,
 		c.count,
-		w.week_no,
-		w.start_day,
-		w.start_month,
-		w.end_day,
-		w.end_month,
-		y.year,
-		w.split_year
+		c.week_number,
+		c.start_day,
+		c.start_month,
+		c.end_day,
+		c.end_month,
+		y.year
 	FROM
-		bom.test_christenings c
+		bom.christenings c
 	JOIN
-		bom.test_year y ON y.year = c.year
-	JOIN 
-		bom.test_week w ON w.joinid = c.week_id
+		bom.year y ON y.year = c.year
 	WHERE
 		y.year >= $1
 		AND y.year < $2
 	ORDER BY
 		year ASC,
-		week_no ASC
+		week_number ASC
 	LIMIT $3
 	OFFSET $4;
 	`
@@ -170,7 +164,7 @@ func (s *Server) ChristeningsHandler() http.HandlerFunc {
 				&row.EndDay,
 				&row.EndMonth,
 				&row.Year,
-				&row.SplitYear,
+				// &row.SplitYear,
 				// &row.LocID,
 			)
 			if err != nil {
@@ -199,7 +193,7 @@ func (s *Server) ListChristeningsHandler() http.HandlerFunc {
 		name,
 		id
 	FROM 
-		bom.test_christening_locations
+		bom.christening_locations
 	ORDER BY 
 		name ASC
 	`

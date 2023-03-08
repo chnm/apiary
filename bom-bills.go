@@ -55,13 +55,13 @@ func (s *Server) BillsHandler() http.HandlerFunc {
 		w.week_no,
 		b.week_id
 	FROM
-		bom.test_bill_of_mortality b
+		bom.bill_of_mortality b
 	JOIN
-		bom.test_parishes p ON p.id = b.parish_id
+		bom.parishes p ON p.id = b.parish_id
 	JOIN
-		bom.test_year y ON y.year = b.year_id
+		bom.year y ON y.year = b.year_id
 	JOIN
-		bom.test_week w ON w.joinid = b.week_id
+		bom.week w ON w.joinid = b.week_id
 	WHERE
 		y.year >= $1::int
 		AND y.year <= $2::int
@@ -95,13 +95,13 @@ func (s *Server) BillsHandler() http.HandlerFunc {
 		w.week_no,
 		b.week_id
 	FROM
-		bom.test_bill_of_mortality b
+		bom.bill_of_mortality b
 	JOIN
-		bom.test_parishes p ON p.id = b.parish_id
+		bom.parishes p ON p.id = b.parish_id
 	JOIN
-		bom.test_year y ON y.year = b.year_id
+		bom.year y ON y.year = b.year_id
 	JOIN
-		bom.test_week w ON w.joinid = b.week_id
+		bom.week w ON w.joinid = b.week_id
 	WHERE
 		y.year >= $1::int
 		AND y.year <= $2::int
@@ -134,13 +134,13 @@ func (s *Server) BillsHandler() http.HandlerFunc {
 		w.week_no,
 		b.week_id
 	FROM
-		bom.test_bill_of_mortality b
+		bom.bill_of_mortality b
 	JOIN
-		bom.test_parishes p ON p.id = b.parish_id
+		bom.parishes p ON p.id = b.parish_id
 	JOIN
-		bom.test_year y ON y.year = b.year_id
+		bom.year y ON y.year = b.year_id
 	JOIN
-		bom.test_week w ON w.joinid = b.week_id
+		bom.week w ON w.joinid = b.week_id
 	WHERE
 		y.year >= $1::int
 		AND y.year <= $2::int
@@ -173,13 +173,13 @@ func (s *Server) BillsHandler() http.HandlerFunc {
 		w.week_no,
 		b.week_id
 	FROM
-		bom.test_bill_of_mortality b
+		bom.bill_of_mortality b
 	JOIN
-		bom.test_parishes p ON p.id = b.parish_id
+		bom.parishes p ON p.id = b.parish_id
 	JOIN
-		bom.test_year y ON y.year = b.year_id
+		bom.year y ON y.year = b.year_id
 	JOIN
-		bom.test_week w ON w.joinid = b.week_id
+		bom.week w ON w.joinid = b.week_id
 	WHERE
 		y.year >= $1::int
 		AND y.year <= $2::int
@@ -211,13 +211,13 @@ func (s *Server) BillsHandler() http.HandlerFunc {
 		w.week_no,
 		b.week_id
 	FROM
-		bom.test_bill_of_mortality b
+		bom.bill_of_mortality b
 	JOIN
-		bom.test_parishes p ON p.id = b.parish_id
+		bom.parishes p ON p.id = b.parish_id
 	JOIN
-		bom.test_year y ON y.year = b.year_id
+		bom.year y ON y.year = b.year_id
 	JOIN
-		bom.test_week w ON w.joinid = b.week_id
+		bom.week w ON w.joinid = b.week_id
 	WHERE
 		y.year >= $1::int
 		AND y.year <= $2::int
@@ -247,13 +247,13 @@ func (s *Server) BillsHandler() http.HandlerFunc {
 		w.week_no,
 		b.week_id
 	FROM
-		bom.test_bill_of_mortality b
+		bom.bill_of_mortality b
 	JOIN
-		bom.test_parishes p ON p.id = b.parish_id
+		bom.parishes p ON p.id = b.parish_id
 	JOIN
-		bom.test_year y ON y.year = b.year_id
+		bom.year y ON y.year = b.year_id
 	JOIN
-		bom.test_week w ON w.joinid = b.week_id
+		bom.week w ON w.joinid = b.week_id
 	WHERE
 		y.year >= $1::int
 		AND y.year <= $2::int
@@ -282,13 +282,13 @@ func (s *Server) BillsHandler() http.HandlerFunc {
 		w.week_no,
 		b.week_id
 	FROM
-		bom.test_bill_of_mortality b
+		bom.bill_of_mortality b
 	JOIN
-		bom.test_parishes p ON p.id = b.parish_id
+		bom.parishes p ON p.id = b.parish_id
 	JOIN
-		bom.test_year y ON y.year = b.year_id
+		bom.year y ON y.year = b.year_id
 	JOIN
-		bom.test_week w ON w.joinid = b.week_id
+		bom.week w ON w.joinid = b.week_id
 	WHERE
 		y.year >= $1::int
 		AND y.year <= $2::int
@@ -317,13 +317,13 @@ func (s *Server) BillsHandler() http.HandlerFunc {
 		w.week_no,
 		b.week_id
 	FROM
-		bom.test_bill_of_mortality b
+		bom.bill_of_mortality b
 	JOIN
-		bom.test_parishes p ON p.id = b.parish_id
+		bom.parishes p ON p.id = b.parish_id
 	JOIN
-		bom.test_year y ON y.year = b.year_id
+		bom.year y ON y.year = b.year_id
 	JOIN
-		bom.test_week w ON w.joinid = b.week_id
+		bom.week w ON w.joinid = b.week_id
 	WHERE
 		y.year >= $1::int
 		AND y.year <= $2::int
@@ -410,13 +410,13 @@ func (s *Server) BillsHandler() http.HandlerFunc {
 		// 	SELECT
 		// 		MAX(id)
 		// 	FROM
-		// 		bom.test_parishes;
+		// 		bom.parishes;
 		// 	`
 		// 	minValueQuery := `
 		// 	SELECT
 		// 		MIN(id)
 		// 	FROM
-		// 		bom.test_parishes;
+		// 		bom.parishes;
 		// 	`
 
 		// 	var maxValue int
@@ -545,7 +545,7 @@ func (s *Server) TotalBillsHandler() http.HandlerFunc {
 	SELECT
 		COUNT(*)
 	FROM
-		bom.test_bill_of_mortality
+		bom.bill_of_mortality
 	WHERE 
 		bill_type = 'Weekly';
 	`
@@ -554,7 +554,7 @@ func (s *Server) TotalBillsHandler() http.HandlerFunc {
 	SELECT
 		COUNT(*)
 	FROM
-		bom.test_bill_of_mortality
+		bom.bill_of_mortality
 	WHERE	
 		bill_type = 'General';
 	`
@@ -563,14 +563,14 @@ func (s *Server) TotalBillsHandler() http.HandlerFunc {
 	SELECT
 		COUNT(*)
 	FROM	
-		bom.test_christenings;
+		bom.christenings;
 	`
 
 	queryCauses := `
 	SELECT
 		COUNT(*)
 	FROM 
-		bom.test_causes_of_death;
+		bom.causes_of_death;
 	`
 
 	return func(w http.ResponseWriter, r *http.Request) {
