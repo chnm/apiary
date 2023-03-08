@@ -12,36 +12,38 @@ import (
 	"github.com/jackc/pgx/v4"
 )
 
-// DeathCauses TODO: Describe
+// DeathCauses returns a list of causes of death with a count of deaths for each
+// cause and related metadata.
 type DeathCauses struct {
-	DeathID    int        `json:"death_id"`
-	Death      string     `json:"death"`
-	Count      NullInt64  `json:"count"`
-	WeekID     string     `json:"week_id"`
-	WeekNo     int        `json:"week_no"`
-	StartDay   NullInt64  `json:"start_day"`
-	StartMonth NullString `json:"start_month"`
-	EndDay     NullInt64  `json:"end_day"`
-	EndMonth   NullString `json:"end_month"`
-	Year       int        `json:"year"`
-	SplitYear  string     `json:"split_year"`
+	Death           string     `json:"death"`
+	Count           NullInt64  `json:"count"`
+	DescriptiveText NullString `json:"descriptive_text"`
+	WeekID          string     `json:"week_id"`
+	WeekNo          int        `json:"week_no"`
+	StartDay        NullInt64  `json:"start_day"`
+	StartMonth      NullString `json:"start_month"`
+	EndDay          NullInt64  `json:"end_day"`
+	EndMonth        NullString `json:"end_month"`
+	Year            NullInt64  `json:"year"`
+	SplitYear       string     `json:"split_year"`
 }
 
 // Causes describes a cause of death.
 type Causes struct {
 	Name string `json:"name"`
-	ID   int    `json:"id"`
 }
 
-// DeathCausesHandler TODO: Describe
+// DeathCausesHandler returns a JSON array of causes of death. The list of causes
+// depends on whether a user has provided a comma-separated list of causes. If
+// no list is provided, it returns the entire list of causes.
 func (s *Server) DeathCausesHandler() http.HandlerFunc {
 
 	queryCause := `
 	SELECT 
-		c.death_id,
 		c.death,
 		c.count, 
-		c.week_id, 
+		c.descriptive_text, 
+		c.week_id,
 		w.week_no,
 		w.start_day, 
 		w.start_month, 
@@ -50,18 +52,16 @@ func (s *Server) DeathCausesHandler() http.HandlerFunc {
 		y.year,
 		w.split_year
 	FROM 
-		bom.causes_of_death c
+		bom.test_causes_of_death c
 	JOIN 
-		bom.week w ON w.week_id = c.week_id
+		bom.test_week w ON w.joinid = c.week_id
 	JOIN
-		bom.year y ON y.year_id = w.year_id
+		bom.test_year y ON y.year = w.year
 	WHERE 
-		y.year >= $1
-		AND y.year <= $2
-		AND (
-			$3::int[] IS NULL
-			OR c.death_id = ANY($3::int[])
-		)
+		y.year::int >= $1
+		AND y.year::int <= $2
+		AND c.death = ANY($3)
+		AND count IS NOT NULL
 	ORDER BY 
 		y.year ASC,
 		w.week_no ASC,
@@ -72,9 +72,9 @@ func (s *Server) DeathCausesHandler() http.HandlerFunc {
 
 	queryNoCause := `
 	SELECT 
-		c.death_id, 
 		c.death,
 		c.count, 
+		c.descriptive_text,
 		c.week_id, 
 		w.week_no,
 		w.start_day, 
@@ -84,14 +84,15 @@ func (s *Server) DeathCausesHandler() http.HandlerFunc {
 		y.year,
 		w.split_year
 	FROM 
-		bom.causes_of_death c
+		bom.test_causes_of_death c
 	JOIN 
-		bom.week w ON w.week_id = c.week_id
+		bom.test_week w ON w.joinid = c.week_id
 	JOIN
-		bom.year y ON y.year_id = w.year_id
-	WHERE 
-		y.year >= $1
-		AND y.year <= $2
+		bom.test_year y ON y.year = w.year
+	WHERE
+		y.year::int >= $1
+		AND y.year::int <= $2
+		AND count IS NOT NULL
 	ORDER BY 
 		y.year ASC,
 		w.week_no ASC,
@@ -124,10 +125,6 @@ func (s *Server) DeathCausesHandler() http.HandlerFunc {
 			return
 		}
 
-		// causes needs to be a postgres array of integers to send to the query. This
-		// returns '{1, 2, 3}' to give the query a literal array.
-		causes = fmt.Sprintf("{%s}", strings.TrimSpace(causes))
-
 		if limit == "" {
 			limit = "25"
 		}
@@ -146,6 +143,8 @@ func (s *Server) DeathCausesHandler() http.HandlerFunc {
 			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 			return
 		}
+
+		causes = fmt.Sprintf("{%s}", strings.TrimSpace(causes))
 
 		results := make([]DeathCauses, 0)
 		var row DeathCauses
@@ -166,9 +165,9 @@ func (s *Server) DeathCausesHandler() http.HandlerFunc {
 		defer rows.Close()
 		for rows.Next() {
 			err := rows.Scan(
-				&row.DeathID,
 				&row.Death,
 				&row.Count,
+				&row.DescriptiveText,
 				&row.WeekID,
 				&row.WeekNo,
 				&row.StartDay,
@@ -176,7 +175,8 @@ func (s *Server) DeathCausesHandler() http.HandlerFunc {
 				&row.EndDay,
 				&row.EndMonth,
 				&row.Year,
-				&row.SplitYear)
+				&row.SplitYear,
+			)
 			if err != nil {
 				log.Println(err)
 			}
@@ -200,10 +200,9 @@ func (s *Server) ListCausesHandler() http.HandlerFunc {
 
 	query := `
 	SELECT DISTINCT
-		death,
-		death_id
+		death
 	FROM 
-		bom.causes_of_death
+		bom.test_causes_of_death
 	ORDER BY 
 		death ASC
 	`
@@ -218,7 +217,7 @@ func (s *Server) ListCausesHandler() http.HandlerFunc {
 		}
 		defer rows.Close()
 		for rows.Next() {
-			err := rows.Scan(&row.Name, &row.ID)
+			err := rows.Scan(&row.Name)
 			if err != nil {
 				log.Println(err)
 			}

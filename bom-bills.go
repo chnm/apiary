@@ -23,11 +23,10 @@ type ParishByYear struct {
 	StartMonth NullString `json:"start_month"`
 	EndDay     NullInt64  `json:"end_day"`
 	EndMonth   NullString `json:"end_month"`
-	Year       int        `json:"year"`
+	Year       NullInt64  `json:"year"`
 	SplitYear  string     `json:"split_year"`
 	WeekNo     int        `json:"week_no"`
 	WeekID     string     `json:"week_id"`
-	UniqueID   string     `json:"unique_identifier"`
 }
 
 // TotalBills returns to the total number of records in the database. We need this
@@ -39,10 +38,6 @@ type TotalBills struct {
 // BillsHandler returns the bills for a given range of years. It expects a start year and
 // an end year. It returns a JSON array of ParishByYear objects.
 func (s *Server) BillsHandler() http.HandlerFunc {
-
-	// The minimum and maximum parish ID values.
-	// minParishID := 1
-	// maxParishID := 149
 
 	// Query for specific bill types and count
 	query := `
@@ -58,19 +53,18 @@ func (s *Server) BillsHandler() http.HandlerFunc {
 		y.year,
 		w.split_year,
 		w.week_no,
-		b.week_id,
-		b.unique_identifier
+		b.week_id
 	FROM
-		bom.bill_of_mortality b
+		bom.test_bill_of_mortality b
 	JOIN
-		bom.parishes p ON p.id = b.parish_id
+		bom.test_parishes p ON p.id = b.parish_id
 	JOIN
-		bom.year y ON y.year_id = b.year_id
+		bom.test_year y ON y.year = b.year_id
 	JOIN
-		bom.week w ON w.week_id = b.week_id
+		bom.test_week w ON w.joinid = b.week_id
 	WHERE
-		year >= $1
-		AND year <= $2
+		y.year >= $1::int
+		AND y.year <= $2::int
 		AND bill_type = $3
 		AND count_type = $4
 		AND (
@@ -99,19 +93,18 @@ func (s *Server) BillsHandler() http.HandlerFunc {
 		y.year,
 		w.split_year,
 		w.week_no,
-		b.week_id,
-		b.unique_identifier
+		b.week_id
 	FROM
-		bom.bill_of_mortality b
+		bom.test_bill_of_mortality b
 	JOIN
-		bom.parishes p ON p.id = b.parish_id
+		bom.test_parishes p ON p.id = b.parish_id
 	JOIN
-		bom.year y ON y.year_id = b.year_id
+		bom.test_year y ON y.year = b.year_id
 	JOIN
-		bom.week w ON w.week_id = b.week_id
+		bom.test_week w ON w.joinid = b.week_id
 	WHERE
-		year >= $1
-		AND year <= $2
+		y.year >= $1::int
+		AND y.year <= $2::int
 		AND count_type = $3
 		AND (
 			$4::int[] IS NULL
@@ -139,19 +132,18 @@ func (s *Server) BillsHandler() http.HandlerFunc {
 		y.year,
 		w.split_year,
 		w.week_no,
-		b.week_id,
-		b.unique_identifier
+		b.week_id
 	FROM
-		bom.bill_of_mortality b
+		bom.test_bill_of_mortality b
 	JOIN
-		bom.parishes p ON p.id = b.parish_id
+		bom.test_parishes p ON p.id = b.parish_id
 	JOIN
-		bom.year y ON y.year_id = b.year_id
+		bom.test_year y ON y.year = b.year_id
 	JOIN
-		bom.week w ON w.week_id = b.week_id
+		bom.test_week w ON w.joinid = b.week_id
 	WHERE
-		year >= $1
-		AND year <= $2
+		y.year >= $1::int
+		AND y.year <= $2::int
 		AND bill_type = $3
 		AND (
 			$4::int[] IS NULL
@@ -179,19 +171,18 @@ func (s *Server) BillsHandler() http.HandlerFunc {
 		y.year,
 		w.split_year,
 		w.week_no,
-		b.week_id,
-		b.unique_identifier
+		b.week_id
 	FROM
-		bom.bill_of_mortality b
+		bom.test_bill_of_mortality b
 	JOIN
-		bom.parishes p ON p.id = b.parish_id
+		bom.test_parishes p ON p.id = b.parish_id
 	JOIN
-		bom.year y ON y.year_id = b.year_id
+		bom.test_year y ON y.year = b.year_id
 	JOIN
-		bom.week w ON w.week_id = b.week_id
+		bom.test_week w ON w.joinid = b.week_id
 	WHERE
-		year >= $1
-		AND year <= $2
+		y.year >= $1::int
+		AND y.year <= $2::int
 		AND (
 			$3::int[] IS NULL
 			OR parish_id = ANY($3::int[])
@@ -218,19 +209,18 @@ func (s *Server) BillsHandler() http.HandlerFunc {
 		y.year,
 		w.split_year,
 		w.week_no,
-		b.week_id,
-		b.unique_identifier
+		b.week_id
 	FROM
-		bom.bill_of_mortality b
+		bom.test_bill_of_mortality b
 	JOIN
-		bom.parishes p ON p.id = b.parish_id
+		bom.test_parishes p ON p.id = b.parish_id
 	JOIN
-		bom.year y ON y.year_id = b.year_id
+		bom.test_year y ON y.year = b.year_id
 	JOIN
-		bom.week w ON w.week_id = b.week_id
+		bom.test_week w ON w.joinid = b.week_id
 	WHERE
-		year >= $1
-		AND year <= $2
+		y.year >= $1::int
+		AND y.year <= $2::int
 		AND bill_type = $3
 		AND count_type = $4
 	ORDER BY
@@ -255,19 +245,18 @@ func (s *Server) BillsHandler() http.HandlerFunc {
 		y.year,
 		w.split_year,
 		w.week_no,
-		b.week_id,
-		b.unique_identifier
+		b.week_id
 	FROM
-		bom.bill_of_mortality b
+		bom.test_bill_of_mortality b
 	JOIN
-		bom.parishes p ON p.id = b.parish_id
+		bom.test_parishes p ON p.id = b.parish_id
 	JOIN
-		bom.year y ON y.year_id = b.year_id
+		bom.test_year y ON y.year = b.year_id
 	JOIN
-		bom.week w ON w.week_id = b.week_id
+		bom.test_week w ON w.joinid = b.week_id
 	WHERE
-		year >= $1
-		AND year <= $2
+		y.year >= $1::int
+		AND y.year <= $2::int
 		AND count_type = $3
 	ORDER BY
 		year ASC,
@@ -291,19 +280,18 @@ func (s *Server) BillsHandler() http.HandlerFunc {
 		y.year,
 		w.split_year,
 		w.week_no,
-		b.week_id,
-		b.unique_identifier
+		b.week_id
 	FROM
-		bom.bill_of_mortality b
+		bom.test_bill_of_mortality b
 	JOIN
-		bom.parishes p ON p.id = b.parish_id
+		bom.test_parishes p ON p.id = b.parish_id
 	JOIN
-		bom.year y ON y.year_id = b.year_id
+		bom.test_year y ON y.year = b.year_id
 	JOIN
-		bom.week w ON w.week_id = b.week_id
+		bom.test_week w ON w.joinid = b.week_id
 	WHERE
-		year >= $1
-		AND year <= $2
+		y.year >= $1::int
+		AND y.year <= $2::int
 		AND bill_type = $3
 	ORDER BY
 		year ASC,
@@ -327,19 +315,18 @@ func (s *Server) BillsHandler() http.HandlerFunc {
 		y.year,
 		w.split_year,
 		w.week_no,
-		b.week_id,
-		b.unique_identifier
+		b.week_id
 	FROM
-		bom.bill_of_mortality b
+		bom.test_bill_of_mortality b
 	JOIN
-		bom.parishes p ON p.id = b.parish_id
+		bom.test_parishes p ON p.id = b.parish_id
 	JOIN
-		bom.year y ON y.year_id = b.year_id
+		bom.test_year y ON y.year = b.year_id
 	JOIN
-		bom.week w ON w.week_id = b.week_id
+		bom.test_week w ON w.joinid = b.week_id
 	WHERE
-		year >= $1
-		AND year <= $2
+		y.year >= $1::int
+		AND y.year <= $2::int
 	ORDER BY
 		year ASC,
 		week_no ASC,
@@ -415,14 +402,35 @@ func (s *Server) BillsHandler() http.HandlerFunc {
 		}
 
 		// ParishID must be between the minParishID and maxParishID range. Otherwise, it's a bad request.
-		// parishIDsInt, err := strconv.Atoi(parishIDs)
-		// if err != nil {
-		// 	http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
-		// 	return
-		// }
-		// if parishIDsInt < minParishID || parishIDsInt > maxParishID {
-		// 	http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
-		// 	return
+		// func validateParishIDs(parishIDs string) (string, error) {
+		// 	// We need to check that the parishIDs are within the range of the min and max parish IDs.
+		// 	// We do this by checking that the parishIDs are within the range of the min and max parish IDs.
+		// 	// currently in the database.
+		// 	maxValueQuery := `
+		// 	SELECT
+		// 		MAX(id)
+		// 	FROM
+		// 		bom.test_parishes;
+		// 	`
+		// 	minValueQuery := `
+		// 	SELECT
+		// 		MIN(id)
+		// 	FROM
+		// 		bom.test_parishes;
+		// 	`
+
+		// 	var maxValue int
+		// 	var minValue int
+
+		// 	err := db.QueryRow(maxValueQuery).Scan(&maxValue)
+		// 	if err != nil {
+		// 		return "", err
+		// 	}
+
+		// 	err = db.QueryRow(minValueQuery).Scan(&minValue)
+		// 	if err != nil {
+		// 		return "", err
+		// 	}
 		// }
 
 		// TODO: We want the ability to sort the following columns:
@@ -431,6 +439,16 @@ func (s *Server) BillsHandler() http.HandlerFunc {
 		// 3. Year (year)
 		// 4. Count (count)
 		// Sorting is selected in the frontend table.
+
+		// sortBy := r.URL.Query().Get("sort")
+		// if sortBy == "" {
+		// 	sortBy = "canonical_name"
+		// }
+		// sortQuery, err := validateAndReturnSortQuery(sortBy)
+		// if err != nil {
+		// 	http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		// 	return
+		// }
 
 		results := make([]ParishByYear, 0)
 		var row ParishByYear
@@ -499,8 +517,7 @@ func (s *Server) BillsHandler() http.HandlerFunc {
 				&row.Year,
 				&row.SplitYear,
 				&row.WeekNo,
-				&row.WeekID,
-				&row.UniqueID)
+				&row.WeekID)
 			if err != nil {
 				log.Println(err)
 			}
@@ -528,7 +545,7 @@ func (s *Server) TotalBillsHandler() http.HandlerFunc {
 	SELECT
 		COUNT(*)
 	FROM
-		bom.bill_of_mortality
+		bom.test_bill_of_mortality
 	WHERE 
 		bill_type = 'Weekly';
 	`
@@ -537,7 +554,7 @@ func (s *Server) TotalBillsHandler() http.HandlerFunc {
 	SELECT
 		COUNT(*)
 	FROM
-		bom.bill_of_mortality
+		bom.test_bill_of_mortality
 	WHERE	
 		bill_type = 'General';
 	`
@@ -546,14 +563,14 @@ func (s *Server) TotalBillsHandler() http.HandlerFunc {
 	SELECT
 		COUNT(*)
 	FROM	
-		bom.christenings;
+		bom.test_christenings;
 	`
 
 	queryCauses := `
 	SELECT
 		COUNT(*)
 	FROM 
-		bom.causes_of_death;
+		bom.test_causes_of_death;
 	`
 
 	return func(w http.ResponseWriter, r *http.Request) {

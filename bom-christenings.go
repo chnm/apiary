@@ -15,15 +15,19 @@ import (
 // ChristeningsByYear describes a christening's description, total count, week number,
 // week ID, and year.
 type ChristeningsByYear struct {
-	ChristeningsDesc string    `json:"christenings_desc"`
-	TotalCount       NullInt64 `json:"count"`
-	WeekNo           int       `json:"week_no"`
-	Year             int       `json:"year"`
-	SplitYear        string    `json:"split_year"`
-	LocationID       int       `json:"location_id"`
+	Christening string    `json:"christening"`
+	TotalCount  NullInt64 `json:"count"`
+	WeekNo      int       `json:"week_no"`
+	StartDay    NullInt64 `json:"start_day"`
+	StartMonth  string    `json:"start_month"`
+	EndDay      NullInt64 `json:"end_day"`
+	EndMonth    string    `json:"end_month"`
+	Year        int       `json:"year"`
+	SplitYear   string    `json:"split_year"`
+	// LocID       int       `json:"loc_id"`
 }
 
-// Christenings describes a christening.
+// Christenings describes a christening location.
 type Christenings struct {
 	Name string `json:"name"`
 	ID   int    `json:"id"`
@@ -35,27 +39,30 @@ func (s *Server) ChristeningsHandler() http.HandlerFunc {
 
 	queryLocation := `
 	SELECT
-		c.christening_desc,
+		c.christening,
 		c.count,
 		w.week_no,
+		w.start_day,
+		w.start_month,
+		w.end_day,
+		w.end_month,
 		y.year,
-		w.split_year,
-		l.id
+		w.split_year
 	FROM
-		bom.christenings c
+		bom.test_christenings c
 	JOIN
-		bom.year y ON y.year_id = c.year_id
+		bom.test_year y ON y.year = c.year
+	JOIN 
+		bom.test_week w ON w.joinid = c.week_id
 	JOIN
-		bom.week w ON w.week_id = c.week_id
-	JOIN
-		bom.christening_locations l ON l.name = c.christening_desc
+		bom.test_christening_locations l ON l.name = c.christening
 	WHERE
-		year >= $1
-		AND year < $2
+		y.year >= $1
+		AND y.year < $2
 		AND (
 			$3::int[] IS NULL
 			OR l.id = ANY($3::int[])
-		)
+		)	
 	ORDER BY
 		year ASC,
 		week_no ASC
@@ -65,23 +72,24 @@ func (s *Server) ChristeningsHandler() http.HandlerFunc {
 
 	query := `
 	SELECT
-		c.christening_desc,
+		c.christening,
 		c.count,
 		w.week_no,
+		w.start_day,
+		w.start_month,
+		w.end_day,
+		w.end_month,
 		y.year,
-		w.split_year,
-		l.id
+		w.split_year
 	FROM
-		bom.christenings c
+		bom.test_christenings c
 	JOIN
-		bom.year y ON y.year_id = c.year_id
-	JOIN
-		bom.week w ON w.week_id = c.week_id
-	JOIN
-		bom.christening_locations l ON l.name = c.christening_desc
+		bom.test_year y ON y.year = c.year
+	JOIN 
+		bom.test_week w ON w.joinid = c.week_id
 	WHERE
-		year >= $1
-		AND year < $2
+		y.year >= $1
+		AND y.year < $2
 	ORDER BY
 		year ASC,
 		week_no ASC
@@ -154,12 +162,16 @@ func (s *Server) ChristeningsHandler() http.HandlerFunc {
 		defer rows.Close()
 		for rows.Next() {
 			err := rows.Scan(
-				&row.ChristeningsDesc,
+				&row.Christening,
 				&row.TotalCount,
 				&row.WeekNo,
+				&row.StartDay,
+				&row.StartMonth,
+				&row.EndDay,
+				&row.EndMonth,
 				&row.Year,
 				&row.SplitYear,
-				&row.LocationID,
+				// &row.LocID,
 			)
 			if err != nil {
 				log.Println(err)
@@ -187,9 +199,9 @@ func (s *Server) ListChristeningsHandler() http.HandlerFunc {
 		name,
 		id
 	FROM 
-		bom.christening_locations
+		bom.test_christening_locations
 	ORDER BY 
-		id ASC
+		name ASC
 	`
 
 	return func(w http.ResponseWriter, r *http.Request) {

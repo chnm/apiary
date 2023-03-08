@@ -114,7 +114,7 @@ func (s *Server) EndpointsHandler() http.HandlerFunc {
 				[]ExampleURL{
 					{baseurl + "/bom/causes?start-year=1648&end-year=1754",
 						"Causes of death for a specific year range"},
-					{baseurl + "/bom/causes?start-year=1648&end-year=1754&id=1,3,17,28",
+					{baseurl + "/bom/causes?start-year=1648&end-year=1754&id=Aged,Drowned",
 						"Causes of death for a specific year range and cause IDs"},
 				}},
 			{"BOM: Christenings",
