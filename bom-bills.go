@@ -15,18 +15,19 @@ import (
 // ParishByYear describes a parish's canoncial name, count type, total count, start day,
 // start month, end day, end month, year, week number, and week ID.
 type ParishByYear struct {
-	ParishName string     `json:"name"`
-	BillType   string     `json:"bill_type"`
-	CountType  string     `json:"count_type"`
-	TotalCount NullInt64  `json:"count"`
-	StartDay   NullInt64  `json:"start_day"`
-	StartMonth NullString `json:"start_month"`
-	EndDay     NullInt64  `json:"end_day"`
-	EndMonth   NullString `json:"end_month"`
-	Year       NullInt64  `json:"year"`
-	SplitYear  string     `json:"split_year"`
-	WeekNo     int        `json:"week_no"`
-	WeekID     string     `json:"week_id"`
+	ParishName   string     `json:"name"`
+	BillType     string     `json:"bill_type"`
+	CountType    string     `json:"count_type"`
+	TotalCount   NullInt64  `json:"count"`
+	StartDay     NullInt64  `json:"start_day"`
+	StartMonth   NullString `json:"start_month"`
+	EndDay       NullInt64  `json:"end_day"`
+	EndMonth     NullString `json:"end_month"`
+	Year         NullInt64  `json:"year"`
+	SplitYear    string     `json:"split_year"`
+	WeekNo       int        `json:"week_no"`
+	WeekID       string     `json:"week_id"`
+	TotalRecords int        `json:"totalrecords"`
 }
 
 // TotalBills returns to the total number of records in the database. We need this
@@ -53,7 +54,8 @@ func (s *Server) BillsHandler() http.HandlerFunc {
 		y.year,
 		w.split_year,
 		w.week_no,
-		b.week_id
+		b.week_id,
+		COUNT(*) OVER() AS totalrecords
 	FROM
 		bom.bill_of_mortality b
 	JOIN
@@ -93,7 +95,8 @@ func (s *Server) BillsHandler() http.HandlerFunc {
 		y.year,
 		w.split_year,
 		w.week_no,
-		b.week_id
+		b.week_id,
+		COUNT(*) OVER() AS totalrecords
 	FROM
 		bom.bill_of_mortality b
 	JOIN
@@ -132,7 +135,8 @@ func (s *Server) BillsHandler() http.HandlerFunc {
 		y.year,
 		w.split_year,
 		w.week_no,
-		b.week_id
+		b.week_id,
+		COUNT(*) OVER() AS totalrecords
 	FROM
 		bom.bill_of_mortality b
 	JOIN
@@ -171,7 +175,8 @@ func (s *Server) BillsHandler() http.HandlerFunc {
 		y.year,
 		w.split_year,
 		w.week_no,
-		b.week_id
+		b.week_id,
+		COUNT(*) OVER() AS totalrecords
 	FROM
 		bom.bill_of_mortality b
 	JOIN
@@ -209,7 +214,8 @@ func (s *Server) BillsHandler() http.HandlerFunc {
 		y.year,
 		w.split_year,
 		w.week_no,
-		b.week_id
+		b.week_id,
+		COUNT(*) OVER() AS totalrecords
 	FROM
 		bom.bill_of_mortality b
 	JOIN
@@ -245,7 +251,8 @@ func (s *Server) BillsHandler() http.HandlerFunc {
 		y.year,
 		w.split_year,
 		w.week_no,
-		b.week_id
+		b.week_id,
+		COUNT(*) OVER() AS totalrecords
 	FROM
 		bom.bill_of_mortality b
 	JOIN
@@ -280,7 +287,8 @@ func (s *Server) BillsHandler() http.HandlerFunc {
 		y.year,
 		w.split_year,
 		w.week_no,
-		b.week_id
+		b.week_id,
+		COUNT(*) OVER() AS totalrecords
 	FROM
 		bom.bill_of_mortality b
 	JOIN
@@ -315,7 +323,8 @@ func (s *Server) BillsHandler() http.HandlerFunc {
 		y.year,
 		w.split_year,
 		w.week_no,
-		b.week_id
+		b.week_id,
+		COUNT(*) OVER() AS totalrecords
 	FROM
 		bom.bill_of_mortality b
 	JOIN
@@ -517,7 +526,8 @@ func (s *Server) BillsHandler() http.HandlerFunc {
 				&row.Year,
 				&row.SplitYear,
 				&row.WeekNo,
-				&row.WeekID)
+				&row.WeekID,
+				&row.TotalRecords)
 			if err != nil {
 				log.Println(err)
 			}
