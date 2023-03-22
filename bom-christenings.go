@@ -15,16 +15,16 @@ import (
 // ChristeningsByYear describes a christening's description, total count, week number,
 // week ID, and year.
 type ChristeningsByYear struct {
-	Christening string    `json:"christening"`
-	TotalCount  NullInt64 `json:"count"`
-	WeekNo      int       `json:"week_no"`
-	StartDay    NullInt64 `json:"start_day"`
-	StartMonth  string    `json:"start_month"`
-	EndDay      NullInt64 `json:"end_day"`
-	EndMonth    string    `json:"end_month"`
-	Year        int       `json:"year"`
-	SplitYear   string    `json:"split_year"`
-	// LocID       int       `json:"loc_id"`
+	Christening  string    `json:"christening"`
+	TotalCount   NullInt64 `json:"count"`
+	WeekNo       NullInt64 `json:"week_no"`
+	StartDay     NullInt64 `json:"start_day"`
+	StartMonth   string    `json:"start_month"`
+	EndDay       NullInt64 `json:"end_day"`
+	EndMonth     string    `json:"end_month"`
+	Year         int       `json:"year"`
+	SplitYear    string    `json:"split_year"`
+	TotalRecords int       `json:"totalrecords"`
 }
 
 // Christenings describes a christening location.
@@ -46,7 +46,8 @@ func (s *Server) ChristeningsHandler() http.HandlerFunc {
 		c.start_month,
 		c.end_day,
 		c.end_month,
-		y.year
+		y.year,
+		COUNT(*) OVER() AS totalrecords
 	FROM
 		bom.christenings c
 	JOIN
@@ -54,8 +55,8 @@ func (s *Server) ChristeningsHandler() http.HandlerFunc {
 	JOIN
 		bom.christening_locations l ON l.name = c.christening
 	WHERE
-		y.year >= $1
-		AND y.year < $2
+		y.year >= $1::int
+		AND y.year < $2::int
 		AND (
 			$3::int[] IS NULL
 			OR l.id = ANY($3::int[])
@@ -76,14 +77,15 @@ func (s *Server) ChristeningsHandler() http.HandlerFunc {
 		c.start_month,
 		c.end_day,
 		c.end_month,
-		y.year
+		y.year,
+		COUNT(*) OVER() AS totalrecords
 	FROM
 		bom.christenings c
 	JOIN
 		bom.year y ON y.year = c.year
 	WHERE
-		y.year >= $1
-		AND y.year < $2
+		y.year >= $1::int
+		AND y.year < $2::int
 	ORDER BY
 		year ASC,
 		week_number ASC
@@ -164,8 +166,7 @@ func (s *Server) ChristeningsHandler() http.HandlerFunc {
 				&row.EndDay,
 				&row.EndMonth,
 				&row.Year,
-				// &row.SplitYear,
-				// &row.LocID,
+				&row.TotalRecords,
 			)
 			if err != nil {
 				log.Println(err)
@@ -186,6 +187,8 @@ func (s *Server) ChristeningsHandler() http.HandlerFunc {
 
 }
 
+// ListChristeningsHandler returns a list of parish names and ids where
+// christenings have been recorded.
 func (s *Server) ListChristeningsHandler() http.HandlerFunc {
 
 	query := `

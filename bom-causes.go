@@ -26,6 +26,7 @@ type DeathCauses struct {
 	EndMonth        NullString `json:"end_month"`
 	Year            NullInt64  `json:"year"`
 	SplitYear       string     `json:"split_year"`
+	TotalRecords    int        `json:"totalrecords"`
 }
 
 // Causes describes a cause of death.
@@ -50,7 +51,8 @@ func (s *Server) DeathCausesHandler() http.HandlerFunc {
 		w.end_day, 
 		w.end_month, 
 		y.year,
-		w.split_year
+		w.split_year,
+		COUNT(*) OVER() AS totalrecords
 	FROM 
 		bom.causes_of_death c
 	JOIN 
@@ -82,7 +84,8 @@ func (s *Server) DeathCausesHandler() http.HandlerFunc {
 		w.end_day, 
 		w.end_month, 
 		y.year,
-		w.split_year
+		w.split_year,
+		COUNT(*) OVER() AS totalrecords
 	FROM 
 		bom.causes_of_death c
 	JOIN 
@@ -176,6 +179,7 @@ func (s *Server) DeathCausesHandler() http.HandlerFunc {
 				&row.EndMonth,
 				&row.Year,
 				&row.SplitYear,
+				&row.TotalRecords,
 			)
 			if err != nil {
 				log.Println(err)
