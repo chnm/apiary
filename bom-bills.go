@@ -7,7 +7,6 @@ import (
 	"log"
 	"net/http"
 	"strconv"
-	"strings"
 
 	"github.com/jackc/pgx/v4"
 )
@@ -15,19 +14,28 @@ import (
 // ParishByYear describes a parish's canoncial name, count type, total count, start day,
 // start month, end day, end month, year, week number, and week ID.
 type ParishByYear struct {
-	ParishName   string     `json:"name"`
-	BillType     string     `json:"bill_type"`
-	CountType    string     `json:"count_type"`
-	TotalCount   NullInt64  `json:"count"`
-	StartDay     NullInt64  `json:"start_day"`
-	StartMonth   NullString `json:"start_month"`
-	EndDay       NullInt64  `json:"end_day"`
-	EndMonth     NullString `json:"end_month"`
-	Year         NullInt64  `json:"year"`
-	SplitYear    string     `json:"split_year"`
-	WeekNo       int        `json:"week_no"`
-	WeekID       string     `json:"week_id"`
-	TotalRecords int        `json:"totalrecords"`
+	CanonicalName string     `json:"name"`
+	BillType      string     `json:"bill_type"`
+	CountType     string     `json:"count_type"`
+	Count         NullInt64  `json:"count"`
+	StartDay      NullInt64  `json:"start_day"`
+	StartMonth    NullString `json:"start_month"`
+	EndDay        NullInt64  `json:"end_day"`
+	EndMonth      NullString `json:"end_month"`
+	Year          NullInt64  `json:"year"`
+	SplitYear     string     `json:"split_year"`
+	WeekNo        int        `json:"week_no"`
+	WeekID        string     `json:"week_id"`
+	TotalRecords  int        `json:"totalrecords"`
+}
+
+type APIParameters struct {
+	StartYear int
+	EndYear   int
+	Parish    string
+	BillType  string
+	CountType string
+	Sort      string
 }
 
 // TotalBills returns to the total number of records in the database. We need this
@@ -40,511 +48,278 @@ type TotalBills struct {
 // an end year. It returns a JSON array of ParishByYear objects.
 func (s *Server) BillsHandler() http.HandlerFunc {
 
-	// Query for specific bill types and count
-	query := `
-	SELECT
-		p.canonical_name,
-		b.bill_type,
-		b.count_type,
-		b.count,
-		w.start_day,
-		w.start_month,
-		w.end_day,
-		w.end_month,
-		y.year,
-		w.split_year,
-		w.week_no,
-		b.week_id,
-		COUNT(*) OVER() AS totalrecords
-	FROM
-		bom.bill_of_mortality b
-	JOIN
-		bom.parishes p ON p.id = b.parish_id
-	JOIN
-		bom.year y ON y.year = b.year_id
-	JOIN
-		bom.week w ON w.joinid = b.week_id
-	WHERE
-		y.year >= $1::int
-		AND y.year <= $2::int
-		AND bill_type = $3
-		AND count_type = $4
-		AND (
-			$5::int[] IS NULL
-			OR parish_id = ANY($5::int[])
-		)
-	ORDER BY
-		year ASC,
-		week_no ASC,
-		canonical_name ASC
-	LIMIT $6
-	OFFSET $7;
-	`
-
-	// Query for all bills (weekly and general) and a specific count type (plague or buried).
-	queryAllBillTypes := `
-	SELECT
-		p.canonical_name,
-		'All' AS bill_type,
-		b.count_type,
-		b.count,
-		w.start_day,
-		w.start_month,
-		w.end_day,
-		w.end_month,
-		y.year,
-		w.split_year,
-		w.week_no,
-		b.week_id,
-		COUNT(*) OVER() AS totalrecords
-	FROM
-		bom.bill_of_mortality b
-	JOIN
-		bom.parishes p ON p.id = b.parish_id
-	JOIN
-		bom.year y ON y.year = b.year_id
-	JOIN
-		bom.week w ON w.joinid = b.week_id
-	WHERE
-		y.year >= $1::int
-		AND y.year <= $2::int
-		AND count_type = $3
-		AND (
-			$4::int[] IS NULL
-			OR parish_id = ANY($4::int[])
-		)
-	ORDER BY
-		year ASC,
-		week_no ASC,
-		canonical_name ASC
-	LIMIT $5
-	OFFSET $6;
-	`
-
-	// Query for all count types (plague and buried) and a specific bill type (plague or buried).
-	queryAllCountTypes := `
-	SELECT
-		p.canonical_name,
-		b.bill_type,
-		b.count_type,
-		b.count,
-		w.start_day,
-		w.start_month,
-		w.end_day,
-		w.end_month,
-		y.year,
-		w.split_year,
-		w.week_no,
-		b.week_id,
-		COUNT(*) OVER() AS totalrecords
-	FROM
-		bom.bill_of_mortality b
-	JOIN
-		bom.parishes p ON p.id = b.parish_id
-	JOIN
-		bom.year y ON y.year = b.year_id
-	JOIN
-		bom.week w ON w.joinid = b.week_id
-	WHERE
-		y.year >= $1::int
-		AND y.year <= $2::int
-		AND bill_type = $3
-		AND (
-			$4::int[] IS NULL
-			OR parish_id = ANY($4::int[])
-		)
-	ORDER BY
-		year ASC,
-		week_no ASC,
-		canonical_name ASC
-	LIMIT $5
-	OFFSET $6;
-	`
-
-	// Default query, return all data with limit and offset.
-	queryAll := `
-	SELECT
-		p.canonical_name,
-		b.bill_type,
-		b.count_type,
-		b.count,
-		w.start_day,
-		w.start_month,
-		w.end_day,
-		w.end_month,
-		y.year,
-		w.split_year,
-		w.week_no,
-		b.week_id,
-		COUNT(*) OVER() AS totalrecords
-	FROM
-		bom.bill_of_mortality b
-	JOIN
-		bom.parishes p ON p.id = b.parish_id
-	JOIN
-		bom.year y ON y.year = b.year_id
-	JOIN
-		bom.week w ON w.joinid = b.week_id
-	WHERE
-		y.year >= $1::int
-		AND y.year <= $2::int
-		AND (
-			$3::int[] IS NULL
-			OR parish_id = ANY($3::int[])
-		)
-	ORDER BY
-		year ASC,
-		week_no ASC,
-		canonical_name ASC
-	LIMIT $4
-	OFFSET $5;
-	`
-
-	// Query for specific bill types and count but no parishes.
-	queryNoParishes := `
-	SELECT
-		p.canonical_name,
-		b.bill_type,
-		b.count_type,
-		b.count,
-		w.start_day,
-		w.start_month,
-		w.end_day,
-		w.end_month,
-		y.year,
-		w.split_year,
-		w.week_no,
-		b.week_id,
-		COUNT(*) OVER() AS totalrecords
-	FROM
-		bom.bill_of_mortality b
-	JOIN
-		bom.parishes p ON p.id = b.parish_id
-	JOIN
-		bom.year y ON y.year = b.year_id
-	JOIN
-		bom.week w ON w.joinid = b.week_id
-	WHERE
-		y.year >= $1::int
-		AND y.year <= $2::int
-		AND bill_type = $3
-		AND count_type = $4
-	ORDER BY
-		year ASC,
-		week_no ASC,
-		canonical_name ASC
-	LIMIT $5
-	OFFSET $6;
-	`
-
-	// Query for all bills (weekly and general) and a specific count type (plague or buried) and no parishes.
-	queryAllBillTypesNoParishes := `
-	SELECT
-		p.canonical_name,
-		'All' AS bill_type,
-		b.count_type,
-		b.count,
-		w.start_day,
-		w.start_month,
-		w.end_day,
-		w.end_month,
-		y.year,
-		w.split_year,
-		w.week_no,
-		b.week_id,
-		COUNT(*) OVER() AS totalrecords
-	FROM
-		bom.bill_of_mortality b
-	JOIN
-		bom.parishes p ON p.id = b.parish_id
-	JOIN
-		bom.year y ON y.year = b.year_id
-	JOIN
-		bom.week w ON w.joinid = b.week_id
-	WHERE
-		y.year >= $1::int
-		AND y.year <= $2::int
-		AND count_type = $3
-	ORDER BY
-		year ASC,
-		week_no ASC,
-		canonical_name ASC
-	LIMIT $4
-	OFFSET $5;
-	`
-
-	// Query for all count types (plague and buried) and a specific bill type (plague or buried) and no parishes.
-	queryAllCountTypesNoParishes := `
-	SELECT
-		p.canonical_name,
-		b.bill_type,
-		b.count_type,
-		b.count,
-		w.start_day,
-		w.start_month,
-		w.end_day,
-		w.end_month,
-		y.year,
-		w.split_year,
-		w.week_no,
-		b.week_id,
-		COUNT(*) OVER() AS totalrecords
-	FROM
-		bom.bill_of_mortality b
-	JOIN
-		bom.parishes p ON p.id = b.parish_id
-	JOIN
-		bom.year y ON y.year = b.year_id
-	JOIN
-		bom.week w ON w.joinid = b.week_id
-	WHERE
-		y.year >= $1::int
-		AND y.year <= $2::int
-		AND bill_type = $3
-	ORDER BY
-		year ASC,
-		week_no ASC,
-		canonical_name ASC
-	LIMIT $4
-	OFFSET $5;
-	`
-
-	// Default query, return all data with limit and offset.
-	queryAllNoParishes := `
-	SELECT
-		p.canonical_name,
-		b.bill_type,
-		b.count_type,
-		b.count,
-		w.start_day,
-		w.start_month,
-		w.end_day,
-		w.end_month,
-		y.year,
-		w.split_year,
-		w.week_no,
-		b.week_id,
-		COUNT(*) OVER() AS totalrecords
-	FROM
-		bom.bill_of_mortality b
-	JOIN
-		bom.parishes p ON p.id = b.parish_id
-	JOIN
-		bom.year y ON y.year = b.year_id
-	JOIN
-		bom.week w ON w.joinid = b.week_id
-	WHERE
-		y.year >= $1::int
-		AND y.year <= $2::int
-	ORDER BY
-		year ASC,
-		week_no ASC,
-		canonical_name ASC
-	LIMIT $3
-	OFFSET $4;
-	`
-
 	return func(w http.ResponseWriter, r *http.Request) {
-		// We use hyphen-separated strings since URLs can be case-sensitive.
-		// https://www.rfc-editor.org/rfc/rfc3986
-		// https://developers.google.com/search/docs/advanced/guidelines/url-structure?hl=en&visit_id=637937657362879240-859683351&rd=1
+
 		startYear := r.URL.Query().Get("start-year")
 		endYear := r.URL.Query().Get("end-year")
+		parish := r.URL.Query().Get("parish")
 		billType := r.URL.Query().Get("bill-type")
 		countType := r.URL.Query().Get("count-type")
-		parishIDs := r.URL.Query().Get("parishes")
+		sortData := r.URL.Query().Get("sort")
 		limit := r.URL.Query().Get("limit")
 		offset := r.URL.Query().Get("offset")
+		page := r.URL.Query().Get("page")
 
-		// parishIDs needs to be a postgres array of integers to send to the query. This
-		// returns '{1, 2, 3}' to give the query a literal array.
-		parishIDs = fmt.Sprintf("{%s}", strings.TrimSpace(parishIDs))
+		// Now we can modify the query if a user has supplied one of the following:
+		// 1. A start and end year. If neither are provided, we use the defaults of
+		// start year: 1648 and end year of 1750.
+		// 2. A count type ("buried" or "plague"). If a user selects "All", we provide all.
+		// 3. A bill type ("weekly", or "general", or "total", or "All")
+		// 4. A parish name, which we fetch by the parish ID. If a user selects "All", we provide all.
 
-		if startYear == "" || endYear == "" {
-			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
-			return
+		// Create the default API parameters
+		apiParams := APIParameters{
+			StartYear: 1648,
+			EndYear:   1750,
+			Parish:    "",
+			BillType:  "",
+			CountType: "",
+			Sort:      "year",
 		}
 
-		startYearInt, err := strconv.Atoi(startYear)
+		// If a start year is provided, update the API parameters
+		if startYear != "" {
+			startYearInt, err := strconv.Atoi(startYear)
+			if err != nil {
+				http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+				log.Println("start year is not an integer", err)
+				return
+			}
+
+			apiParams.StartYear = startYearInt
+		}
+
+		// If an end year is provided, update the API parameters
+		if endYear != "" {
+			endYearInt, err := strconv.Atoi(endYear)
+			if err != nil {
+				http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+				log.Println("end year is not an integer", err)
+				return
+			}
+
+			apiParams.EndYear = endYearInt
+		}
+
+		// If a parish is provided, update the API parameters
+		if parish != "" {
+			apiParams.Parish = parish
+		}
+
+		// If a bill type is provided, update the API parameters
+		if billType != "" {
+			// billtype can only be "Weekly", "General", or "Total"
+			if billType != "Weekly" && billType != "General" && billType != "Total" {
+				http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+				log.Println("bill type is invalid")
+				return
+			}
+
+			apiParams.BillType = billType
+		}
+
+		// If a count type is provided, update the API parameters
+		if countType != "" {
+			// counttype can only be "Buried" or "Plague"
+			if countType != "Buried" && countType != "Plague" {
+				http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+				log.Println("count type is invalid")
+				return
+			}
+
+			apiParams.CountType = countType
+		}
+
+		// If a sort is provided, update the API parameters
+		if sortData != "" {
+			// sort can only be "canonical_name", "year", or "week_no"
+			if sortData != "canonical_name" && sortData != "year" && sortData != "week_no" {
+				http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+				log.Println("sort is invalid")
+				return
+			}
+
+			apiParams.Sort = sortData
+		}
+
+		// Create the query
+		query := `
+		SELECT
+		p.canonical_name,
+		b.bill_type,
+		b.count_type,
+		b.count,
+		w.start_day,
+		w.start_month,
+		w.end_day,
+		w.end_month,
+		y.year,
+		w.split_year,
+		w.week_no,
+		b.week_id,
+		COUNT(*) OVER() AS totalrecords
+	FROM
+		bom.bill_of_mortality b
+	JOIN
+		bom.parishes p ON p.id = b.parish_id
+	JOIN
+		bom.year y ON y.year = b.year_id
+	JOIN
+		bom.week w ON w.joinid = b.week_id
+		`
+
+		// Now we can deal with the parameters.
+		// If a start year is provided, add it to the query
+		if apiParams.StartYear != 0 {
+			query += " WHERE b.year_id >= " + strconv.Itoa(apiParams.StartYear)
+			// params = append(params, apiParams.StartYear)
+		}
+
+		// If an end year is provided, add it to the query
+		if apiParams.EndYear != 0 {
+			query += " AND b.year_id <= " + strconv.Itoa(apiParams.EndYear)
+			// params = append(params, apiParams.EndYear)
+		}
+
+		// If a parish is provided, add it to the query
+		if apiParams.Parish != "" {
+			query += " AND b.parish_id = " + "'" + apiParams.Parish + "'"
+			// params = append(params, apiParams.Parish)
+		}
+
+		// If a bill type is provided, add it to the query
+		if apiParams.BillType != "" {
+			query += " AND b.bill_type = " + "'" + apiParams.BillType + "'"
+			// params = append(params, apiParams.BillType)
+		}
+
+		// If a count type is provided, add it to the query
+		if apiParams.CountType != "" {
+			query += " AND b.count_type = " + "'" + apiParams.CountType + "'"
+			// params = append(params, apiParams.CountType)
+		}
+
+		// If a sort is provided, add it to the query
+		if apiParams.Sort != "" {
+			query += " ORDER BY " + apiParams.Sort + " ASC"
+			// params = append(params, apiParams.Sort)
+		}
+
+		// log the query and parameters
+		log.Println("query", query)
+		log.Println("api parameters ", apiParams)
+		// log.Println("params", params)
+
+		// We handle limit and offset for pagination, and allow a page parameter which will be converted to limit and offset
+		// If a limit is provided, add it to the query
+		if limit != "" {
+			limitInt, err := strconv.Atoi(limit)
+			if err != nil {
+				http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+				log.Println("limit is not an integer", err)
+				return
+			}
+
+			query += " LIMIT " + strconv.Itoa(limitInt)
+		}
+
+		// If an offset is provided, add it to the query
+		if offset != "" {
+			offsetInt, err := strconv.Atoi(offset)
+			if err != nil {
+				http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+				log.Println("offset is not an integer", err)
+				return
+			}
+
+			query += " OFFSET " + strconv.Itoa(offsetInt)
+		}
+
+		// If a page is provided, add it to the query
+		if page != "" {
+			pageInt, err := strconv.Atoi(page)
+			if err != nil {
+				http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+				log.Println("page is not an integer", err)
+				return
+			}
+
+			// We implement logic here to figure out the limit and offset that
+			// corresponds to a particular page.
+			// If the page is 1, the limit is 25 and the offset is 0
+			// If the page is 2, the limit is 25 and the offset is 25
+			// If the page is 15, the limit is 25 and the offset is 350
+			// And so on...
+			limitInt := 25 // default limit
+			offsetInt := (pageInt - 1) * limitInt
+
+			query += " LIMIT " + strconv.Itoa(limitInt) + " OFFSET " + strconv.Itoa(offsetInt)
+		}
+
+		// now we can query the database
+		rows, err := s.DB.Query(context.TODO(), query)
 		if err != nil {
-			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			log.Fatal("Error preparing statement", err)
 			return
 		}
 
-		endYearInt, err := strconv.Atoi(endYear)
-		if err != nil {
-			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
-			return
-		}
-
-		if limit == "" {
-			limit = "25"
-		}
-		if offset == "" {
-			offset = "0"
-		}
-
-		limitInt, err := strconv.Atoi(limit)
-		if err != nil {
-			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
-			return
-		}
-
-		offsetInt, err := strconv.Atoi(offset)
-		if err != nil {
-			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
-			return
-		}
-
-		// If billType is supplied, it can only be one of the following:
-		// "Weekly", "General", or "All".
-		if billType != "" && billType != "Weekly" && billType != "General" && billType != "All" {
-			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
-			return
-		}
-
-		// If countType is supplied, it can only be one of the following:
-		// "Total", "Buried", "Plague", or "All".
-		if countType != "" && countType != "All" && countType != "Total" && countType != "Buried" && countType != "Plague" {
-			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
-			return
-		}
-
-		// ParishID must be between the minParishID and maxParishID range. Otherwise, it's a bad request.
-		// func validateParishIDs(parishIDs string) (string, error) {
-		// 	// We need to check that the parishIDs are within the range of the min and max parish IDs.
-		// 	// We do this by checking that the parishIDs are within the range of the min and max parish IDs.
-		// 	// currently in the database.
-		// 	maxValueQuery := `
-		// 	SELECT
-		// 		MAX(id)
-		// 	FROM
-		// 		bom.parishes;
-		// 	`
-		// 	minValueQuery := `
-		// 	SELECT
-		// 		MIN(id)
-		// 	FROM
-		// 		bom.parishes;
-		// 	`
-
-		// 	var maxValue int
-		// 	var minValue int
-
-		// 	err := db.QueryRow(maxValueQuery).Scan(&maxValue)
-		// 	if err != nil {
-		// 		return "", err
-		// 	}
-
-		// 	err = db.QueryRow(minValueQuery).Scan(&minValue)
-		// 	if err != nil {
-		// 		return "", err
-		// 	}
-		// }
-
-		// TODO: We want the ability to sort the following columns:
-		// 1. Parish name (canonical_name)
-		// 2. Week number (week_no)
-		// 3. Year (year)
-		// 4. Count (count)
-		// Sorting is selected in the frontend table.
-
-		// sortBy := r.URL.Query().Get("sort")
-		// if sortBy == "" {
-		// 	sortBy = "canonical_name"
-		// }
-		// sortQuery, err := validateAndReturnSortQuery(sortBy)
-		// if err != nil {
-		// 	http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
-		// 	return
-		// }
-
-		results := make([]ParishByYear, 0)
-		var row ParishByYear
-		var rows pgx.Rows
-
-		switch {
-		// The following returns the data based on user choices:
-
-		// 1. Bill type and count type are not set, returns all data
-		// 		GET /bom/bills?start-year=1669&end-year=1754&limit=50&offset=0 --- this returns [] as expected
-		// 		GET /bom/bills?start-year=1669&end-year=1754&bill-type=All&count-type=All&parishes=5&limit=50&offset=0
-		// 		GET /bom/bills?start-year=1669&end-year=1754&bill-type=All&count-type=All&limit=50&offset=0
-		//
-		// 2. Bill type (weekly or general) is set, but count type is not
-		// 		GET /bom/bills?start-year=1669&end-year=1754&bill-type=Weekly&limit=50&offset=0
-		// 		GET /bom/bills?start-year=1669&end-year=1754&bill-type=Weekly&parishes=1,5,19,67,77&limit=50&offset=0
-		//
-		// 3. Count type (buried or plague) is set, but bill type is not
-		// 		GET /bom/bills?start-year=1669&end-year=1754&count-type=Buried&limit=50&offset=0
-		// 		GET /bom/bills?start-year=1669&end-year=1754&count-type=Buried&parishes=2&limit=50&offset=0
-		//
-		// 4. Bill type (weekly or general) and count type (buried or plague) are specifically set
-		// 		GET /bom/bills?start-year=1669&end-year=1754&bill-type=Weekly&count-type=Buried&limit=50&offset=0
-		// 		GET /bom/bills?start-year=1669&end-year=1754&bill-type=General&count-type=Total&limit=50&offset=0
-		// 		GET /bom/bills?start-year=1669&end-year=1754&bill-type=Weekly&count-type=Plague&parishes=1,5,9&limit=50&offset=0
-
-		// If parish ids are provided:
-		case billType == "All" && countType == "All" && parishIDs != "{}":
-			rows, err = s.DB.Query(context.TODO(), queryAll, startYearInt, endYearInt, parishIDs, limitInt, offsetInt)
-		case countType != "" && billType != "" && parishIDs != "{}":
-			rows, err = s.DB.Query(context.TODO(), query, startYearInt, endYearInt, billType, countType, parishIDs, limitInt, offsetInt)
-		case billType != "" && countType == "" && parishIDs != "{}":
-			rows, err = s.DB.Query(context.TODO(), queryAllCountTypes, startYearInt, endYearInt, billType, parishIDs, limitInt, offsetInt)
-		case countType != "" && billType == "" && parishIDs != "{}":
-			rows, err = s.DB.Query(context.TODO(), queryAllBillTypes, startYearInt, endYearInt, countType, parishIDs, limitInt, offsetInt)
-
-		// If parish ids are not provided:
-		case billType == "All" && countType == "All" && parishIDs == "{}":
-			rows, err = s.DB.Query(context.TODO(), queryAllNoParishes, startYearInt, endYearInt, limitInt, offsetInt)
-		case countType != "" && billType != "" && parishIDs == "{}":
-			rows, err = s.DB.Query(context.TODO(), queryNoParishes, startYearInt, endYearInt, billType, countType, limitInt, offsetInt)
-		case billType != "" && countType == "" && parishIDs == "{}":
-			rows, err = s.DB.Query(context.TODO(), queryAllCountTypesNoParishes, startYearInt, endYearInt, billType, limitInt, offsetInt)
-		case countType != "" && billType == "" && parishIDs == "{}":
-			rows, err = s.DB.Query(context.TODO(), queryAllBillTypesNoParishes, startYearInt, endYearInt, countType, limitInt, offsetInt)
-
-		default:
-			rows, err = s.DB.Query(context.TODO(), query, startYearInt, endYearInt, billType, countType, parishIDs, limitInt, offsetInt)
-		}
-
-		if err != nil {
-			log.Println(err)
-		}
 		defer rows.Close()
 
+		// create a slice to hold the results
+		results := []ParishByYear{}
+
+		// iterate through the rows
 		for rows.Next() {
+			// create a variable to hold the result
+			var result ParishByYear
+
+			// scan the row into the result
 			err := rows.Scan(
-				&row.ParishName,
-				&row.BillType,
-				&row.CountType,
-				&row.TotalCount,
-				&row.StartDay,
-				&row.StartMonth,
-				&row.EndDay,
-				&row.EndMonth,
-				&row.Year,
-				&row.SplitYear,
-				&row.WeekNo,
-				&row.WeekID,
-				&row.TotalRecords)
+				&result.CanonicalName,
+				&result.BillType,
+				&result.CountType,
+				&result.Count,
+				&result.StartDay,
+				&result.StartMonth,
+				&result.EndDay,
+				&result.EndMonth,
+				&result.Year,
+				&result.SplitYear,
+				&result.WeekNo,
+				&result.WeekID,
+				&result.TotalRecords,
+			)
 			if err != nil {
-				log.Println(err)
+				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+				log.Fatal("Error scanning row", err)
+				return
 			}
-			results = append(results, row)
+
+			// append the result to the results slice
+			results = append(results, result)
 		}
+
+		// check for errors after iterating through the rows
 		err = rows.Err()
 		if err != nil {
-			log.Println(err)
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			log.Fatal("Error iterating through rows", err)
 			return
 		}
 
+		// if no results are returned, return a 404
+		if len(results) == 0 {
+			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+			log.Println("404", err)
+			return
+		}
+
+		// if results are returned, marshal them into JSON
 		response, _ := json.Marshal(results)
 		w.Header().Set("Content-Type", "application/json")
 		fmt.Fprint(w, string(response))
 	}
-
 }
 
 // TotalBillsHandler returns the total number of bills in the database.
