@@ -32,7 +32,7 @@ type ParishByYear struct {
 type APIParameters struct {
 	StartYear int
 	EndYear   int
-	Parish    string
+	Parish    int
 	BillType  string
 	CountType string
 	Sort      string
@@ -71,10 +71,10 @@ func (s *Server) BillsHandler() http.HandlerFunc {
 		apiParams := APIParameters{
 			StartYear: 1648,
 			EndYear:   1750,
-			Parish:    "",
+			Parish:    0,
 			BillType:  "",
 			CountType: "",
-			Sort:      "year",
+			Sort:      "year, week_no, canonical_name",
 		}
 
 		// If a start year is provided, update the API parameters
@@ -101,9 +101,16 @@ func (s *Server) BillsHandler() http.HandlerFunc {
 			apiParams.EndYear = endYearInt
 		}
 
-		// If a parish is provided, update the API parameters
+		// if a parish ID is provided, update the API parameters
 		if parish != "" {
-			apiParams.Parish = parish
+			parishInt, err := strconv.Atoi(parish)
+			if err != nil {
+				http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+				log.Println("parish is not an integer", err)
+				return
+			}
+
+			apiParams.Parish = parishInt
 		}
 
 		// If a bill type is provided, update the API parameters
@@ -132,13 +139,6 @@ func (s *Server) BillsHandler() http.HandlerFunc {
 
 		// If a sort is provided, update the API parameters
 		if sortData != "" {
-			// sort can only be "canonical_name", "year", or "week_no"
-			if sortData != "canonical_name" && sortData != "year" && sortData != "week_no" {
-				http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
-				log.Println("sort is invalid")
-				return
-			}
-
 			apiParams.Sort = sortData
 		}
 
@@ -182,8 +182,8 @@ func (s *Server) BillsHandler() http.HandlerFunc {
 		}
 
 		// If a parish is provided, add it to the query
-		if apiParams.Parish != "" {
-			query += " AND b.parish_id = " + "'" + apiParams.Parish + "'"
+		if apiParams.Parish != 0 {
+			query += " AND b.parish_id = " + strconv.Itoa(apiParams.Parish)
 			// params = append(params, apiParams.Parish)
 		}
 
