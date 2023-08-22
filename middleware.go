@@ -14,7 +14,8 @@ func (s *Server) Middleware() {
 	}
 	s.Router.Use(corsMiddleware)
 	s.Router.Use(clientCacheMiddleware)
-	s.Router.Use(handlers.CompressHandler)   // gzip requests
+	s.Router.Use(handlers.CompressHandler) // gzip requests
+	s.Router.Use(s.Cache.Middleware)
 	s.Router.Use(handlers.RecoveryHandler()) // Recover from runtime panics
 }
 

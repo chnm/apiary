@@ -3,6 +3,7 @@ package apiary
 import (
 	"context"
 	"log"
+	"math"
 	"net/http"
 	"time"
 
@@ -10,6 +11,9 @@ import (
 	"github.com/gorilla/mux"
 	_ "github.com/jackc/pgx/v4" // Driver for database
 	"github.com/jackc/pgx/v4/pgxpool"
+
+	cache "github.com/victorspringer/http-cache"
+	"github.com/victorspringer/http-cache/adapter/memory"
 )
 
 // The Config type stores configuration which is read from environment variables.
@@ -25,6 +29,7 @@ type Server struct {
 	DB     *pgxpool.Pool
 	Router *mux.Router
 	Config Config
+	Cache  *cache.Client
 }
 
 // NewServer creates a new Server and connects to the database or fails trying.
@@ -46,6 +51,25 @@ func NewServer(ctx context.Context) *Server {
 		log.Fatalln("error connecting to the database:", err)
 	}
 	s.DB = pool
+
+	// Set up the in-memory cache
+	memcached, err := memory.NewAdapter(
+		memory.AdapterWithAlgorithm(memory.LRU),
+		memory.AdapterWithCapacity(int(math.Pow(1000, 3))), // 1000^3 = gigabyte
+	)
+	if err != nil {
+		log.Fatal("error setting up memory cache:", err)
+	}
+
+	cacheClient, err := cache.NewClient(
+		cache.ClientWithAdapter(memcached),
+		cache.ClientWithTTL(1*time.Hour),
+		cache.ClientWithRefreshKey("nocache"),
+	)
+	if err != nil {
+		log.Fatal("error setting up memory cache:", err)
+	}
+	s.Cache = cacheClient
 
 	// Create the router, store it in the struct, initialize the routes, and
 	// register the middleware.
