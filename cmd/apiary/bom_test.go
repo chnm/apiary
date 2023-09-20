@@ -33,7 +33,7 @@ func TestBomParishes(t *testing.T) {
 
 func TestBomBills(t *testing.T) {
 	// Check that we get the right response
-	req, _ := http.NewRequest("GET", "/bom/bills?start-year=1669&end-year=1754&bill-type=All&count-type=All&limit=50&offset=0", nil)
+	req, _ := http.NewRequest("GET", "/bom/bills?start-year=1669&end-year=1754&bill-type=Weekly&count-type=Buried&limit=50&offset=0", nil)
 	response := executeRequest(req)
 	checkResponseCode(t, http.StatusOK, response.Code)
 
