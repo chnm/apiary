@@ -1,8 +1,6 @@
 # Apiary: The RRCHNM Data API
 
-This repository provides an API to access data stored in a PostgreSQL database. It is a component of [American Religious Ecologies](http://religiousecologies.org), [America's Public Bible](https://americaspublicbible.org), [Death by Numbers](https://deathbynumbers.org) and other projects at the [Roy Rosenzweig Center for History and New Media](https://rrchnm.org). The API is intended for use by RRCHNM projects and is not general purpose, but we provide the source code in case it is useful.
-
-You can read more about the rationale for this piece of RRCHNM's infrastructure [on our website](https://rrchnm.org/uncategorized/rrchnms-custom-api-for-data-driven-projects/).
+This repository provides an API to access data stored in a PostgreSQL database. It is a component of [American Religious Ecologies](http://religiousecologies.org), [America's Public Bible](https://americaspublicbible.org), [Death by Numbers](https://deathbynumbers.org) and other projects at the [Roy Rosenzweig Center for History and New Media](https://rrchnm.org). The API is intended for use by RRCHNM projects and is not general purpose, but we provide the source code in case it is useful. You can read more about the rationale for this piece of RRCHNM's infrastructure [on our website](https://rrchnm.org/uncategorized/rrchnms-custom-api-for-data-driven-projects/).
 
 ## Documentation 
 
