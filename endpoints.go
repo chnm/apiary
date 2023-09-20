@@ -173,6 +173,13 @@ func (s *Server) EndpointsHandler() http.HandlerFunc {
 					{baseurl + "/relcensus/city-membership?year=1926",
 						"Membership data aggregated for all denominations in each city"},
 				}},
+			{"Cache test",
+				baseurl + "/cache",
+				[]ExampleURL{
+					{baseurl + "/cache", "Cached response"},
+					{baseurl + "/cache?nocache", "Uncached response"},
+				},
+			},
 		}
 
 		response, _ := json.MarshalIndent(endpoints, "", "  ")
@@ -181,5 +188,3 @@ func (s *Server) EndpointsHandler() http.HandlerFunc {
 		fmt.Fprint(w, resp)
 	}
 }
-
-// []ExampleURL{{baseurl + "/ahcb/counties/1844-05-08/", "County on a specific date"}},

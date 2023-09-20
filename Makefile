@@ -16,6 +16,11 @@ install :
 test :
 	go test ./...
 
+.PHONY : bench
+bench: export APIARY_LOGGING=false
+bench :
+	go test ./... -run=^$$ -bench=.
+
 .PHONY : vuln
 vuln : 
 	govulncheck ./...
