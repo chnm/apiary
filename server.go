@@ -55,7 +55,7 @@ func NewServer(ctx context.Context) *Server {
 	// Set up the in-memory cache
 	memcached, err := memory.NewAdapter(
 		memory.AdapterWithAlgorithm(memory.LRU),
-		memory.AdapterWithCapacity(int(math.Pow(1000, 3))), // 1000^3 = gigabyte
+		memory.AdapterWithCapacity(int(math.Pow(1000, 2))), // 1000^3 = gigabyte
 	)
 	if err != nil {
 		log.Fatal("error setting up memory cache:", err)
