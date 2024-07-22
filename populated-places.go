@@ -45,7 +45,7 @@ func (s *Server) CountiesInState() http.HandlerFunc {
 
 	query := `
 		SELECT DISTINCT county_ahcb, county
-		FROM popplaces_1926
+		FROM relcensus.popplaces_1926
 		WHERE state = $1
 		ORDER BY county;
 		`
@@ -88,7 +88,7 @@ func (s *Server) PlacesInCounty() http.HandlerFunc {
 
 	query := `
 		SELECT place_id, place, map_name
-		FROM popplaces_1926
+		FROM relcensus.popplaces_1926
 		WHERE county_ahcb = $1
 		ORDER BY place;
 		`
@@ -131,7 +131,7 @@ func (s *Server) Place() http.HandlerFunc {
 
 	query := `
 		SELECT place_id, place, map_name, county, county_ahcb, state
-		FROM popplaces_1926
+		FROM relcensus.popplaces_1926
 		WHERE place_id = $1
 		`
 
