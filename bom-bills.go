@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/jackc/pgx/v4"
 )
@@ -32,7 +33,7 @@ type ParishByYear struct {
 type APIParameters struct {
 	StartYear int
 	EndYear   int
-	Parish    int
+	Parish    []int
 	BillType  string
 	CountType string
 	Sort      string
@@ -47,9 +48,7 @@ type TotalBills struct {
 // BillsHandler returns the bills for a given range of years. It expects a start year and
 // an end year. It returns a JSON array of ParishByYear objects.
 func (s *Server) BillsHandler() http.HandlerFunc {
-
 	return func(w http.ResponseWriter, r *http.Request) {
-
 		startYear := r.URL.Query().Get("start-year")
 		endYear := r.URL.Query().Get("end-year")
 		parish := r.URL.Query().Get("parish")
@@ -71,7 +70,7 @@ func (s *Server) BillsHandler() http.HandlerFunc {
 		apiParams := APIParameters{
 			StartYear: 1648,
 			EndYear:   1750,
-			Parish:    0,
+			Parish:    []int{},
 			BillType:  "",
 			CountType: "",
 			Sort:      "year, week_no, canonical_name",
@@ -103,14 +102,20 @@ func (s *Server) BillsHandler() http.HandlerFunc {
 
 		// if a parish ID is provided, update the API parameters
 		if parish != "" {
-			parishInt, err := strconv.Atoi(parish)
-			if err != nil {
-				http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
-				log.Println("parish is not an integer", err)
-				return
+			parishList := strings.Split(parish, ",")
+			var parishInts []int
+
+			for _, p := range parishList {
+				parishInt, err := strconv.Atoi(strings.TrimSpace(p))
+				if err != nil {
+					http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+					log.Println("parish is not an integer", err)
+					return
+				}
+				parishInts = append(parishInts, parishInt)
 			}
 
-			apiParams.Parish = parishInt
+			apiParams.Parish = parishInts
 		}
 
 		// If a bill type is provided, update the API parameters
@@ -182,8 +187,8 @@ func (s *Server) BillsHandler() http.HandlerFunc {
 		}
 
 		// If a parish is provided, add it to the query
-		if apiParams.Parish != 0 {
-			query += " AND b.parish_id = " + strconv.Itoa(apiParams.Parish)
+		if len(apiParams.Parish) > 0 {
+			query += " AND b.parish_id IN (" + strings.Trim(strings.Join(strings.Fields(fmt.Sprint(apiParams.Parish)), ","), "[]") + ")"
 			// params = append(params, apiParams.Parish)
 		}
 
@@ -325,7 +330,6 @@ func (s *Server) BillsHandler() http.HandlerFunc {
 // TotalBillsHandler returns the total number of bills in the database.
 // This number is required for pagination in the web application.
 func (s *Server) TotalBillsHandler() http.HandlerFunc {
-
 	queryWeekly := `
 	SELECT
 		COUNT(*)
