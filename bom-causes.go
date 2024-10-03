@@ -12,6 +12,13 @@ import (
 	"github.com/jackc/pgx/v4"
 )
 
+type DeathsAPIParameters struct {
+	StartYear int
+	EndYear   int
+	Death     []string
+	Sort      string
+}
+
 // DeathCauses returns a list of causes of death with a count of deaths for each
 // cause and related metadata.
 type DeathCauses struct {
@@ -19,13 +26,13 @@ type DeathCauses struct {
 	Count           NullInt64  `json:"count"`
 	DescriptiveText NullString `json:"descriptive_text"`
 	WeekID          string     `json:"week_id"`
-	WeekNo          int        `json:"week_no"`
+	WeekNo          NullInt64  `json:"week_no"`
 	StartDay        NullInt64  `json:"start_day"`
 	StartMonth      NullString `json:"start_month"`
 	EndDay          NullInt64  `json:"end_day"`
 	EndMonth        NullString `json:"end_month"`
 	Year            NullInt64  `json:"year"`
-	SplitYear       string     `json:"split_year"`
+	SplitYear       NullString `json:"split_year"`
 	TotalRecords    int        `json:"totalrecords"`
 }
 
@@ -38,72 +45,6 @@ type Causes struct {
 // depends on whether a user has provided a comma-separated list of causes. If
 // no list is provided, it returns the entire list of causes.
 func (s *Server) DeathCausesHandler() http.HandlerFunc {
-
-	queryCause := `
-	SELECT 
-		c.death,
-		c.count, 
-		c.descriptive_text, 
-		c.week_id,
-		w.week_no,
-		w.start_day, 
-		w.start_month, 
-		w.end_day, 
-		w.end_month, 
-		y.year,
-		w.split_year,
-		COUNT(*) OVER() AS totalrecords
-	FROM 
-		bom.causes_of_death c
-	JOIN 
-		bom.week w ON w.joinid = c.week_id
-	JOIN
-		bom.year y ON y.year = w.year
-	WHERE 
-		y.year::int >= $1
-		AND y.year::int <= $2
-		AND c.death = ANY($3)
-		AND count IS NOT NULL
-	ORDER BY 
-		y.year ASC,
-		w.week_no ASC,
-		c.death ASC
-	LIMIT $4
-	OFFSET $5;
-	`
-
-	queryNoCause := `
-	SELECT 
-		c.death,
-		c.count, 
-		c.descriptive_text,
-		c.week_id, 
-		w.week_no,
-		w.start_day, 
-		w.start_month, 
-		w.end_day, 
-		w.end_month, 
-		y.year,
-		w.split_year,
-		COUNT(*) OVER() AS totalrecords
-	FROM 
-		bom.causes_of_death c
-	JOIN 
-		bom.week w ON w.joinid = c.week_id
-	JOIN
-		bom.year y ON y.year = w.year
-	WHERE
-		y.year::int >= $1
-		AND y.year::int <= $2
-		AND count IS NOT NULL
-	ORDER BY 
-		y.year ASC,
-		w.week_no ASC,
-		c.death ASC
-	LIMIT $3
-	OFFSET $4;
-	`
-
 	return func(w http.ResponseWriter, r *http.Request) {
 		startYear := r.URL.Query().Get("start-year")
 		endYear := r.URL.Query().Get("end-year")
@@ -111,60 +52,127 @@ func (s *Server) DeathCausesHandler() http.HandlerFunc {
 		limit := r.URL.Query().Get("limit")
 		offset := r.URL.Query().Get("offset")
 
-		if startYear == "" || endYear == "" {
-			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
-			return
+		apiParams := DeathsAPIParameters{
+			StartYear: 1648,
+			EndYear:   1750,
+			Death:     []string{},
+			Sort:      "year, week_no, death",
 		}
 
-		startYearInt, err := strconv.Atoi(startYear)
-		if err != nil {
-			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
-			return
+		// If a start year is provided, update the API parameters
+		if startYear != "" {
+			startYearInt, err := strconv.Atoi(startYear)
+			if err != nil {
+				http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+				log.Println("start year is not an integer", err)
+				return
+			}
+
+			apiParams.StartYear = startYearInt
 		}
 
-		endYearInt, err := strconv.Atoi(endYear)
-		if err != nil {
-			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
-			return
+		// If an end year is provided, update the API parameters
+		if endYear != "" {
+			endYearInt, err := strconv.Atoi(endYear)
+			if err != nil {
+				http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+				log.Println("end year is not an integer", err)
+				return
+			}
+
+			apiParams.EndYear = endYearInt
 		}
 
-		if limit == "" {
-			limit = "25"
-		}
-		if offset == "" {
-			offset = "0"
+		// if a cause string is provided, update the API parameters
+		if causes != "" {
+			causesList := strings.Split(causes, ",")
+			var causesStr []string
+
+			for _, p := range causesList {
+				causeStr := strings.TrimSpace(p)
+				if causeStr == "" {
+					http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+					log.Println("cause is an empty string")
+					return
+				}
+				causesStr = append(causesStr, causeStr)
+			}
+
+			apiParams.Death = causesStr
 		}
 
-		limitInt, err := strconv.Atoi(limit)
-		if err != nil {
-			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
-			return
+		query := `
+    SELECT 
+        c.death,
+        c.count, 
+        c.descriptive_text, 
+        c.week_id,
+        w.week_no,
+        w.start_day, 
+        w.start_month, 
+        w.end_day, 
+        w.end_month, 
+        y.year,
+        w.split_year,
+        COUNT(*) OVER() AS totalrecords
+    FROM 
+        bom.causes_of_death c
+    JOIN 
+        bom.week w ON w.joinid = c.week_id
+    JOIN
+        bom.year y ON y.year = w.year
+    WHERE 
+        y.year::int >= $1
+        AND y.year::int <= $2
+        AND count IS NOT NULL
+    `
+
+		if len(apiParams.Death) > 0 {
+			query += " AND c.death = ANY($3)"
 		}
 
-		offsetInt, err := strconv.Atoi(offset)
-		if err != nil {
-			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
-			return
+		query += " ORDER BY " + apiParams.Sort
+
+		if limit != "" {
+			limitInt, err := strconv.Atoi(limit)
+			if err != nil {
+				http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+				log.Println("limit is not an integer", err)
+				return
+			}
+
+			query += " LIMIT " + strconv.Itoa(limitInt)
 		}
 
-		causes = fmt.Sprintf("{%s}", strings.TrimSpace(causes))
+		// If an offset is provided, add it to the query
+		if offset != "" {
+			offsetInt, err := strconv.Atoi(offset)
+			if err != nil {
+				http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+				log.Println("offset is not an integer", err)
+				return
+			}
+
+			query += " OFFSET " + strconv.Itoa(offsetInt)
+		}
 
 		results := make([]DeathCauses, 0)
 		var row DeathCauses
 		var rows pgx.Rows
+		var err error
 
-		switch {
-		case causes == "{}":
-			rows, err = s.DB.Query(context.TODO(), queryNoCause, startYearInt, endYearInt, limitInt, offsetInt)
-		case causes != "{}":
-			rows, err = s.DB.Query(context.TODO(), queryCause, startYearInt, endYearInt, causes, limitInt, offsetInt)
-		default:
-			rows, err = s.DB.Query(context.TODO(), queryNoCause, startYearInt, endYearInt, limitInt, offsetInt)
+		if len(apiParams.Death) > 0 {
+			rows, err = s.DB.Query(context.TODO(), query, apiParams.StartYear, apiParams.EndYear, apiParams.Death)
+		} else {
+			rows, err = s.DB.Query(context.TODO(), query, apiParams.StartYear, apiParams.EndYear)
 		}
 
 		if err != nil {
-			log.Println(err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			log.Fatal("Error preparing statement", err)
+			return
 		}
+
 		defer rows.Close()
 		for rows.Next() {
 			err := rows.Scan(
@@ -182,10 +190,12 @@ func (s *Server) DeathCausesHandler() http.HandlerFunc {
 				&row.TotalRecords,
 			)
 			if err != nil {
-				log.Println(err)
+				log.Printf("Error scanning row: %v", err)
+				log.Printf("Types: death=%T, count=%T, descriptiveText=%T, weekID=%T, weekNo=%T, startDay=%T, startMonth=%T, endDay=%T, endMonth=%T, year=%T, splitYear=%T, totalRecords=%T",
+					row.Death, row.Count, row.DescriptiveText, row.WeekID, row.WeekNo, row.StartDay, row.StartMonth, row.EndDay, row.EndMonth, row.Year, row.SplitYear, row.TotalRecords)
+				continue
 			}
 			results = append(results, row)
-
 		}
 		err = rows.Err()
 		if err != nil {
@@ -201,6 +211,7 @@ func (s *Server) DeathCausesHandler() http.HandlerFunc {
 }
 
 func (s *Server) ListCausesHandler() http.HandlerFunc {
+	// Query to get a unique list of causes of death
 
 	query := `
 	SELECT DISTINCT
