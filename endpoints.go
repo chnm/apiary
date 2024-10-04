@@ -163,6 +163,10 @@ func (s *Server) EndpointsHandler() http.HandlerFunc {
 				baseurl + "/bom/causes?start-year=1648&end-year=1754&limit=50&offset=0",
 				[]ExampleURL{
 					{
+						baseurl + "/bom/causes",
+						"Return all causes of death",
+					},
+					{
 						baseurl + "/bom/causes?start-year=1648&end-year=1754",
 						"Causes of death for a specific year range",
 					},
