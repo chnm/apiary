@@ -55,7 +55,6 @@ type TotalBills struct {
 
 // BillsHandler returns the bills for a given range of years. It expects a start year and
 // an end year. It returns a JSON array of ParishByYear objects.
-// BillsHandler returns the bills for a given range of years.
 func (s *Server) BillsHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Parse and validate query parameters
