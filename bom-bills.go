@@ -37,6 +37,14 @@ type APIParameters struct {
 	BillType  string
 	CountType string
 	Sort      string
+	Limit     int
+	Offset    int
+	Page      int
+}
+
+type QueryOptions struct {
+	Limit  int
+	Offset int
 }
 
 // TotalBills returns to the total number of records in the database. We need this
@@ -47,239 +55,38 @@ type TotalBills struct {
 
 // BillsHandler returns the bills for a given range of years. It expects a start year and
 // an end year. It returns a JSON array of ParishByYear objects.
+// BillsHandler returns the bills for a given range of years.
 func (s *Server) BillsHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		startYear := r.URL.Query().Get("start-year")
-		endYear := r.URL.Query().Get("end-year")
-		parish := r.URL.Query().Get("parish")
-		billType := r.URL.Query().Get("bill-type")
-		countType := r.URL.Query().Get("count-type")
-		sortData := r.URL.Query().Get("sort")
-		limit := r.URL.Query().Get("limit")
-		offset := r.URL.Query().Get("offset")
-		page := r.URL.Query().Get("page")
-
-		// Now we can modify the query if a user has supplied one of the following:
-		// 1. A start and end year. If neither are provided, we use the defaults of
-		// start year: 1648 and end year of 1750.
-		// 2. A count type ("buried" or "plague"). If a user selects "All", we provide all.
-		// 3. A bill type ("weekly", or "general", or "total", or "All")
-		// 4. A parish name, which we fetch by the parish ID. If a user selects "All", we provide all.
-
-		// Create the default API parameters
-		apiParams := APIParameters{
-			StartYear: 1648,
-			EndYear:   1750,
-			Parish:    []int{},
-			BillType:  "",
-			CountType: "",
-			Sort:      "year, week_no, canonical_name",
-		}
-
-		// If a start year is provided, update the API parameters
-		if startYear != "" {
-			startYearInt, err := strconv.Atoi(startYear)
-			if err != nil {
-				http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
-				log.Println("start year is not an integer", err)
-				return
-			}
-
-			apiParams.StartYear = startYearInt
-		}
-
-		// If an end year is provided, update the API parameters
-		if endYear != "" {
-			endYearInt, err := strconv.Atoi(endYear)
-			if err != nil {
-				http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
-				log.Println("end year is not an integer", err)
-				return
-			}
-
-			apiParams.EndYear = endYearInt
-		}
-
-		// if a parish ID is provided, update the API parameters
-		if parish != "" {
-			parishList := strings.Split(parish, ",")
-			var parishInts []int
-
-			for _, p := range parishList {
-				parishInt, err := strconv.Atoi(strings.TrimSpace(p))
-				if err != nil {
-					http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
-					log.Println("parish is not an integer", err)
-					return
-				}
-				parishInts = append(parishInts, parishInt)
-			}
-
-			apiParams.Parish = parishInts
-		}
-
-		// If a bill type is provided, update the API parameters
-		if billType != "" {
-			// billtype can only be "Weekly", "General", or "Total"
-			if billType != "Weekly" && billType != "General" && billType != "Total" {
-				http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
-				log.Println("bill type is invalid")
-				return
-			}
-
-			apiParams.BillType = billType
-		}
-
-		// If a count type is provided, update the API parameters
-		if countType != "" {
-			// counttype can only be "Buried" or "Plague"
-			if countType != "Buried" && countType != "Plague" {
-				http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
-				log.Println("count type is invalid")
-				return
-			}
-
-			apiParams.CountType = countType
-		}
-
-		// If a sort is provided, update the API parameters
-		if sortData != "" {
-			apiParams.Sort = sortData
-		}
-
-		// Create the query
-		query := `
-		SELECT
-		p.canonical_name,
-		b.bill_type,
-		b.count_type,
-		b.count,
-		w.start_day,
-		w.start_month,
-		w.end_day,
-		w.end_month,
-		y.year,
-		w.split_year,
-		w.week_no,
-		b.week_id,
-		COUNT(*) OVER() AS totalrecords
-	FROM
-		bom.bill_of_mortality b
-	JOIN
-		bom.parishes p ON p.id = b.parish_id
-	JOIN
-		bom.year y ON y.year = b.year_id
-	JOIN
-		bom.week w ON w.joinid = b.week_id
-		`
-
-		// Now we can deal with the parameters.
-		// If a start year is provided, add it to the query
-		if apiParams.StartYear != 0 {
-			query += " WHERE b.year_id >= " + strconv.Itoa(apiParams.StartYear)
-			// params = append(params, apiParams.StartYear)
-		}
-
-		// If an end year is provided, add it to the query
-		if apiParams.EndYear != 0 {
-			query += " AND b.year_id <= " + strconv.Itoa(apiParams.EndYear)
-			// params = append(params, apiParams.EndYear)
-		}
-
-		// If a parish is provided, add it to the query
-		if len(apiParams.Parish) > 0 {
-			query += " AND b.parish_id IN (" + strings.Trim(strings.Join(strings.Fields(fmt.Sprint(apiParams.Parish)), ","), "[]") + ")"
-			// params = append(params, apiParams.Parish)
-		}
-
-		// If a bill type is provided, add it to the query
-		if apiParams.BillType != "" {
-			query += " AND b.bill_type = " + "'" + apiParams.BillType + "'"
-			// params = append(params, apiParams.BillType)
-		}
-
-		// If a count type is provided, add it to the query
-		if apiParams.CountType != "" {
-			query += " AND b.count_type = " + "'" + apiParams.CountType + "'"
-			// params = append(params, apiParams.CountType)
-		}
-
-		// If a sort is provided, add it to the query
-		if apiParams.Sort != "" {
-			query += " ORDER BY " + apiParams.Sort + " ASC"
-			// params = append(params, apiParams.Sort)
-		}
-
-		// log the query and parameters
-		log.Println("query", query)
-		log.Println("api parameters ", apiParams)
-		// log.Println("params", params)
-
-		// We handle limit and offset for pagination, and allow a page parameter which will be converted to limit and offset
-		// If a limit is provided, add it to the query
-		if limit != "" {
-			limitInt, err := strconv.Atoi(limit)
-			if err != nil {
-				http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
-				log.Println("limit is not an integer", err)
-				return
-			}
-
-			query += " LIMIT " + strconv.Itoa(limitInt)
-		}
-
-		// If an offset is provided, add it to the query
-		if offset != "" {
-			offsetInt, err := strconv.Atoi(offset)
-			if err != nil {
-				http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
-				log.Println("offset is not an integer", err)
-				return
-			}
-
-			query += " OFFSET " + strconv.Itoa(offsetInt)
-		}
-
-		// If a page is provided, add it to the query
-		if page != "" {
-			pageInt, err := strconv.Atoi(page)
-			if err != nil {
-				http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
-				log.Println("page is not an integer", err)
-				return
-			}
-
-			// We implement logic here to figure out the limit and offset that
-			// corresponds to a particular page.
-			// If the page is 1, the limit is 25 and the offset is 0
-			// If the page is 2, the limit is 25 and the offset is 25
-			// If the page is 15, the limit is 25 and the offset is 350
-			// And so on...
-			limitInt := 25 // default limit
-			offsetInt := (pageInt - 1) * limitInt
-
-			query += " LIMIT " + strconv.Itoa(limitInt) + " OFFSET " + strconv.Itoa(offsetInt)
-		}
-
-		// now we can query the database
-		rows, err := s.DB.Query(context.TODO(), query)
+		// Parse and validate query parameters
+		apiParams, err := parseAPIParameters(r)
 		if err != nil {
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			log.Fatal("Error preparing statement", err)
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			log.Printf("Error parsing API parameters: %v", err)
 			return
 		}
 
+		// Build query
+		query, err := buildBillsQuery(apiParams)
+		if err != nil {
+			http.Error(w, "Error building query", http.StatusInternalServerError)
+			log.Printf("Error building query: %v", err)
+			return
+		}
+
+		// Execute query
+		rows, err := s.DB.Query(context.TODO(), query)
+		if err != nil {
+			http.Error(w, "Database error", http.StatusInternalServerError)
+			log.Printf("Error executing query: %v", err)
+			return
+		}
 		defer rows.Close()
 
-		// create a slice to hold the results
+		// Process results
 		results := []ParishByYear{}
-
-		// iterate through the rows
 		for rows.Next() {
-			// create a variable to hold the result
 			var result ParishByYear
-
-			// scan the row into the result
 			err := rows.Scan(
 				&result.CanonicalName,
 				&result.BillType,
@@ -296,35 +103,238 @@ func (s *Server) BillsHandler() http.HandlerFunc {
 				&result.TotalRecords,
 			)
 			if err != nil {
-				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-				log.Fatal("Error scanning row", err)
+				http.Error(w, "Error processing results", http.StatusInternalServerError)
+				log.Printf("Error scanning row: %v", err)
 				return
 			}
-
-			// append the result to the results slice
 			results = append(results, result)
 		}
 
-		// check for errors after iterating through the rows
-		err = rows.Err()
-		if err != nil {
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			log.Fatal("Error iterating through rows", err)
+		if err = rows.Err(); err != nil {
+			http.Error(w, "Error processing results", http.StatusInternalServerError)
+			log.Printf("Error iterating through rows: %v", err)
 			return
 		}
 
-		// if no results are returned, return a 404
-		if len(results) == 0 {
-			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
-			log.Println("404", err)
-			return
-		}
-
-		// if results are returned, marshal them into JSON
-		response, _ := json.Marshal(results)
+		// Return results (empty array if no results found)
 		w.Header().Set("Content-Type", "application/json")
-		fmt.Fprint(w, string(response))
+		response, err := json.Marshal(results)
+		if err != nil {
+			http.Error(w, "Error encoding response", http.StatusInternalServerError)
+			log.Printf("Error marshaling JSON: %v", err)
+			return
+		}
+		w.Write(response)
 	}
+}
+
+func (p *APIParameters) GetQueryOptions() QueryOptions {
+	if p.Page > 0 {
+		// Default to 25 items per page if using page parameter
+		return QueryOptions{
+			Limit:  25,
+			Offset: (p.Page - 1) * 25,
+		}
+	}
+
+	return QueryOptions{
+		Limit:  p.Limit,
+		Offset: p.Offset,
+	}
+}
+
+// Helper function to parse and validate query parameters
+func parseAPIParameters(r *http.Request) (APIParameters, error) {
+	params := APIParameters{
+		StartYear: 1648, // Default values
+		EndYear:   1750,
+		Parish:    []int{},
+		Sort:      "year, week_no, canonical_name",
+		Limit:     25, // Set a default limit
+	}
+
+	// Log raw query parameters for debugging
+	log.Printf("Raw query parameters: %v", r.URL.Query())
+
+	// Parse start year
+	if startYear := r.URL.Query().Get("start-year"); startYear != "" {
+		startYearInt, err := strconv.Atoi(startYear)
+		if err != nil {
+			return params, fmt.Errorf("invalid start year: %v", err)
+		}
+		params.StartYear = startYearInt
+	}
+
+	// Parse end year
+	if endYear := r.URL.Query().Get("end-year"); endYear != "" {
+		endYearInt, err := strconv.Atoi(endYear)
+		if err != nil {
+			return params, fmt.Errorf("invalid end year: %v", err)
+		}
+		params.EndYear = endYearInt
+	}
+
+	// Parse parish IDs
+	if parish := r.URL.Query().Get("parish"); parish != "" {
+		parishList := strings.Split(parish, ",")
+		for _, p := range parishList {
+			parishInt, err := strconv.Atoi(strings.TrimSpace(p))
+			if err != nil {
+				return params, fmt.Errorf("invalid parish ID: %v", err)
+			}
+			params.Parish = append(params.Parish, parishInt)
+		}
+	}
+
+	// Parse bill type
+	if billType := r.URL.Query().Get("bill-type"); billType != "" {
+		if !isValidBillType(billType) {
+			return params, fmt.Errorf("invalid bill type: %s", billType)
+		}
+		params.BillType = billType
+	}
+
+	// Parse count type
+	if countType := r.URL.Query().Get("count-type"); countType != "" {
+		if !isValidCountType(countType) {
+			return params, fmt.Errorf("invalid count type: %s", countType)
+		}
+		params.CountType = countType
+	}
+
+	// Parse pagination parameters first
+	if limit := r.URL.Query().Get("limit"); limit != "" {
+		limitInt, err := strconv.Atoi(limit)
+		if err != nil {
+			return params, fmt.Errorf("invalid limit: %v", err)
+		}
+		params.Limit = limitInt
+		log.Printf("Setting explicit limit to: %d", limitInt)
+	}
+
+	if offset := r.URL.Query().Get("offset"); offset != "" {
+		offsetInt, err := strconv.Atoi(offset)
+		if err != nil {
+			return params, fmt.Errorf("invalid offset: %v", err)
+		}
+		params.Offset = offsetInt
+		log.Printf("Setting offset to: %d", offsetInt)
+	}
+
+	// Handle page parameter last since it may override limit/offset
+	if page := r.URL.Query().Get("page"); page != "" {
+		pageInt, err := strconv.Atoi(page)
+		if err != nil {
+			return params, fmt.Errorf("invalid page number: %v", err)
+		}
+		params.Page = pageInt
+		log.Printf("Using page number: %d", pageInt)
+	}
+
+	// Parse sorting
+	if sort := r.URL.Query().Get("sort"); sort != "" {
+		params.Sort = sort
+	}
+
+	// Log final parameter values
+	log.Printf("Final API parameters: %+v", params)
+
+	return params, nil
+}
+
+// Helper function to build the SQL query
+func buildBillsQuery(params APIParameters) (string, error) {
+	baseQuery := `
+    SELECT
+        p.canonical_name,
+        b.bill_type,
+        b.count_type,
+        b.count,
+        w.start_day,
+        w.start_month,
+        w.end_day,
+        w.end_month,
+        y.year,
+        w.split_year,
+        w.week_no,
+        b.week_id,
+        COUNT(*) OVER() AS totalrecords
+    FROM
+        bom.bill_of_mortality b
+    JOIN
+        bom.parishes p ON p.id = b.parish_id
+    JOIN
+        bom.year y ON y.year = b.year_id
+    JOIN
+        bom.week w ON w.joinid = b.week_id
+    WHERE 1=1`
+
+	// Build WHERE clause
+	var conditions []string
+	if params.StartYear != 0 {
+		conditions = append(conditions, fmt.Sprintf("b.year_id >= %d", params.StartYear))
+	}
+	if params.EndYear != 0 {
+		conditions = append(conditions, fmt.Sprintf("b.year_id <= %d", params.EndYear))
+	}
+	if len(params.Parish) > 0 {
+		conditions = append(conditions, fmt.Sprintf("b.parish_id IN (%s)",
+			strings.Trim(strings.Join(strings.Fields(fmt.Sprint(params.Parish)), ","), "[]")))
+	}
+	if params.BillType != "" {
+		conditions = append(conditions, fmt.Sprintf("b.bill_type = '%s'", params.BillType))
+	}
+	if params.CountType != "" {
+		conditions = append(conditions, fmt.Sprintf("b.count_type = '%s'", params.CountType))
+	}
+
+	// Add conditions to query
+	if len(conditions) > 0 {
+		baseQuery += " AND " + strings.Join(conditions, " AND ")
+	}
+
+	// Add sorting
+	if params.Sort != "" {
+		baseQuery += " ORDER BY " + params.Sort + " ASC"
+	}
+
+	// Handle pagination
+	queryPart := " LIMIT %d"
+	if params.Page > 0 {
+		// If using page-based pagination
+		limit := 25
+		offset := (params.Page - 1) * limit
+		baseQuery += fmt.Sprintf(queryPart+" OFFSET %d", limit, offset)
+	} else {
+		// Always apply the limit (default or specified)
+		baseQuery += fmt.Sprintf(queryPart, params.Limit)
+		// Add offset if specified
+		if params.Offset > 0 {
+			baseQuery += fmt.Sprintf(" OFFSET %d", params.Offset)
+		}
+	}
+
+	log.Printf("Final query with pagination: %s", baseQuery)
+	return baseQuery, nil
+}
+
+// Helper function to validate bill types
+func isValidBillType(billType string) bool {
+	validTypes := map[string]bool{
+		"Weekly":  true,
+		"General": true,
+		"Total":   true,
+	}
+	return validTypes[billType]
+}
+
+// Helper function to validate count types
+func isValidCountType(countType string) bool {
+	validTypes := map[string]bool{
+		"Buried": true,
+		"Plague": true,
+	}
+	return validTypes[countType]
 }
 
 // TotalBillsHandler returns the total number of bills in the database.
