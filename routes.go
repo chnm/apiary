@@ -19,6 +19,7 @@ func (s *Server) Routes() {
 	s.Router.HandleFunc("/apb/verse-quotations", s.APBVerseQuotationsHandler()).Methods("GET", "HEAD")
 	s.Router.HandleFunc("/apb/verse-trend", s.APBVerseTrendHandler()).Methods("GET", "HEAD")
 	s.Router.HandleFunc("/bom/parishes", s.ParishesHandler()).Methods("GET", "HEAD")
+	s.Router.HandleFunc("/bom/geometries", s.ParishShpHandler()).Methods("GET", "HEAD")
 	s.Router.HandleFunc("/bom/totalbills", s.TotalBillsHandler()).Methods("GET", "HEAD")
 	s.Router.HandleFunc("/bom/bills", s.BillsHandler()).Methods("GET", "HEAD")
 	s.Router.HandleFunc("/bom/christenings", s.ChristeningsHandler()).Methods("GET", "HEAD")
