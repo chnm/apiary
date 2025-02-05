@@ -149,7 +149,6 @@ func parseAPIParameters(r *http.Request) (APIParameters, error) {
 		EndYear:   1750,
 		Parish:    []int{},
 		Sort:      "year, week_no, canonical_name",
-		Limit:     25, // Set a default limit
 	}
 
 	// Log raw query parameters for debugging
@@ -298,16 +297,12 @@ func buildBillsQuery(params APIParameters) (string, error) {
 	}
 
 	// Handle pagination
-	queryPart := " LIMIT %d"
 	if params.Page > 0 {
-		// If using page-based pagination
 		limit := 25
 		offset := (params.Page - 1) * limit
-		baseQuery += fmt.Sprintf(queryPart+" OFFSET %d", limit, offset)
-	} else {
-		// Always apply the limit (default or specified)
-		baseQuery += fmt.Sprintf(queryPart, params.Limit)
-		// Add offset if specified
+		baseQuery += fmt.Sprintf(" LIMIT %d OFFSET %d", limit, offset)
+	} else if params.Limit > 0 {
+		baseQuery += fmt.Sprintf(" LIMIT %d", params.Limit)
 		if params.Offset > 0 {
 			baseQuery += fmt.Sprintf(" OFFSET %d", params.Offset)
 		}
@@ -412,5 +407,128 @@ func (s *Server) TotalBillsHandler() http.HandlerFunc {
 		response, _ := json.Marshal(results)
 		w.Header().Set("Content-Type", "application/json")
 		fmt.Fprint(w, string(response))
+	}
+}
+
+// Statistics
+type YearlySummary struct {
+	Year           int `json:"year"`
+	WeeksCompleted int `json:"weeksCompleted"`
+	RowsCount      int `json:"rowsCount"`
+	TotalCount     int `json:"totalCount"`
+}
+
+type WeeklySummary struct {
+	Year      int `json:"year"`
+	WeekNo    int `json:"weekNo"`
+	RowsCount int `json:"rowsCount"`
+}
+
+func buildYearlyStatsQuery() string {
+	return `
+  WITH year_range AS (
+        SELECT generate_series(1636, 1754) AS year
+    ),
+    weekly_stats AS (
+        SELECT 
+            b.year_id as year,
+            COUNT(DISTINCT b.week_id) as weeks_completed,
+            COUNT(*) as rows_count
+        FROM bom.bill_of_mortality b
+        WHERE b.bill_type = 'Weekly'
+        GROUP BY b.year_id
+    )
+    SELECT 
+        yr.year,
+        COALESCE(ws.weeks_completed, 0) as weeks_completed,
+        COALESCE(ws.rows_count, 0) as rows_count,
+        53 as total_count
+    FROM year_range yr
+    LEFT JOIN weekly_stats ws ON yr.year = ws.year
+    ORDER BY yr.year;
+    `
+}
+
+func buildWeeklyStatsQuery() string {
+	return `
+    WITH year_week_range AS (
+        SELECT 
+            y.year,
+            w.number as week_no
+        FROM generate_series(1636, 1754) y(year)
+        CROSS JOIN generate_series(1, 53) w(number)
+    ),
+    weekly_stats AS (
+        SELECT 
+            b.year_id as year,
+            w.week_no,
+            COUNT(*) as rows_count
+        FROM bom.bill_of_mortality b
+        JOIN bom.week w ON w.joinid = b.week_id
+        WHERE b.bill_type = 'Weekly'
+        GROUP BY b.year_id, w.week_no
+    )
+    SELECT 
+        yr.year,
+        yr.week_no,
+        COALESCE(ws.rows_count, 0) as rows_count
+    FROM year_week_range yr
+    LEFT JOIN weekly_stats ws ON yr.year = ws.year AND yr.week_no = ws.week_no
+    ORDER BY yr.year, yr.week_no;
+    `
+}
+
+func (s *Server) StatisticsHandler() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		statType := r.URL.Query().Get("type")
+
+		var query string
+		switch statType {
+		case "weekly":
+			query = buildWeeklyStatsQuery()
+		case "yearly":
+			query = buildYearlyStatsQuery()
+		default:
+			http.Error(w, "Invalid type parameter. Must be 'weekly' or 'yearly'", http.StatusBadRequest)
+			return
+		}
+
+		rows, err := s.DB.Query(context.TODO(), query)
+		if err != nil {
+			http.Error(w, "Database error", http.StatusInternalServerError)
+			return
+		}
+		defer rows.Close()
+
+		if statType == "weekly" {
+			stats := []WeeklySummary{}
+			for rows.Next() {
+				var summary WeeklySummary
+				err := rows.Scan(&summary.Year, &summary.WeekNo, &summary.RowsCount)
+				if err != nil {
+					http.Error(w, "Error processing results", http.StatusInternalServerError)
+					return
+				}
+				stats = append(stats, summary)
+			}
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(stats)
+			return
+		}
+
+		stats := []YearlySummary{}
+		for rows.Next() {
+			var summary YearlySummary
+			err := rows.Scan(&summary.Year, &summary.WeeksCompleted,
+				&summary.RowsCount, &summary.TotalCount)
+			if err != nil {
+				http.Error(w, "Error processing results", http.StatusInternalServerError)
+				return
+			}
+			stats = append(stats, summary)
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(stats)
 	}
 }

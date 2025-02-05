@@ -141,6 +141,20 @@ func (s *Server) EndpointsHandler() http.HandlerFunc {
 				nil,
 			},
 			{
+				"BOM: Completion Statistics",
+				baseurl + "/bom/statistics",
+				[]ExampleURL{
+					{
+						baseurl + "/bom/statistics?type=weekly",
+						"Group completed bill transcriptions by week",
+					},
+					{
+						baseurl + "/bom/statistics?type=yearly",
+						"Group completed bill transcriptions by year",
+					},
+				},
+			},
+			{
 				"BOM: Bills of Mortality",
 				baseurl + "/bom/bills?start-year=1636&end-year=1754",
 				[]ExampleURL{
