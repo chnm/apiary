@@ -155,6 +155,11 @@ func (s *Server) EndpointsHandler() http.HandlerFunc {
 				},
 			},
 			{
+				"BOM: Parish polygons",
+				baseurl + "/bom/geometries",
+				nil,
+			},
+			{
 				"BOM: Bills of Mortality",
 				baseurl + "/bom/bills?start-year=1636&end-year=1754",
 				[]ExampleURL{
