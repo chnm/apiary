@@ -7,6 +7,7 @@ on:
       - "feature/cicd"
     paths:
       - "**"
+      - '!.github/**'
 
 jobs:
   build-publish:
