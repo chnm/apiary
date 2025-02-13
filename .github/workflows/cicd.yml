@@ -7,7 +7,7 @@ on:
       - "feature/cicd"
     paths:
       - "**"
-      #- '!.github/**'
+      - '!.github/**'
 
 jobs:
   build-publish:
@@ -21,7 +21,7 @@ jobs:
       context-root: "."
 
       website-devl-fqdn: "dev.apiary.rrchnm.org"
-      website-prod-fqdn: "dev.apiary.rrchnm.org"
+      website-prod-fqdn: "data.chnm.org"
   
   deploy:
     uses: chnm/.github/.github/workflows/docker--deploy.yml@main
@@ -29,4 +29,4 @@ jobs:
     secrets: inherit
     with:
       website-devl-fqdn: "dev.apiary.rrchnm.org"
-      website-prod-fqdn: "dev.apiary.rrchnm.org"
+      website-prod-fqdn: "data.chnm.org"
