@@ -22,3 +22,11 @@ jobs:
 
       website-devl-fqdn: "dev.apiary.rrchnm.org"
       website-prod-fqdn: "dev.apiary.rrchnm.org"
+  
+  deploy:
+    uses: chnm/.github/.github/workflows/docker--deploy.yml@main
+    needs: [build-publish]
+    secrets: inherit
+    with:
+      website-devl-fqdn: "dev.apiary.rrchnm.org"
+      website-prod-fqdn: "dev.apiary.rrchnm.org"
