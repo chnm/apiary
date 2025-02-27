@@ -27,6 +27,9 @@ type ParishByYear struct {
 	SplitYear     string     `json:"split_year"`
 	WeekNo        int        `json:"week_no"`
 	WeekID        string     `json:"week_id"`
+	Missing       *bool      `json:"missing"`
+	Illegible     *bool      `json:"illegible"`
+	Source        NullString `json:"source"`
 	TotalRecords  int        `json:"totalrecords"`
 }
 
@@ -99,6 +102,9 @@ func (s *Server) BillsHandler() http.HandlerFunc {
 				&result.SplitYear,
 				&result.WeekNo,
 				&result.WeekID,
+				&result.Missing,
+				&result.Illegible,
+				&result.Source,
 				&result.TotalRecords,
 			)
 			if err != nil {
@@ -256,13 +262,16 @@ func buildBillsQuery(params APIParameters) (string, error) {
         w.split_year,
         w.week_no,
         b.week_id,
+        b.missing,
+        b.illegible,
+        b.source,
         COUNT(*) OVER() AS totalrecords
     FROM
         bom.bill_of_mortality b
     JOIN
         bom.parishes p ON p.id = b.parish_id
     JOIN
-        bom.year y ON y.year = b.year_id
+        bom.year y ON y.year = b.year
     JOIN
         bom.week w ON w.joinid = b.week_id
     WHERE 1=1`
@@ -270,10 +279,10 @@ func buildBillsQuery(params APIParameters) (string, error) {
 	// Build WHERE clause
 	var conditions []string
 	if params.StartYear != 0 {
-		conditions = append(conditions, fmt.Sprintf("b.year_id >= %d", params.StartYear))
+		conditions = append(conditions, fmt.Sprintf("b.year >= %d", params.StartYear))
 	}
 	if params.EndYear != 0 {
-		conditions = append(conditions, fmt.Sprintf("b.year_id <= %d", params.EndYear))
+		conditions = append(conditions, fmt.Sprintf("b.year <= %d", params.EndYear))
 	}
 	if len(params.Parish) > 0 {
 		conditions = append(conditions, fmt.Sprintf("b.parish_id IN (%s)",
@@ -431,12 +440,12 @@ func buildYearlyStatsQuery() string {
     ),
     weekly_stats AS (
         SELECT 
-            b.year_id as year,
+            b.year as year,
             COUNT(DISTINCT b.week_id) as weeks_completed,
             COUNT(*) as rows_count
         FROM bom.bill_of_mortality b
         WHERE b.bill_type = 'Weekly'
-        GROUP BY b.year_id
+        GROUP BY b.year
     )
     SELECT 
         yr.year,
@@ -460,13 +469,13 @@ func buildWeeklyStatsQuery() string {
     ),
     weekly_stats AS (
         SELECT 
-            b.year_id as year,
+            b.year as year,
             w.week_no,
             COUNT(*) as rows_count
         FROM bom.bill_of_mortality b
         JOIN bom.week w ON w.joinid = b.week_id
         WHERE b.bill_type = 'Weekly'
-        GROUP BY b.year_id, w.week_no
+        GROUP BY b.year, w.week_no
     )
     SELECT 
         yr.year,
