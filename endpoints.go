@@ -152,6 +152,14 @@ func (s *Server) EndpointsHandler() http.HandlerFunc {
 						baseurl + "/bom/statistics?type=yearly",
 						"Group completed bill transcriptions by year",
 					},
+					{
+						baseurl + "/bom/statistics?type=parish-yearly",
+						"Group weekly bills by parish and year",
+					},
+					{
+						baseurl + "/bom/statistics?type=parish-yearly&parish=All%20Hallows%20Barking",
+						"Group weekly bills by parish and year",
+					},
 				},
 			},
 			{

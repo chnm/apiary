@@ -15,19 +15,23 @@ import (
 // ParishByYear describes a parish's canoncial name, count type, total count, start day,
 // start month, end day, end month, year, week number, and week ID.
 type ParishByYear struct {
-	CanonicalName string     `json:"name"`
-	BillType      string     `json:"bill_type"`
-	CountType     string     `json:"count_type"`
-	Count         NullInt64  `json:"count"`
-	StartDay      NullInt64  `json:"start_day"`
-	StartMonth    NullString `json:"start_month"`
-	EndDay        NullInt64  `json:"end_day"`
-	EndMonth      NullString `json:"end_month"`
-	Year          NullInt64  `json:"year"`
-	SplitYear     string     `json:"split_year"`
-	WeekNo        int        `json:"week_no"`
-	WeekID        string     `json:"week_id"`
-	TotalRecords  int        `json:"totalrecords"`
+	CanonicalName    string     `json:"name"`
+	BillType         string     `json:"bill_type"`
+	CountType        string     `json:"count_type"`
+	Count            NullInt64  `json:"count"`
+	StartDay         NullInt64  `json:"start_day"`
+	StartMonth       NullString `json:"start_month"`
+	EndDay           NullInt64  `json:"end_day"`
+	EndMonth         NullString `json:"end_month"`
+	Year             NullInt64  `json:"year"`
+	SplitYear        string     `json:"split_year"`
+	WeekNo           int        `json:"week_no"`
+	WeekID           string     `json:"week_id"`
+	Missing          *bool      `json:"missing"`
+	Illegible        *bool      `json:"illegible"`
+	Source           NullString `json:"source"`
+	UniqueIdentifier NullString `json:"unique_identifier"`
+	TotalRecords     int        `json:"totalrecords"`
 }
 
 type APIParameters struct {
@@ -99,6 +103,10 @@ func (s *Server) BillsHandler() http.HandlerFunc {
 				&result.SplitYear,
 				&result.WeekNo,
 				&result.WeekID,
+				&result.Missing,
+				&result.Illegible,
+				&result.Source,
+				&result.UniqueIdentifier,
 				&result.TotalRecords,
 			)
 			if err != nil {
@@ -150,9 +158,6 @@ func parseAPIParameters(r *http.Request) (APIParameters, error) {
 		Parish:    []int{},
 		Sort:      "year, week_no, canonical_name",
 	}
-
-	// Log raw query parameters for debugging
-	log.Printf("Raw query parameters: %v", r.URL.Query())
 
 	// Parse start year
 	if startYear := r.URL.Query().Get("start-year"); startYear != "" {
@@ -207,7 +212,6 @@ func parseAPIParameters(r *http.Request) (APIParameters, error) {
 			return params, fmt.Errorf("invalid limit: %v", err)
 		}
 		params.Limit = limitInt
-		log.Printf("Setting explicit limit to: %d", limitInt)
 	}
 
 	if offset := r.URL.Query().Get("offset"); offset != "" {
@@ -216,7 +220,6 @@ func parseAPIParameters(r *http.Request) (APIParameters, error) {
 			return params, fmt.Errorf("invalid offset: %v", err)
 		}
 		params.Offset = offsetInt
-		log.Printf("Setting offset to: %d", offsetInt)
 	}
 
 	// Handle page parameter last since it may override limit/offset
@@ -226,16 +229,12 @@ func parseAPIParameters(r *http.Request) (APIParameters, error) {
 			return params, fmt.Errorf("invalid page number: %v", err)
 		}
 		params.Page = pageInt
-		log.Printf("Using page number: %d", pageInt)
 	}
 
 	// Parse sorting
 	if sort := r.URL.Query().Get("sort"); sort != "" {
 		params.Sort = sort
 	}
-
-	// Log final parameter values
-	log.Printf("Final API parameters: %+v", params)
 
 	return params, nil
 }
@@ -252,17 +251,21 @@ func buildBillsQuery(params APIParameters) (string, error) {
         w.start_month,
         w.end_day,
         w.end_month,
-        y.year,
+        b.year,
         w.split_year,
         w.week_no,
         b.week_id,
+        b.missing,
+        b.illegible,
+        b.source,
+        b.unique_identifier,
         COUNT(*) OVER() AS totalrecords
     FROM
         bom.bill_of_mortality b
     JOIN
         bom.parishes p ON p.id = b.parish_id
     JOIN
-        bom.year y ON y.year = b.year_id
+        bom.year y ON y.year = b.year
     JOIN
         bom.week w ON w.joinid = b.week_id
     WHERE 1=1`
@@ -270,10 +273,10 @@ func buildBillsQuery(params APIParameters) (string, error) {
 	// Build WHERE clause
 	var conditions []string
 	if params.StartYear != 0 {
-		conditions = append(conditions, fmt.Sprintf("b.year_id >= %d", params.StartYear))
+		conditions = append(conditions, fmt.Sprintf("b.year >= %d", params.StartYear))
 	}
 	if params.EndYear != 0 {
-		conditions = append(conditions, fmt.Sprintf("b.year_id <= %d", params.EndYear))
+		conditions = append(conditions, fmt.Sprintf("b.year <= %d", params.EndYear))
 	}
 	if len(params.Parish) > 0 {
 		conditions = append(conditions, fmt.Sprintf("b.parish_id IN (%s)",
@@ -308,7 +311,6 @@ func buildBillsQuery(params APIParameters) (string, error) {
 		}
 	}
 
-	log.Printf("Final query with pagination: %s", baseQuery)
 	return baseQuery, nil
 }
 
@@ -424,19 +426,27 @@ type WeeklySummary struct {
 	RowsCount int `json:"rowsCount"`
 }
 
+// ParishYearlySummary represents total counts by parish and year for small multiple visualizations
+type ParishYearlySummary struct {
+	Year        int    `json:"year"`
+	ParishName  string `json:"parish_name"`
+	TotalBuried int    `json:"total_buried"`
+	TotalPlague *int   `json:"total_plague"`
+}
+
 func buildYearlyStatsQuery() string {
-	return `
+	query := `
   WITH year_range AS (
         SELECT generate_series(1636, 1754) AS year
     ),
     weekly_stats AS (
         SELECT 
-            b.year_id as year,
+            b.year as year,
             COUNT(DISTINCT b.week_id) as weeks_completed,
             COUNT(*) as rows_count
         FROM bom.bill_of_mortality b
         WHERE b.bill_type = 'Weekly'
-        GROUP BY b.year_id
+        GROUP BY b.year
     )
     SELECT 
         yr.year,
@@ -447,10 +457,11 @@ func buildYearlyStatsQuery() string {
     LEFT JOIN weekly_stats ws ON yr.year = ws.year
     ORDER BY yr.year;
     `
+	return query
 }
 
 func buildWeeklyStatsQuery() string {
-	return `
+	query := `
     WITH year_week_range AS (
         SELECT 
             y.year,
@@ -460,13 +471,13 @@ func buildWeeklyStatsQuery() string {
     ),
     weekly_stats AS (
         SELECT 
-            b.year_id as year,
+            b.year as year,
             w.week_no,
             COUNT(*) as rows_count
         FROM bom.bill_of_mortality b
         JOIN bom.week w ON w.joinid = b.week_id
         WHERE b.bill_type = 'Weekly'
-        GROUP BY b.year_id, w.week_no
+        GROUP BY b.year, w.week_no
     )
     SELECT 
         yr.year,
@@ -476,11 +487,37 @@ func buildWeeklyStatsQuery() string {
     LEFT JOIN weekly_stats ws ON yr.year = ws.year AND yr.week_no = ws.week_no
     ORDER BY yr.year, yr.week_no;
     `
+	return query
+}
+
+func buildParishYearlyStatsQuery(parishName string) string {
+	query := `
+    SELECT 
+        b.year,
+        p.canonical_name as parish_name,
+        SUM(CASE WHEN b.count_type = 'Buried' THEN COALESCE(b.count, 0) ELSE 0 END) as total_buried,
+        NULLIF(SUM(CASE WHEN b.count_type = 'Plague' THEN COALESCE(b.count, 0) ELSE 0 END), 0) as total_plague
+    FROM bom.bill_of_mortality b
+    JOIN bom.parishes p ON p.id = b.parish_id
+    WHERE b.bill_type = 'Weekly'
+    `
+
+	if parishName != "" {
+		query += fmt.Sprintf(" AND p.canonical_name = '%s'", parishName)
+	}
+
+	query += `
+    GROUP BY b.year, p.canonical_name
+    ORDER BY p.canonical_name, b.year
+    `
+
+	return query
 }
 
 func (s *Server) StatisticsHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		statType := r.URL.Query().Get("type")
+		parishName := r.URL.Query().Get("parish")
 
 		var query string
 		switch statType {
@@ -488,47 +525,103 @@ func (s *Server) StatisticsHandler() http.HandlerFunc {
 			query = buildWeeklyStatsQuery()
 		case "yearly":
 			query = buildYearlyStatsQuery()
+		case "parish-yearly":
+			query = buildParishYearlyStatsQuery(parishName)
 		default:
-			http.Error(w, "Invalid type parameter. Must be 'weekly' or 'yearly'", http.StatusBadRequest)
+			http.Error(w, "Invalid type parameter. Must be 'weekly', 'yearly', or 'parish-yearly'", http.StatusBadRequest)
 			return
 		}
 
 		rows, err := s.DB.Query(context.TODO(), query)
 		if err != nil {
-			http.Error(w, "Database error", http.StatusInternalServerError)
+			log.Printf("Database error executing query: %v", err)
+			http.Error(w, fmt.Sprintf("Database error: %v", err), http.StatusInternalServerError)
 			return
 		}
 		defer rows.Close()
 
-		if statType == "weekly" {
+		switch statType {
+		case "weekly":
 			stats := []WeeklySummary{}
 			for rows.Next() {
 				var summary WeeklySummary
 				err := rows.Scan(&summary.Year, &summary.WeekNo, &summary.RowsCount)
 				if err != nil {
-					http.Error(w, "Error processing results", http.StatusInternalServerError)
+					log.Printf("Error scanning weekly summary: %v", err)
+					http.Error(w, fmt.Sprintf("Error processing results: %v", err), http.StatusInternalServerError)
 					return
 				}
 				stats = append(stats, summary)
 			}
-			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(stats)
-			return
-		}
 
-		stats := []YearlySummary{}
-		for rows.Next() {
-			var summary YearlySummary
-			err := rows.Scan(&summary.Year, &summary.WeeksCompleted,
-				&summary.RowsCount, &summary.TotalCount)
-			if err != nil {
-				http.Error(w, "Error processing results", http.StatusInternalServerError)
+			// Check for errors from iterating over rows
+			if err = rows.Err(); err != nil {
+				log.Printf("Error iterating over rows: %v", err)
+				http.Error(w, fmt.Sprintf("Error processing results: %v", err), http.StatusInternalServerError)
 				return
 			}
-			stats = append(stats, summary)
-		}
 
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(stats)
+			w.Header().Set("Content-Type", "application/json")
+			if err := json.NewEncoder(w).Encode(stats); err != nil {
+				log.Printf("Error encoding JSON response: %v", err)
+			}
+
+		case "yearly":
+			stats := []YearlySummary{}
+			for rows.Next() {
+				var summary YearlySummary
+				err := rows.Scan(&summary.Year, &summary.WeeksCompleted,
+					&summary.RowsCount, &summary.TotalCount)
+				if err != nil {
+					log.Printf("Error scanning yearly summary: %v", err)
+					http.Error(w, fmt.Sprintf("Error processing results: %v", err), http.StatusInternalServerError)
+					return
+				}
+				stats = append(stats, summary)
+			}
+
+			// Check for errors from iterating over rows
+			if err = rows.Err(); err != nil {
+				log.Printf("Error iterating over rows: %v", err)
+				http.Error(w, fmt.Sprintf("Error processing results: %v", err), http.StatusInternalServerError)
+				return
+			}
+
+			w.Header().Set("Content-Type", "application/json")
+			if err := json.NewEncoder(w).Encode(stats); err != nil {
+				log.Printf("Error encoding JSON response: %v", err)
+			}
+
+		case "parish-yearly":
+			stats := []ParishYearlySummary{}
+			for rows.Next() {
+				var summary ParishYearlySummary
+				err := rows.Scan(
+					&summary.Year,
+					&summary.ParishName,
+					&summary.TotalBuried,
+					&summary.TotalPlague,
+				)
+				if err != nil {
+					log.Printf("Error scanning parish-yearly summary: %v", err)
+					http.Error(w, fmt.Sprintf("Error processing results: %v", err), http.StatusInternalServerError)
+					return
+				}
+				stats = append(stats, summary)
+			}
+
+			// Check for errors from iterating over rows
+			if err = rows.Err(); err != nil {
+				log.Printf("Error iterating over rows: %v", err)
+				http.Error(w, fmt.Sprintf("Error processing results: %v", err), http.StatusInternalServerError)
+				return
+			}
+
+			log.Printf("Returning %d parish-yearly summary records", len(stats))
+			w.Header().Set("Content-Type", "application/json")
+			if err := json.NewEncoder(w).Encode(stats); err != nil {
+				log.Printf("Error encoding JSON response: %v", err)
+			}
+		}
 	}
 }
