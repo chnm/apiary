@@ -15,16 +15,16 @@ import (
 // ChristeningsByYear describes a christening's description, total count, week number,
 // week ID, and year.
 type ChristeningsByYear struct {
-	Christening  string    `json:"christening"`
-	TotalCount   NullInt64 `json:"count"`
-	WeekNo       NullInt64 `json:"week_no"`
-	StartDay     NullInt64 `json:"start_day"`
-	StartMonth   string    `json:"start_month"`
-	EndDay       NullInt64 `json:"end_day"`
-	EndMonth     string    `json:"end_month"`
-	Year         int       `json:"year"`
-	SplitYear    string    `json:"split_year"`
-	TotalRecords int       `json:"totalrecords"`
+	Christening  string     `json:"christening"`
+	TotalCount   NullInt64  `json:"count"`
+	WeekNumber   NullInt64  `json:"week_number"`
+	StartDay     NullInt64  `json:"start_day"`
+	StartMonth   NullString `json:"start_month"`
+	EndDay       NullInt64  `json:"end_day"`
+	EndMonth     NullString `json:"end_month"`
+	Year         int        `json:"year"`
+	SplitYear    string     `json:"split_year"`
+	TotalRecords int        `json:"totalrecords"`
 }
 
 // Christenings describes a christening location.
@@ -160,7 +160,7 @@ func (s *Server) ChristeningsHandler() http.HandlerFunc {
 			err := rows.Scan(
 				&row.Christening,
 				&row.TotalCount,
-				&row.WeekNo,
+				&row.WeekNumber,
 				&row.StartDay,
 				&row.StartMonth,
 				&row.EndDay,

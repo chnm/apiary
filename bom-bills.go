@@ -25,7 +25,7 @@ type ParishByYear struct {
 	EndMonth         NullString `json:"end_month"`
 	Year             NullInt64  `json:"year"`
 	SplitYear        string     `json:"split_year"`
-	WeekNo           int        `json:"week_no"`
+	WeekNumber       int        `json:"week_number"`
 	WeekID           string     `json:"week_id"`
 	Missing          *bool      `json:"missing"`
 	Illegible        *bool      `json:"illegible"`
@@ -101,7 +101,7 @@ func (s *Server) BillsHandler() http.HandlerFunc {
 				&result.EndMonth,
 				&result.Year,
 				&result.SplitYear,
-				&result.WeekNo,
+				&result.WeekNumber,
 				&result.WeekID,
 				&result.Missing,
 				&result.Illegible,
@@ -156,7 +156,7 @@ func parseAPIParameters(r *http.Request) (APIParameters, error) {
 		StartYear: 1648, // Default values
 		EndYear:   1750,
 		Parish:    []int{},
-		Sort:      "year, week_no, canonical_name",
+		Sort:      "year, week_number, canonical_name",
 	}
 
 	// Parse start year
@@ -253,7 +253,7 @@ func buildBillsQuery(params APIParameters) (string, error) {
         w.end_month,
         b.year,
         w.split_year,
-        w.week_no,
+        w.week_number,
         b.week_id,
         b.missing,
         b.illegible,
@@ -421,9 +421,9 @@ type YearlySummary struct {
 }
 
 type WeeklySummary struct {
-	Year      int `json:"year"`
-	WeekNo    int `json:"weekNo"`
-	RowsCount int `json:"rowsCount"`
+	Year       int `json:"year"`
+	WeekNumber int `json:"weekNumber"`
+	RowsCount  int `json:"rowsCount"`
 }
 
 // ParishYearlySummary represents total counts by parish and year for small multiple visualizations
@@ -465,27 +465,27 @@ func buildWeeklyStatsQuery() string {
     WITH year_week_range AS (
         SELECT 
             y.year,
-            w.number as week_no
+            w.number as week_number
         FROM generate_series(1636, 1754) y(year)
         CROSS JOIN generate_series(1, 53) w(number)
     ),
     weekly_stats AS (
         SELECT 
             b.year as year,
-            w.week_no,
+            w.week_number,
             COUNT(*) as rows_count
         FROM bom.bill_of_mortality b
         JOIN bom.week w ON w.joinid = b.week_id
         WHERE b.bill_type = 'Weekly'
-        GROUP BY b.year, w.week_no
+        GROUP BY b.year, w.week_number
     )
     SELECT 
         yr.year,
-        yr.week_no,
+        yr.week_number,
         COALESCE(ws.rows_count, 0) as rows_count
     FROM year_week_range yr
-    LEFT JOIN weekly_stats ws ON yr.year = ws.year AND yr.week_no = ws.week_no
-    ORDER BY yr.year, yr.week_no;
+    LEFT JOIN weekly_stats ws ON yr.year = ws.year AND yr.week_number = ws.week_number
+    ORDER BY yr.year, yr.week_number;
     `
 	return query
 }
@@ -545,7 +545,7 @@ func (s *Server) StatisticsHandler() http.HandlerFunc {
 			stats := []WeeklySummary{}
 			for rows.Next() {
 				var summary WeeklySummary
-				err := rows.Scan(&summary.Year, &summary.WeekNo, &summary.RowsCount)
+				err := rows.Scan(&summary.Year, &summary.WeekNumber, &summary.RowsCount)
 				if err != nil {
 					log.Printf("Error scanning weekly summary: %v", err)
 					http.Error(w, fmt.Sprintf("Error processing results: %v", err), http.StatusInternalServerError)
