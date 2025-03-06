@@ -22,18 +22,20 @@ type DeathsAPIParameters struct {
 // DeathCauses returns a list of causes of death with a count of deaths for each
 // cause and related metadata.
 type DeathCauses struct {
-	Death           string     `json:"death"`
-	Count           NullInt64  `json:"count"`
-	DescriptiveText NullString `json:"descriptive_text"`
-	WeekID          string     `json:"week_id"`
-	WeekNo          NullInt64  `json:"week_no"`
-	StartDay        NullInt64  `json:"start_day"`
-	StartMonth      NullString `json:"start_month"`
-	EndDay          NullInt64  `json:"end_day"`
-	EndMonth        NullString `json:"end_month"`
-	Year            NullInt64  `json:"year"`
-	SplitYear       NullString `json:"split_year"`
-	TotalRecords    int        `json:"totalrecords"`
+	Death            string     `json:"death"`
+	Count            NullInt64  `json:"count"`
+	DescriptiveText  NullString `json:"descriptive_text"`
+	Definition       NullString `json:"definition"`
+	DefinitionSource NullString `json:"definition_source"`
+	WeekID           string     `json:"week_id"`
+	WeekNumber       NullInt64  `json:"week_number"`
+	StartDay         NullInt64  `json:"start_day"`
+	StartMonth       NullString `json:"start_month"`
+	EndDay           NullInt64  `json:"end_day"`
+	EndMonth         NullString `json:"end_month"`
+	Year             NullInt64  `json:"year"`
+	SplitYear        NullString `json:"split_year"`
+	TotalRecords     int        `json:"totalrecords"`
 }
 
 // Causes describes a cause of death.
@@ -56,7 +58,7 @@ func (s *Server) DeathCausesHandler() http.HandlerFunc {
 			StartYear: 1648,
 			EndYear:   1750,
 			Death:     []string{},
-			Sort:      "year, week_no, death",
+			Sort:      "year, week_number, death",
 		}
 
 		// If a start year is provided, update the API parameters
@@ -106,8 +108,10 @@ func (s *Server) DeathCausesHandler() http.HandlerFunc {
         c.death,
         c.count, 
         c.descriptive_text, 
+        c.definition,
+        c.definition_source,
         c.week_id,
-        w.week_no,
+        w.week_number,
         w.start_day, 
         w.start_month, 
         w.end_day, 
@@ -179,8 +183,10 @@ func (s *Server) DeathCausesHandler() http.HandlerFunc {
 				&row.Death,
 				&row.Count,
 				&row.DescriptiveText,
+				&row.Definition,
+				&row.DefinitionSource,
 				&row.WeekID,
-				&row.WeekNo,
+				&row.WeekNumber,
 				&row.StartDay,
 				&row.StartMonth,
 				&row.EndDay,
@@ -191,8 +197,8 @@ func (s *Server) DeathCausesHandler() http.HandlerFunc {
 			)
 			if err != nil {
 				log.Printf("Error scanning row: %v", err)
-				log.Printf("Types: death=%T, count=%T, descriptiveText=%T, weekID=%T, weekNo=%T, startDay=%T, startMonth=%T, endDay=%T, endMonth=%T, year=%T, splitYear=%T, totalRecords=%T",
-					row.Death, row.Count, row.DescriptiveText, row.WeekID, row.WeekNo, row.StartDay, row.StartMonth, row.EndDay, row.EndMonth, row.Year, row.SplitYear, row.TotalRecords)
+				log.Printf("Types: death=%T, count=%T, descriptiveText=%T, weekID=%T, weekNumber=%T, startDay=%T, startMonth=%T, endDay=%T, endMonth=%T, year=%T, splitYear=%T, totalRecords=%T",
+					row.Death, row.Count, row.DescriptiveText, row.Definition, row.DefinitionSource, row.WeekID, row.WeekNumber, row.StartDay, row.StartMonth, row.EndDay, row.EndMonth, row.Year, row.SplitYear, row.TotalRecords)
 				continue
 			}
 			results = append(results, row)
