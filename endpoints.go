@@ -168,6 +168,24 @@ func (s *Server) EndpointsHandler() http.HandlerFunc {
 				nil,
 			},
 			{
+				"BOM: Bills data with parish polygons",
+				baseurl + "/bom/bills-geometries",
+				[]ExampleURL{
+					{
+						baseurl + "/bom/bills-geometries?year=1665",
+						"Bills data with parish polygons for a specific year",
+					},
+					{
+						baseurl + "/bom/bills-geometries?start-year=1664&end-year=1666",
+						"Bills data with parish polygons for a range of years",
+					},
+					{
+						baseurl + "/bom/bills-geometries?start-year=1664&end-year=1666&bill-type=Weekly&count-type=Buried",
+						"Bills data with parish polygons filtered by bill type and count type",
+					},
+				},
+			},
+			{
 				"BOM: Bills of Mortality",
 				baseurl + "/bom/bills?start-year=1636&end-year=1754",
 				[]ExampleURL{
