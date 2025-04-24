@@ -191,7 +191,7 @@ func parseAPIParameters(r *http.Request) (APIParameters, error) {
 
 	// Parse bill type
 	if billType := r.URL.Query().Get("bill-type"); billType != "" {
-		if !isValidBillType(billType) {
+		if !IsValidBillType(billType) {
 			return params, fmt.Errorf("invalid bill type: %s", billType)
 		}
 		params.BillType = billType
@@ -199,7 +199,7 @@ func parseAPIParameters(r *http.Request) (APIParameters, error) {
 
 	// Parse count type
 	if countType := r.URL.Query().Get("count-type"); countType != "" {
-		if !isValidCountType(countType) {
+		if !IsValidCountType(countType) {
 			return params, fmt.Errorf("invalid count type: %s", countType)
 		}
 		params.CountType = countType
@@ -314,8 +314,8 @@ func buildBillsQuery(params APIParameters) (string, error) {
 	return baseQuery, nil
 }
 
-// Helper function to validate bill types
-func isValidBillType(billType string) bool {
+// IsValidBillType checks if the provided bill type is valid
+func IsValidBillType(billType string) bool {
 	validTypes := map[string]bool{
 		"Weekly":  true,
 		"General": true,
@@ -324,8 +324,8 @@ func isValidBillType(billType string) bool {
 	return validTypes[billType]
 }
 
-// Helper function to validate count types
-func isValidCountType(countType string) bool {
+// IsValidCountType checks if the provided count type is valid
+func IsValidCountType(countType string) bool {
 	validTypes := map[string]bool{
 		"Buried": true,
 		"Plague": true,

@@ -257,11 +257,11 @@ func buildSeparateFilters(year, startYear, endYear, subunit, cityCounty, billTyp
 	}
 
 	// Bills-specific filters
-	if billType != "" && isValidBillType(billType) {
+	if billType != "" && IsValidBillType(billType) {
 		billFilters = append(billFilters, fmt.Sprintf("AND b.bill_type = '%s'", billType))
 	}
 
-	if countType != "" && isValidCountType(countType) {
+	if countType != "" && IsValidCountType(countType) {
 		billFilters = append(billFilters, fmt.Sprintf("AND b.count_type = '%s'", countType))
 	}
 
