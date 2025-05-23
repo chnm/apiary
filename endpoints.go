@@ -295,6 +295,11 @@ func (s *Server) EndpointsHandler() http.HandlerFunc {
 				nil,
 			},
 			{
+				"Religious Bodies List of all Cities",
+				baseurl + "/relcensus/cities/",
+				nil,
+			},
+			{
 				"Religious Bodies Census membership data for a denomination in a city in a year",
 				baseurl + "/relcensus/city-membership?year=1926&denomination=Protestant+Episcopal+Church",
 				[]ExampleURL{

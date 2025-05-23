@@ -26,6 +26,19 @@ type CityMembership struct {
 	Lat            float64   `json:"lat"`
 }
 
+// LocationInfo provides basic information about cities, counties, and states
+// for use in dropdowns and other UI elements.
+type LocationInfo struct {
+	PlaceID    int     `json:"place_id"`
+	City       string  `json:"city"`
+	County     string  `json:"county"`
+	State      string  `json:"state"`
+	CountyAHCB string  `json:"county_ahcb"`
+	MapName    string  `json:"map_name"`
+	Lon        float64 `json:"lon"`
+	Lat        float64 `json:"lat"`
+}
+
 // RelCensusCityMembershipHandler returns the statistics for all the cities for a single
 // denomination in a single year. It must be filtered by year and denomination.
 func (s *Server) RelCensusCityMembershipHandler() http.HandlerFunc {
@@ -179,5 +192,45 @@ func (s *Server) RelCensusCityMembershipHandler() http.HandlerFunc {
 		w.Header().Set("Content-Type", "application/json")
 		fmt.Fprint(w, string(response))
 	}
+}
 
+// RelCensusLocationsHandler returns a list of locations (city, county, state)
+func (s *Server) RelCensusLocationsHandler() http.HandlerFunc {
+	query := `
+		SELECT DISTINCT place_id, place, county, state, county_ahcb, map_name, lat, lon
+		FROM relcensus.popplaces_1926
+		ORDER BY state, county, place;
+	`
+
+	return func(w http.ResponseWriter, r *http.Request) {
+		results := make([]LocationInfo, 0)
+		var row LocationInfo
+
+		rows, err := s.DB.Query(context.TODO(), query)
+		if err != nil {
+			log.Println(err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
+		defer rows.Close()
+
+		for rows.Next() {
+			err := rows.Scan(&row.PlaceID, &row.City, &row.County, &row.State, &row.CountyAHCB, &row.MapName, &row.Lat, &row.Lon)
+			if err != nil {
+				log.Println(err)
+			}
+			results = append(results, row)
+		}
+
+		err = rows.Err()
+		if err != nil {
+			log.Println(err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
+
+		response, _ := json.Marshal(results)
+		w.Header().Set("Content-Type", "application/json")
+		fmt.Fprint(w, string(response))
+	}
 }

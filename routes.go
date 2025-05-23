@@ -37,6 +37,7 @@ func (s *Server) Routes() {
 	s.Router.HandleFunc("/relcensus/denomination-families", s.RelCensusDenominationFamiliesHandler()).Methods("GET", "HEAD")
 	s.Router.HandleFunc("/relcensus/denominations", s.RelCensusDenominationsHandler()).Methods("GET", "HEAD")
 	s.Router.HandleFunc("/relcensus/city-membership", s.RelCensusCityMembershipHandler()).Methods("GET", "HEAD")
+	s.Router.HandleFunc("/relcensus/cities", s.RelCensusLocationsHandler()).Methods("GET", "HEAD")
 	s.Router.HandleFunc("/cache", s.CacheTest()).Methods("GET", "HEAD")
 	s.Router.HandleFunc("/", s.EndpointsHandler()).Methods("GET", "HEAD")
 
