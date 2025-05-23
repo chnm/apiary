@@ -295,8 +295,8 @@ func (s *Server) EndpointsHandler() http.HandlerFunc {
 				nil,
 			},
 			{
-				"Religious Bodies List of all Cities",
-				baseurl + "/relcensus/cities/",
+				"Religious Bodies list of all cities",
+				baseurl + "/relcensus/cities",
 				nil,
 			},
 			{

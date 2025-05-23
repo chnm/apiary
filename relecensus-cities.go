@@ -194,7 +194,7 @@ func (s *Server) RelCensusCityMembershipHandler() http.HandlerFunc {
 	}
 }
 
-// RelCensusLocationsHandler returns a list of locations (city, county, state)
+// RelCensusLocationsHandler returns a list of all locations
 func (s *Server) RelCensusLocationsHandler() http.HandlerFunc {
 	query := `
 		SELECT DISTINCT place_id, place, county, state, county_ahcb, map_name, lat, lon
