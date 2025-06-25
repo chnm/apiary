@@ -2,6 +2,7 @@ package apiary
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -34,16 +35,26 @@ type ParishByYear struct {
 	TotalRecords     int        `json:"totalrecords"`
 }
 
+type PaginatedResponse struct {
+	Data       []ParishByYear `json:"data"`
+	NextCursor *string        `json:"next_cursor,omitempty"`
+	HasMore    bool           `json:"has_more"`
+}
+
 type APIParameters struct {
-	StartYear int
-	EndYear   int
-	Parish    []int
-	BillType  string
-	CountType string
-	Sort      string
-	Limit     int
-	Offset    int
-	Page      int
+	StartYear  int
+	EndYear    int
+	Parish     []int
+	BillType   string
+	CountType  string
+	Sort       string
+	Limit      int
+	Offset     int
+	Page       int
+	Cursor     string
+	CursorYear int
+	CursorWeek int
+	CursorName string
 }
 
 type QueryOptions struct {
@@ -51,8 +62,27 @@ type QueryOptions struct {
 	Offset int
 }
 
-// TotalBills returns to the total number of records in the database. We need this
-// number to get pagination working.
+// QueryBuilder holds the query string and parameters
+type QueryBuilder struct {
+	Query  string
+	Params []interface{}
+}
+
+// NewQueryBuilder creates a new query builder
+func NewQueryBuilder() *QueryBuilder {
+	return &QueryBuilder{
+		Params: make([]interface{}, 0),
+	}
+}
+
+// AddParam adds a parameter and returns the placeholder ($1, $2, etc.)
+// We do this to prevent injection problems.
+func (qb *QueryBuilder) AddParam(value interface{}) string {
+	qb.Params = append(qb.Params, value)
+	return fmt.Sprintf("$%d", len(qb.Params))
+}
+
+// TotalBills returns to the total number of records in the database.
 type TotalBills struct {
 	TotalRecords NullInt64 `json:"total_records"`
 }
@@ -69,19 +99,21 @@ func (s *Server) BillsHandler() http.HandlerFunc {
 			return
 		}
 
-		// Build query
-		query, err := buildBillsQuery(apiParams)
+		// Build query with parameters
+		qb, err := buildBillsQueryWithParams(apiParams)
 		if err != nil {
 			http.Error(w, "Error building query", http.StatusInternalServerError)
 			log.Printf("Error building query: %v", err)
 			return
 		}
 
-		// Execute query
-		rows, err := s.DB.Query(context.TODO(), query)
+		// Execute query with parameters
+		rows, err := s.DB.Query(context.TODO(), qb.Query, qb.Params...)
 		if err != nil {
 			http.Error(w, "Database error", http.StatusInternalServerError)
 			log.Printf("Error executing query: %v", err)
+			log.Printf("Query: %s", qb.Query)
+			log.Printf("Params: %v", qb.Params)
 			return
 		}
 		defer rows.Close()
@@ -123,9 +155,22 @@ func (s *Server) BillsHandler() http.HandlerFunc {
 			return
 		}
 
-		// Return results (empty array if no results found)
+		// Create paginated response
+		paginatedResponse := PaginatedResponse{
+			Data:    results,
+			HasMore: len(results) == getEffectiveLimit(apiParams),
+		}
+
+		// Generate next cursor if there are more results
+		if paginatedResponse.HasMore && len(results) > 0 {
+			lastResult := results[len(results)-1]
+			if nextCursor, err := generateCursor(int(lastResult.Year.Int64), int(lastResult.WeekNumber), lastResult.CanonicalName); err == nil {
+				paginatedResponse.NextCursor = &nextCursor
+			}
+		}
+
 		w.Header().Set("Content-Type", "application/json")
-		response, err := json.Marshal(results)
+		response, err := json.Marshal(paginatedResponse)
 		if err != nil {
 			http.Error(w, "Error encoding response", http.StatusInternalServerError)
 			log.Printf("Error marshaling JSON: %v", err)
@@ -236,12 +281,31 @@ func parseAPIParameters(r *http.Request) (APIParameters, error) {
 		params.Sort = sort
 	}
 
+	// Parse cursor
+	if cursor := r.URL.Query().Get("cursor"); cursor != "" {
+		params.Cursor = cursor
+		if year, week, name, err := parseCursor(cursor); err == nil {
+			params.CursorYear = year
+			params.CursorWeek = week
+			params.CursorName = name
+		} else {
+			return params, fmt.Errorf("invalid cursor: %v", err)
+		}
+	}
+
 	return params, nil
 }
 
-// Helper function to build the SQL query
-func buildBillsQuery(params APIParameters) (string, error) {
-	baseQuery := `
+// Helper function to build the SQL query with parameters
+func buildBillsQueryWithParams(params APIParameters) (*QueryBuilder, error) {
+	qb := NewQueryBuilder()
+
+	// For cursor-based pagination, skip the expensive COUNT(*) OVER() calculation
+	// Only calculate total count for first page or legacy pagination
+	var selectClause string
+	if params.Cursor != "" {
+		// Fast cursor query without total count for subsequent pages
+		selectClause = `
     SELECT
         p.canonical_name,
         b.bill_type,
@@ -259,7 +323,31 @@ func buildBillsQuery(params APIParameters) (string, error) {
         b.illegible,
         b.source,
         b.unique_identifier,
-        COUNT(*) OVER() AS totalrecords
+        0 AS totalrecords`
+	} else {
+		// Include total count for first page and legacy pagination
+		selectClause = `
+    SELECT
+        p.canonical_name,
+        b.bill_type,
+        b.count_type,
+        b.count,
+        w.start_day,
+        w.start_month,
+        w.end_day,
+        w.end_month,
+        b.year,
+        w.split_year,
+        w.week_number,
+        b.week_id,
+        b.missing,
+        b.illegible,
+        b.source,
+        b.unique_identifier,
+        COUNT(*) OVER() AS totalrecords`
+	}
+
+	baseQuery := selectClause + `
     FROM
         bom.bill_of_mortality b
     JOIN
@@ -272,21 +360,38 @@ func buildBillsQuery(params APIParameters) (string, error) {
 
 	// Build WHERE clause
 	var conditions []string
+
 	if params.StartYear != 0 {
-		conditions = append(conditions, fmt.Sprintf("b.year >= %d", params.StartYear))
+		conditions = append(conditions, fmt.Sprintf("b.year >= %s", qb.AddParam(params.StartYear)))
 	}
+
 	if params.EndYear != 0 {
-		conditions = append(conditions, fmt.Sprintf("b.year <= %d", params.EndYear))
+		conditions = append(conditions, fmt.Sprintf("b.year <= %s", qb.AddParam(params.EndYear)))
 	}
+
 	if len(params.Parish) > 0 {
-		conditions = append(conditions, fmt.Sprintf("b.parish_id IN (%s)",
-			strings.Trim(strings.Join(strings.Fields(fmt.Sprint(params.Parish)), ","), "[]")))
+		// Convert []int to []interface{} for the parameter
+		parishParams := make([]string, len(params.Parish))
+		for i, p := range params.Parish {
+			parishParams[i] = qb.AddParam(p)
+		}
+		conditions = append(conditions, fmt.Sprintf("b.parish_id IN (%s)", strings.Join(parishParams, ",")))
 	}
+
 	if params.BillType != "" {
-		conditions = append(conditions, fmt.Sprintf("b.bill_type = '%s'", params.BillType))
+		conditions = append(conditions, fmt.Sprintf("b.bill_type = %s", qb.AddParam(params.BillType)))
 	}
+
 	if params.CountType != "" {
-		conditions = append(conditions, fmt.Sprintf("b.count_type = '%s'", params.CountType))
+		conditions = append(conditions, fmt.Sprintf("b.count_type = %s", qb.AddParam(params.CountType)))
+	}
+
+	// Handle cursor-based pagination
+	if params.Cursor != "" {
+		yearParam := qb.AddParam(params.CursorYear)
+		weekParam := qb.AddParam(params.CursorWeek)
+		nameParam := qb.AddParam(params.CursorName)
+		conditions = append(conditions, fmt.Sprintf("(b.year, w.week_number, p.canonical_name) > (%s, %s, %s)", yearParam, weekParam, nameParam))
 	}
 
 	// Add conditions to query
@@ -294,24 +399,37 @@ func buildBillsQuery(params APIParameters) (string, error) {
 		baseQuery += " AND " + strings.Join(conditions, " AND ")
 	}
 
-	// Add sorting
+	// Add sorting (ensure consistent ordering for cursor pagination)
 	if params.Sort != "" {
 		baseQuery += " ORDER BY " + params.Sort + " ASC"
+	} else {
+		baseQuery += " ORDER BY b.year, w.week_number, p.canonical_name ASC"
 	}
 
-	// Handle pagination
-	if params.Page > 0 {
-		limit := 25
+	// Handle pagination - cursor-based is the default and preferred method
+	if params.Cursor != "" {
+		// Cursor pagination (preferred for performance)
+		limit := getEffectiveLimit(params)
+		baseQuery += fmt.Sprintf(" LIMIT %s", qb.AddParam(limit))
+	} else if params.Page > 0 {
+		// Legacy page-based pagination for compatibility
+		limit := 100
 		offset := (params.Page - 1) * limit
-		baseQuery += fmt.Sprintf(" LIMIT %d OFFSET %d", limit, offset)
+		baseQuery += fmt.Sprintf(" LIMIT %s OFFSET %s", qb.AddParam(limit), qb.AddParam(offset))
 	} else if params.Limit > 0 {
-		baseQuery += fmt.Sprintf(" LIMIT %d", params.Limit)
+		// Direct limit/offset pagination
+		baseQuery += fmt.Sprintf(" LIMIT %s", qb.AddParam(params.Limit))
 		if params.Offset > 0 {
-			baseQuery += fmt.Sprintf(" OFFSET %d", params.Offset)
+			baseQuery += fmt.Sprintf(" OFFSET %s", qb.AddParam(params.Offset))
 		}
+	} else {
+		// Default to cursor-based pagination
+		defaultLimit := 100
+		baseQuery += fmt.Sprintf(" LIMIT %s", qb.AddParam(defaultLimit))
 	}
 
-	return baseQuery, nil
+	qb.Query = baseQuery
+	return qb, nil
 }
 
 // IsValidBillType checks if the provided bill type is valid
@@ -331,6 +449,51 @@ func IsValidCountType(countType string) bool {
 		"Plague": true,
 	}
 	return validTypes[countType]
+}
+
+// generateCursor creates a base64-encoded cursor from year, week, and name
+func generateCursor(year, week int, name string) (string, error) {
+	cursorData := fmt.Sprintf("%d|%d|%s", year, week, name)
+	return base64.URLEncoding.EncodeToString([]byte(cursorData)), nil
+}
+
+// parseCursor decodes a base64 cursor back to year, week, and name
+func parseCursor(cursor string) (int, int, string, error) {
+	decoded, err := base64.URLEncoding.DecodeString(cursor)
+	if err != nil {
+		return 0, 0, "", err
+	}
+
+	parts := strings.Split(string(decoded), "|")
+	if len(parts) != 3 {
+		return 0, 0, "", fmt.Errorf("invalid cursor format")
+	}
+
+	year, err := strconv.Atoi(parts[0])
+	if err != nil {
+		return 0, 0, "", fmt.Errorf("invalid year in cursor: %v", err)
+	}
+
+	week, err := strconv.Atoi(parts[1])
+	if err != nil {
+		return 0, 0, "", fmt.Errorf("invalid week in cursor: %v", err)
+	}
+
+	return year, week, parts[2], nil
+}
+
+// getEffectiveLimit returns the appropriate limit for the query
+func getEffectiveLimit(params APIParameters) int {
+	if params.Cursor != "" {
+		return 100 // Default page size for cursor pagination
+	}
+	if params.Page > 0 {
+		return 100
+	}
+	if params.Limit > 0 {
+		return params.Limit
+	}
+	return 100
 }
 
 // TotalBillsHandler returns the total number of bills in the database.
@@ -490,7 +653,9 @@ func buildWeeklyStatsQuery() string {
 	return query
 }
 
-func buildParishYearlyStatsQuery(parishName string) string {
+func buildParishYearlyStatsQuery(parishName string) (*QueryBuilder, error) {
+	qb := NewQueryBuilder()
+
 	query := `
     SELECT 
         b.year,
@@ -499,19 +664,18 @@ func buildParishYearlyStatsQuery(parishName string) string {
         NULLIF(SUM(CASE WHEN b.count_type = 'Plague' THEN COALESCE(b.count, 0) ELSE 0 END), 0) as total_plague
     FROM bom.bill_of_mortality b
     JOIN bom.parishes p ON p.id = b.parish_id
-    WHERE b.bill_type = 'Weekly'
-    `
+    WHERE b.bill_type = 'Weekly'`
 
 	if parishName != "" {
-		query += fmt.Sprintf(" AND p.canonical_name = '%s'", parishName)
+		query += fmt.Sprintf(" AND p.canonical_name = %s", qb.AddParam(parishName))
 	}
 
 	query += `
     GROUP BY b.year, p.canonical_name
-    ORDER BY p.canonical_name, b.year
-    `
+    ORDER BY p.canonical_name, b.year`
 
-	return query
+	qb.Query = query
+	return qb, nil
 }
 
 func (s *Server) StatisticsHandler() http.HandlerFunc {
@@ -519,22 +683,33 @@ func (s *Server) StatisticsHandler() http.HandlerFunc {
 		statType := r.URL.Query().Get("type")
 		parishName := r.URL.Query().Get("parish")
 
-		var query string
+		var rows pgx.Rows
+		var err error
+
 		switch statType {
 		case "weekly":
-			query = buildWeeklyStatsQuery()
+			query := buildWeeklyStatsQuery()
+			rows, err = s.DB.Query(context.TODO(), query)
 		case "yearly":
-			query = buildYearlyStatsQuery()
+			query := buildYearlyStatsQuery()
+			rows, err = s.DB.Query(context.TODO(), query)
 		case "parish-yearly":
-			query = buildParishYearlyStatsQuery(parishName)
+			qb, buildErr := buildParishYearlyStatsQuery(parishName)
+			if buildErr != nil {
+				http.Error(w, "Error building query", http.StatusInternalServerError)
+				log.Printf("Error building parish-yearly query: %v", buildErr)
+				return
+			}
+			rows, err = s.DB.Query(context.TODO(), qb.Query, qb.Params...)
 		default:
 			http.Error(w, "Invalid type parameter. Must be 'weekly', 'yearly', or 'parish-yearly'", http.StatusBadRequest)
 			return
 		}
-
-		rows, err := s.DB.Query(context.TODO(), query)
 		if err != nil {
 			log.Printf("Database error executing query: %v", err)
+			if statType == "parish-yearly" {
+				log.Printf("Parish name: %s", parishName)
+			}
 			http.Error(w, fmt.Sprintf("Database error: %v", err), http.StatusInternalServerError)
 			return
 		}
