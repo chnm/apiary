@@ -115,22 +115,22 @@ func (s *Server) EndpointsHandler() http.HandlerFunc {
 			},
 			{
 				"BOM: Total records",
-				baseurl + "/bom/totalbills?type=Weekly",
+				baseurl + "/bom/totalbills?type=weekly",
 				[]ExampleURL{
 					{
-						baseurl + "/bom/totalbills?type=Causes",
+						baseurl + "/bom/totalbills?type=causes",
 						"Total records for causes of death",
 					},
 					{
-						baseurl + "/bom/totalbills?type=Christenings",
+						baseurl + "/bom/totalbills?type=christenings",
 						"Total records for christenings",
 					},
 					{
-						baseurl + "/bom/totalbills?type=Weekly",
+						baseurl + "/bom/totalbills?type=weekly",
 						"Total records for weekly bills",
 					},
 					{
-						baseurl + "/bom/totalbills?type=General",
+						baseurl + "/bom/totalbills?type=general",
 						"Total records for general bills",
 					},
 				},
@@ -175,7 +175,7 @@ func (s *Server) EndpointsHandler() http.HandlerFunc {
 						"Bills data with parish polygons for a range of years",
 					},
 					{
-						baseurl + "/bom/shapefiles?start-year=1664&end-year=1666&bill-type=Weekly&count-type=Buried",
+						baseurl + "/bom/shapefiles?start-year=1664&end-year=1666&bill-type=weekly&count-type=buried",
 						"Bills data with parish polygons filtered by bill type and count type",
 					},
 				},
@@ -185,16 +185,16 @@ func (s *Server) EndpointsHandler() http.HandlerFunc {
 				baseurl + "/bom/bills?start-year=1636&end-year=1754",
 				[]ExampleURL{
 					{
-						baseurl + "/bom/bills?start-year=1636&end-year=1754&bill-type=Weekly&parish=1,3,17,28&limit=50&offset=0",
-						"Weekly bills for a specific parish or set of parishes by ID. Bill type can be: Weekly or General.",
+						baseurl + "/bom/bills?start-year=1636&end-year=1754&bill-type=weekly&parish=1,3,17,28&limit=50&offset=0",
+						"Weekly bills for a specific parish or set of parishes by ID. Bill type can be: 'weekly' or 'general'.",
 					},
 					{
-						baseurl + "/bom/bills?start-year=1636&end-year=1754&count-type=Buried&limit=50&offset=0",
+						baseurl + "/bom/bills?start-year=1636&end-year=1754&count-type=buried&limit=50&offset=0",
 						"Bills data for a specific count type (Buried or Plague). Specific parishes can be provided.",
 					},
 					{
-						baseurl + "/bom/bills?start-year=1636&end-year=1754&bill-type=Weekly&count-type=Buried&limit=50&offset=0",
-						"Bill type (Weekly or General) and count type (Buried or Plague) can be specific. Specific parishes can be provided.",
+						baseurl + "/bom/bills?start-year=1636&end-year=1754&bill-type=weekly&count-type=buried&limit=50&offset=0",
+						"Bill type (weekly or general) and count type (buried or plague) can be specific. Specific parishes can be provided.",
 					},
 				},
 			},
@@ -211,7 +211,7 @@ func (s *Server) EndpointsHandler() http.HandlerFunc {
 						"Causes of death for a specific year range",
 					},
 					{
-						baseurl + "/bom/causes?start-year=1648&end-year=1754&id=Aged,Drowned",
+						baseurl + "/bom/causes?start-year=1648&end-year=1754&id=aged,drowned",
 						"Causes of death for a specific year range and cause IDs",
 					},
 				},
@@ -333,4 +333,3 @@ func (s *Server) EndpointsHandler() http.HandlerFunc {
 		fmt.Fprint(w, resp)
 	}
 }
-

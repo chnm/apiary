@@ -435,9 +435,9 @@ func buildBillsQueryWithParams(params APIParameters) (*QueryBuilder, error) {
 // IsValidBillType checks if the provided bill type is valid
 func IsValidBillType(billType string) bool {
 	validTypes := map[string]bool{
-		"Weekly":  true,
-		"General": true,
-		"Total":   true,
+		"weekly":  true,
+		"general": true,
+		"total":   true,
 	}
 	return validTypes[billType]
 }
@@ -445,8 +445,8 @@ func IsValidBillType(billType string) bool {
 // IsValidCountType checks if the provided count type is valid
 func IsValidCountType(countType string) bool {
 	validTypes := map[string]bool{
-		"Buried": true,
-		"Plague": true,
+		"buried": true,
+		"plague": true,
 	}
 	return validTypes[countType]
 }
@@ -505,7 +505,7 @@ func (s *Server) TotalBillsHandler() http.HandlerFunc {
 	FROM
 		bom.bill_of_mortality
 	WHERE 
-		bill_type = 'Weekly';
+		bill_type = 'weekly';
 	`
 
 	queryGeneral := `
@@ -514,7 +514,7 @@ func (s *Server) TotalBillsHandler() http.HandlerFunc {
 	FROM
 		bom.bill_of_mortality
 	WHERE	
-		bill_type = 'General';
+		bill_type = 'general';
 	`
 
 	queryChristenings := `
@@ -545,13 +545,13 @@ func (s *Server) TotalBillsHandler() http.HandlerFunc {
 		var err error
 
 		switch {
-		case totalValues == "Weekly":
+		case totalValues == "weekly":
 			rows, err = s.DB.Query(context.TODO(), queryWeekly)
-		case totalValues == "General":
+		case totalValues == "general":
 			rows, err = s.DB.Query(context.TODO(), queryGeneral)
-		case totalValues == "Christenings":
+		case totalValues == "christenings":
 			rows, err = s.DB.Query(context.TODO(), queryChristenings)
-		case totalValues == "Causes":
+		case totalValues == "causes":
 			rows, err = s.DB.Query(context.TODO(), queryCauses)
 		}
 		if err != nil {
@@ -608,7 +608,7 @@ func buildYearlyStatsQuery() string {
             COUNT(DISTINCT b.week_id) as weeks_completed,
             COUNT(*) as rows_count
         FROM bom.bill_of_mortality b
-        WHERE b.bill_type = 'Weekly'
+        WHERE b.bill_type = 'weekly'
         GROUP BY b.year
     )
     SELECT 
@@ -639,7 +639,7 @@ func buildWeeklyStatsQuery() string {
             COUNT(*) as rows_count
         FROM bom.bill_of_mortality b
         JOIN bom.week w ON w.joinid = b.week_id
-        WHERE b.bill_type = 'Weekly'
+        WHERE b.bill_type = 'weekly'
         GROUP BY b.year, w.week_number
     )
     SELECT 
@@ -664,7 +664,7 @@ func buildParishYearlyStatsQuery(parishName string) (*QueryBuilder, error) {
         NULLIF(SUM(CASE WHEN b.count_type = 'Plague' THEN COALESCE(b.count, 0) ELSE 0 END), 0) as total_plague
     FROM bom.bill_of_mortality b
     JOIN bom.parishes p ON p.id = b.parish_id
-    WHERE b.bill_type = 'Weekly'`
+    WHERE b.bill_type = 'weekly'`
 
 	if parishName != "" {
 		query += fmt.Sprintf(" AND p.canonical_name = %s", qb.AddParam(parishName))
