@@ -128,8 +128,8 @@ func (s *Server) BillsShapefilesHandler() http.HandlerFunc {
             parishes_shp.start_yr,
             parishes_shp.sp_total,
             parishes_shp.sp_per,
-            COALESCE(SUM(CASE WHEN fb.count_type = 'Buried' THEN fb.count ELSE 0 END), 0) as total_buried,
-            COALESCE(SUM(CASE WHEN fb.count_type = 'Plague' THEN fb.count ELSE 0 END), 0) as total_plague,
+            COALESCE(SUM(CASE WHEN fb.count_type = 'buried' THEN fb.count ELSE 0 END), 0) as total_buried,
+            COALESCE(SUM(CASE WHEN fb.count_type = 'plague' THEN fb.count ELSE 0 END), 0) as total_plague,
             COUNT(fb.parish_id) as bill_count,
             parishes_shp.geom_01
         FROM 

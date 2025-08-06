@@ -660,18 +660,19 @@ func buildParishYearlyStatsQuery(parishName string) (*QueryBuilder, error) {
     SELECT 
         b.year,
         p.canonical_name as parish_name,
-        SUM(CASE WHEN b.count_type = 'Buried' THEN COALESCE(b.count, 0) ELSE 0 END) as total_buried,
-        NULLIF(SUM(CASE WHEN b.count_type = 'Plague' THEN COALESCE(b.count, 0) ELSE 0 END), 0) as total_plague
+        SUM(CASE WHEN b.count_type = 'buried' THEN COALESCE(b.count, 0) ELSE 0 END) as total_buried,
+        NULLIF(SUM(CASE WHEN b.count_type = 'plague' THEN COALESCE(b.count, 0) ELSE 0 END), 0) as total_plague
     FROM bom.bill_of_mortality b
     JOIN bom.parishes p ON p.id = b.parish_id
     WHERE b.bill_type = 'weekly'`
 
 	if parishName != "" {
-		query += fmt.Sprintf(" AND p.canonical_name = %s", qb.AddParam(parishName))
+		query += fmt.Sprintf(" AND LOWER(p.canonical_name) = LOWER(%s)", qb.AddParam(parishName))
 	}
 
 	query += `
     GROUP BY b.year, p.canonical_name
+    HAVING SUM(CASE WHEN b.count_type IN ('buried', 'plague') THEN COALESCE(b.count, 0) ELSE 0 END) > 0
     ORDER BY p.canonical_name, b.year`
 
 	qb.Query = query

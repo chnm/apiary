@@ -190,7 +190,7 @@ func (s *Server) EndpointsHandler() http.HandlerFunc {
 					},
 					{
 						baseurl + "/bom/bills?start-year=1636&end-year=1754&count-type=buried&limit=50&offset=0",
-						"Bills data for a specific count type (Buried or Plague). Specific parishes can be provided.",
+						"Bills data for a specific count type (buried or plague). Specific parishes can be provided.",
 					},
 					{
 						baseurl + "/bom/bills?start-year=1636&end-year=1754&bill-type=weekly&count-type=buried&limit=50&offset=0",
