@@ -13,7 +13,7 @@ import (
 )
 
 // ChristeningsByYear describes a christening's description, total count, week number,
-// week ID, and year.
+// week ID, year, and bill type.
 type ChristeningsByYear struct {
 	Christening  string     `json:"christening"`
 	TotalCount   NullInt64  `json:"count"`
@@ -23,6 +23,7 @@ type ChristeningsByYear struct {
 	EndDay       NullInt64  `json:"end_day"`
 	EndMonth     NullString `json:"end_month"`
 	Year         int        `json:"year"`
+	BillType     NullString `json:"bill_type"`
 	SplitYear    string     `json:"split_year"`
 	TotalRecords int        `json:"totalrecords"`
 }
@@ -34,9 +35,8 @@ type Christenings struct {
 }
 
 // ChristeningsHandler returns the christenings for a given range of years. It expects a start year and
-// end year as query parameters.
+// end year as query parameters. Optional query parameters: id (location filter), bill-type (general/weekly filter).
 func (s *Server) ChristeningsHandler() http.HandlerFunc {
-
 	queryLocation := `
 	SELECT
 		c.christening,
@@ -47,6 +47,7 @@ func (s *Server) ChristeningsHandler() http.HandlerFunc {
 		c.end_day,
 		c.end_month,
 		y.year,
+		c.bill_type,
 		COUNT(*) OVER() AS totalrecords
 	FROM
 		bom.christenings c
@@ -60,6 +61,10 @@ func (s *Server) ChristeningsHandler() http.HandlerFunc {
 		AND (
 			$3::int[] IS NULL
 			OR l.id = ANY($3::int[])
+		)
+		AND (
+			$6::text IS NULL
+			OR c.bill_type = $6::text
 		)	
 	ORDER BY
 		year ASC,
@@ -78,6 +83,7 @@ func (s *Server) ChristeningsHandler() http.HandlerFunc {
 		c.end_day,
 		c.end_month,
 		y.year,
+		c.bill_type,
 		COUNT(*) OVER() AS totalrecords
 	FROM
 		bom.christenings c
@@ -86,6 +92,10 @@ func (s *Server) ChristeningsHandler() http.HandlerFunc {
 	WHERE
 		y.year >= $1::int
 		AND y.year < $2::int
+		AND (
+			$5::text IS NULL
+			OR c.bill_type = $5::text
+		)
 	ORDER BY
 		year ASC,
 		week_number ASC
@@ -97,6 +107,7 @@ func (s *Server) ChristeningsHandler() http.HandlerFunc {
 		startYear := r.URL.Query().Get("start-year")
 		endYear := r.URL.Query().Get("end-year")
 		location := r.URL.Query().Get("id")
+		billType := r.URL.Query().Get("bill-type")
 		limit := r.URL.Query().Get("limit")
 		offset := r.URL.Query().Get("offset")
 
@@ -126,6 +137,20 @@ func (s *Server) ChristeningsHandler() http.HandlerFunc {
 
 		// location needs to be a postgres array
 		location = fmt.Sprintf("{%s}", strings.TrimSpace(location))
+		
+		// Validate bill_type parameter
+		if billType != "" && billType != "general" && billType != "weekly" {
+			http.Error(w, "bill-type must be 'general' or 'weekly'", http.StatusBadRequest)
+			return
+		}
+		
+		// Convert empty bill_type to nil for SQL query
+		var billTypeParam interface{}
+		if billType == "" {
+			billTypeParam = nil
+		} else {
+			billTypeParam = billType
+		}
 
 		limitInt, err := strconv.Atoi(limit)
 		if err != nil {
@@ -145,11 +170,11 @@ func (s *Server) ChristeningsHandler() http.HandlerFunc {
 
 		switch {
 		case location == "{}":
-			rows, err = s.DB.Query(context.TODO(), query, startYearInt, endYearInt, limitInt, offsetInt)
+			rows, err = s.DB.Query(context.TODO(), query, startYearInt, endYearInt, limitInt, offsetInt, billTypeParam)
 		case location != "{}":
-			rows, err = s.DB.Query(context.TODO(), queryLocation, startYearInt, endYearInt, location, limitInt, offsetInt)
+			rows, err = s.DB.Query(context.TODO(), queryLocation, startYearInt, endYearInt, location, limitInt, offsetInt, billTypeParam)
 		default:
-			rows, err = s.DB.Query(context.TODO(), query, startYearInt, endYearInt, limitInt, offsetInt)
+			rows, err = s.DB.Query(context.TODO(), query, startYearInt, endYearInt, limitInt, offsetInt, billTypeParam)
 		}
 
 		if err != nil {
@@ -166,6 +191,7 @@ func (s *Server) ChristeningsHandler() http.HandlerFunc {
 				&row.EndDay,
 				&row.EndMonth,
 				&row.Year,
+				&row.BillType,
 				&row.TotalRecords,
 			)
 			if err != nil {
@@ -184,13 +210,11 @@ func (s *Server) ChristeningsHandler() http.HandlerFunc {
 		w.Header().Set("Content-Type", "application/json")
 		fmt.Fprint(w, string(response))
 	}
-
 }
 
 // ListChristeningsHandler returns a list of parish names and ids where
 // christenings have been recorded.
 func (s *Server) ListChristeningsHandler() http.HandlerFunc {
-
 	query := `
 	SELECT DISTINCT
 		name,
@@ -227,5 +251,4 @@ func (s *Server) ListChristeningsHandler() http.HandlerFunc {
 		w.Header().Set("Content-Type", "application/json")
 		fmt.Fprint(w, string(response))
 	}
-
 }
