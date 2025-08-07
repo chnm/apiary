@@ -224,6 +224,10 @@ func (s *Server) EndpointsHandler() http.HandlerFunc {
 						baseurl + "/bom/christenings?start-year=1669&end-year=1754&id=1,3,17,28",
 						"Christenings for a specific year range and parish IDs",
 					},
+					{
+						baseurl + "/bom/christenings?start-year=1669&end-year=1754&bill-type=weekly",
+						"Christenings for a specific year range from weekly bills",
+					},
 				},
 			},
 			{
