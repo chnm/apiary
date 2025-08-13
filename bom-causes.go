@@ -23,8 +23,8 @@ type DeathsAPIParameters struct {
 // cause and related metadata.
 type DeathCauses struct {
 	Death            string     `json:"death"`
+	BillType         string     `json:"bill_type"`
 	Count            NullInt64  `json:"count"`
-	DescriptiveText  NullString `json:"descriptive_text"`
 	Definition       NullString `json:"definition"`
 	DefinitionSource NullString `json:"definition_source"`
 	WeekID           string     `json:"week_id"`
@@ -51,6 +51,7 @@ func (s *Server) DeathCausesHandler() http.HandlerFunc {
 		startYear := r.URL.Query().Get("start-year")
 		endYear := r.URL.Query().Get("end-year")
 		causes := r.URL.Query().Get("id")
+		billType := r.URL.Query().Get("bill-type")
 		limit := r.URL.Query().Get("limit")
 		offset := r.URL.Query().Get("offset")
 
@@ -103,11 +104,20 @@ func (s *Server) DeathCausesHandler() http.HandlerFunc {
 			apiParams.Death = causesStr
 		}
 
+		// Validate bill type if provided
+		if billType != "" {
+			if !IsValidBillType(billType) {
+				http.Error(w, "Invalid bill type", http.StatusBadRequest)
+				log.Printf("Invalid bill type: %s", billType)
+				return
+			}
+		}
+
 		query := `
     SELECT 
         c.death,
+        c.bill_type,
         c.count, 
-        c.descriptive_text, 
         c.definition,
         c.definition_source,
         c.week_id,
@@ -131,8 +141,16 @@ func (s *Server) DeathCausesHandler() http.HandlerFunc {
         AND count IS NOT NULL
     `
 
+		paramCount := 2
+
 		if len(apiParams.Death) > 0 {
-			query += " AND c.death = ANY($3)"
+			paramCount++
+			query += fmt.Sprintf(" AND c.death = ANY($%d)", paramCount)
+		}
+
+		if billType != "" {
+			paramCount++
+			query += fmt.Sprintf(" AND c.bill_type = $%d", paramCount)
 		}
 
 		query += " ORDER BY " + apiParams.Sort
@@ -165,11 +183,18 @@ func (s *Server) DeathCausesHandler() http.HandlerFunc {
 		var rows pgx.Rows
 		var err error
 
+		// Build parameters slice
+		params := []interface{}{apiParams.StartYear, apiParams.EndYear}
+		
 		if len(apiParams.Death) > 0 {
-			rows, err = s.DB.Query(context.TODO(), query, apiParams.StartYear, apiParams.EndYear, apiParams.Death)
-		} else {
-			rows, err = s.DB.Query(context.TODO(), query, apiParams.StartYear, apiParams.EndYear)
+			params = append(params, apiParams.Death)
 		}
+		
+		if billType != "" {
+			params = append(params, billType)
+		}
+
+		rows, err = s.DB.Query(context.TODO(), query, params...)
 
 		if err != nil {
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -181,8 +206,8 @@ func (s *Server) DeathCausesHandler() http.HandlerFunc {
 		for rows.Next() {
 			err := rows.Scan(
 				&row.Death,
+				&row.BillType,
 				&row.Count,
-				&row.DescriptiveText,
 				&row.Definition,
 				&row.DefinitionSource,
 				&row.WeekID,
@@ -197,8 +222,8 @@ func (s *Server) DeathCausesHandler() http.HandlerFunc {
 			)
 			if err != nil {
 				log.Printf("Error scanning row: %v", err)
-				log.Printf("Types: death=%T, count=%T, descriptiveText=%T, definition=%T, definitionSource=%T, weekID=%T, weekNumber=%T, startDay=%T, startMonth=%T, endDay=%T, endMonth=%T, year=%T, splitYear=%T, totalRecords=%T",
-					row.Death, row.Count, row.DescriptiveText, row.Definition, row.DefinitionSource, row.WeekID, row.WeekNumber, row.StartDay, row.StartMonth, row.EndDay, row.EndMonth, row.Year, row.SplitYear, row.TotalRecords)
+				log.Printf("Types: death=%T, billType=%T, count=%T, definition=%T, definitionSource=%T, weekID=%T, weekNumber=%T, startDay=%T, startMonth=%T, endDay=%T, endMonth=%T, year=%T, splitYear=%T, totalRecords=%T",
+					row.Death, row.BillType, row.Count, row.Definition, row.DefinitionSource, row.WeekID, row.WeekNumber, row.StartDay, row.StartMonth, row.EndDay, row.EndMonth, row.Year, row.SplitYear, row.TotalRecords)
 				continue
 			}
 			results = append(results, row)
@@ -215,6 +240,7 @@ func (s *Server) DeathCausesHandler() http.HandlerFunc {
 		fmt.Fprint(w, string(response))
 	}
 }
+
 
 func (s *Server) ListCausesHandler() http.HandlerFunc {
 	// Query to get a unique list of causes of death
@@ -254,5 +280,4 @@ func (s *Server) ListCausesHandler() http.HandlerFunc {
 		w.Header().Set("Content-Type", "application/json")
 		fmt.Fprint(w, string(response))
 	}
-
 }
