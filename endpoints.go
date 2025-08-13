@@ -196,6 +196,14 @@ func (s *Server) EndpointsHandler() http.HandlerFunc {
 						baseurl + "/bom/bills?start-year=1636&end-year=1754&bill-type=weekly&count-type=buried&limit=50&offset=0",
 						"Bill type (weekly or general) and count type (buried or plague) can be specific. Specific parishes can be provided.",
 					},
+					{
+						baseurl + "/bom/bills?start-year=1665&end-year=1665&start-week=10&end-week=15&limit=50&offset=0",
+						"Filter bills by week number range (1-53). Useful for seasonal analysis or specific time periods within a year.",
+					},
+					{
+						baseurl + "/bom/bills?start-year=1665&end-year=1665&start-week=50&bill-type=weekly&count-type=plague&limit=50&offset=0",
+						"Combine week number filtering with other parameters. Example shows plague deaths from week 50 onwards in 1665.",
+					},
 				},
 			},
 			{
@@ -204,15 +212,15 @@ func (s *Server) EndpointsHandler() http.HandlerFunc {
 				[]ExampleURL{
 					{
 						baseurl + "/bom/causes",
-						"Return all causes of death",
+						"Return all causes of death with bill_type indicating 'weekly' or 'general' bills",
 					},
 					{
 						baseurl + "/bom/causes?start-year=1648&end-year=1754",
-						"Causes of death for a specific year range",
+						"Causes of death for a specific year range with bill_type parameter",
 					},
 					{
-						baseurl + "/bom/causes?start-year=1648&end-year=1754&id=aged,drowned",
-						"Causes of death for a specific year range and cause IDs",
+						baseurl + "/bom/causes?start-year=1648&end-year=1754&bill-type=general&id=aged,drowned",
+						"Causes of death for a specific year range and cause IDs with bill_type parameter",
 					},
 				},
 			},

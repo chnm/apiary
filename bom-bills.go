@@ -44,6 +44,8 @@ type PaginatedResponse struct {
 type APIParameters struct {
 	StartYear  int
 	EndYear    int
+	StartWeek  int
+	EndWeek    int
 	Parish     []int
 	BillType   string
 	CountType  string
@@ -222,6 +224,30 @@ func parseAPIParameters(r *http.Request) (APIParameters, error) {
 		params.EndYear = endYearInt
 	}
 
+	// Parse start week
+	if startWeek := r.URL.Query().Get("start-week"); startWeek != "" {
+		startWeekInt, err := strconv.Atoi(startWeek)
+		if err != nil {
+			return params, fmt.Errorf("invalid start week: %v", err)
+		}
+		if startWeekInt < 1 || startWeekInt > 53 {
+			return params, fmt.Errorf("start week must be between 1 and 53")
+		}
+		params.StartWeek = startWeekInt
+	}
+
+	// Parse end week
+	if endWeek := r.URL.Query().Get("end-week"); endWeek != "" {
+		endWeekInt, err := strconv.Atoi(endWeek)
+		if err != nil {
+			return params, fmt.Errorf("invalid end week: %v", err)
+		}
+		if endWeekInt < 1 || endWeekInt > 53 {
+			return params, fmt.Errorf("end week must be between 1 and 53")
+		}
+		params.EndWeek = endWeekInt
+	}
+
 	// Parse parish IDs
 	if parish := r.URL.Query().Get("parish"); parish != "" {
 		parishList := strings.Split(parish, ",")
@@ -367,6 +393,14 @@ func buildBillsQueryWithParams(params APIParameters) (*QueryBuilder, error) {
 
 	if params.EndYear != 0 {
 		conditions = append(conditions, fmt.Sprintf("b.year <= %s", qb.AddParam(params.EndYear)))
+	}
+
+	if params.StartWeek != 0 {
+		conditions = append(conditions, fmt.Sprintf("w.week_number >= %s", qb.AddParam(params.StartWeek)))
+	}
+
+	if params.EndWeek != 0 {
+		conditions = append(conditions, fmt.Sprintf("w.week_number <= %s", qb.AddParam(params.EndWeek)))
 	}
 
 	if len(params.Parish) > 0 {
