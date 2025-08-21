@@ -49,6 +49,8 @@ type APIParameters struct {
 	Parish     []int
 	BillType   string
 	CountType  string
+	Missing    *bool
+	Illegible  *bool
 	Sort       string
 	Limit      int
 	Offset     int
@@ -276,6 +278,24 @@ func parseAPIParameters(r *http.Request) (APIParameters, error) {
 		params.CountType = countType
 	}
 
+	// Parse missing parameter
+	if missing := r.URL.Query().Get("missing"); missing != "" {
+		missingBool, err := strconv.ParseBool(missing)
+		if err != nil {
+			return params, fmt.Errorf("invalid missing value: %v", err)
+		}
+		params.Missing = &missingBool
+	}
+
+	// Parse illegible parameter
+	if illegible := r.URL.Query().Get("illegible"); illegible != "" {
+		illegibleBool, err := strconv.ParseBool(illegible)
+		if err != nil {
+			return params, fmt.Errorf("invalid illegible value: %v", err)
+		}
+		params.Illegible = &illegibleBool
+	}
+
 	// Parse pagination parameters first
 	if limit := r.URL.Query().Get("limit"); limit != "" {
 		limitInt, err := strconv.Atoi(limit)
@@ -418,6 +438,14 @@ func buildBillsQueryWithParams(params APIParameters) (*QueryBuilder, error) {
 
 	if params.CountType != "" {
 		conditions = append(conditions, fmt.Sprintf("b.count_type = %s", qb.AddParam(params.CountType)))
+	}
+
+	if params.Missing != nil {
+		conditions = append(conditions, fmt.Sprintf("b.missing = %s", qb.AddParam(*params.Missing)))
+	}
+
+	if params.Illegible != nil {
+		conditions = append(conditions, fmt.Sprintf("b.illegible = %s", qb.AddParam(*params.Illegible)))
 	}
 
 	// Handle cursor-based pagination

@@ -204,6 +204,14 @@ func (s *Server) EndpointsHandler() http.HandlerFunc {
 						baseurl + "/bom/bills?start-year=1665&end-year=1665&start-week=50&bill-type=weekly&count-type=plague&limit=50&offset=0",
 						"Combine week number filtering with other parameters. Example shows plague deaths from week 50 onwards in 1665.",
 					},
+					{
+						baseurl + "/bom/bills?start-year=1636&end-year=1754&missing=false&illegible=false&limit=50&offset=0",
+						"Filter out missing and illegible records. Parameters accept true/false values.",
+					},
+					{
+						baseurl + "/bom/bills?start-year=1636&end-year=1754&missing=true&limit=50&offset=0",
+						"Show only missing records. Can be combined with other filtering parameters.",
+					},
 				},
 			},
 			{
