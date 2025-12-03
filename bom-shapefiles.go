@@ -135,7 +135,7 @@ func (s *Server) BillsShapefilesHandler() http.HandlerFunc {
         FROM 
             bom.parishes_shp
 				LEFT JOIN
-      		filtered_bills fb ON fb.parish_id = parishes_shp.parish_id
+      		filtered_bills fb ON fb.parish_id = parishes_shp.id
         WHERE 1=1
         -- Dynamic parish filters will be added here
         GROUP BY
