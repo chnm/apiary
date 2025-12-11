@@ -33,6 +33,7 @@ type ParishByYear struct {
 	Source           NullString `json:"source"`
 	UniqueIdentifier NullString `json:"unique_identifier"`
 	TotalRecords     int        `json:"totalrecords"`
+	Parish           *Parish    `json:"parish,omitempty"`
 }
 
 type PaginatedResponse struct {
@@ -126,6 +127,7 @@ func (s *Server) BillsHandler() http.HandlerFunc {
 		results := []ParishByYear{}
 		for rows.Next() {
 			var result ParishByYear
+			var parish Parish
 			err := rows.Scan(
 				&result.CanonicalName,
 				&result.BillType,
@@ -144,12 +146,19 @@ func (s *Server) BillsHandler() http.HandlerFunc {
 				&result.Source,
 				&result.UniqueIdentifier,
 				&result.TotalRecords,
+				&parish.ParishID,
+				&parish.Name,
+				&parish.CanonicalName,
+				&parish.BillSubunit,
+				&parish.FoundationYear,
+				&parish.Notes,
 			)
 			if err != nil {
 				http.Error(w, "Error processing results", http.StatusInternalServerError)
 				log.Printf("Error scanning row: %v", err)
 				return
 			}
+			result.Parish = &parish
 			results = append(results, result)
 		}
 
@@ -369,7 +378,13 @@ func buildBillsQueryWithParams(params APIParameters) (*QueryBuilder, error) {
         b.illegible,
         b.source,
         b.unique_identifier,
-        0 AS totalrecords`
+        0 AS totalrecords,
+        p.id,
+        p.parish_name,
+        p.canonical_name AS parish_canonical,
+        p.bills_subunit,
+        p.foundation_year,
+        p.notes`
 	} else {
 		// Include total count for first page and legacy pagination
 		selectClause = `
@@ -390,7 +405,13 @@ func buildBillsQueryWithParams(params APIParameters) (*QueryBuilder, error) {
         b.illegible,
         b.source,
         b.unique_identifier,
-        COUNT(*) OVER() AS totalrecords`
+        COUNT(*) OVER() AS totalrecords,
+        p.id,
+        p.parish_name,
+        p.canonical_name AS parish_canonical,
+        p.bills_subunit,
+        p.foundation_year,
+        p.notes`
 	}
 
 	baseQuery := selectClause + `

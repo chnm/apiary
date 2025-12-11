@@ -10,16 +10,18 @@ import (
 
 // Parish describes a parish name, canonical name, and unique ID.
 type Parish struct {
-	ParishID      int    `json:"id"`
-	Name          string `json:"name"`
-	CanonicalName string `json:"canonical_name"`
+	ParishID       int        `json:"id"`
+	Name           string     `json:"name"`
+	CanonicalName  string     `json:"canonical_name"`
+	BillSubunit    NullString `json:"subunit"`
+	FoundationYear NullString `json:"foundation_year"`
+	Notes          NullString `json:"notes"`
 }
 
 // ParishesHandler returns a list of unique parish IDs and names.
 func (s *Server) ParishesHandler() http.HandlerFunc {
-
 	query := `
-	SELECT id, parish_name, canonical_name 
+	SELECT id, parish_name, canonical_name, bills_subunit, foundation_year, notes
 	FROM bom.parishes
 	ORDER BY canonical_name;
 	`
@@ -34,7 +36,7 @@ func (s *Server) ParishesHandler() http.HandlerFunc {
 		}
 		defer rows.Close()
 		for rows.Next() {
-			err := rows.Scan(&row.ParishID, &row.Name, &row.CanonicalName)
+			err := rows.Scan(&row.ParishID, &row.Name, &row.CanonicalName, &row.BillSubunit, &row.FoundationYear, &row.Notes)
 			if err != nil {
 				log.Println(err)
 			}
