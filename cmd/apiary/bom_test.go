@@ -301,9 +301,9 @@ func TestBomShapefiles(t *testing.T) {
 
 // Helper tests for the validation functions
 func TestIsValidBillType(t *testing.T) {
-	// Test with valid bill types
+	// Test with valid bill types (case-insensitive)
 	t.Run("ValidBillTypes", func(t *testing.T) {
-		validTypes := []string{"Weekly", "General", "Total"}
+		validTypes := []string{"Weekly", "General", "Total", "weekly", "WEEKLY", "general", "GENERAL", "total", "TOTAL"}
 		for _, billType := range validTypes {
 			if !apiary.IsValidBillType(billType) {
 				t.Errorf("Expected %s to be a valid bill type, but it was rejected", billType)
@@ -313,7 +313,7 @@ func TestIsValidBillType(t *testing.T) {
 
 	// Test with invalid bill types
 	t.Run("InvalidBillTypes", func(t *testing.T) {
-		invalidTypes := []string{"", "weekly", "WEEKLY", "Invalid", "MonthlyReport"}
+		invalidTypes := []string{"", "Invalid", "MonthlyReport", "monthly", "Daily"}
 		for _, billType := range invalidTypes {
 			if apiary.IsValidBillType(billType) {
 				t.Errorf("Expected %s to be an invalid bill type, but it was accepted", billType)
@@ -323,9 +323,9 @@ func TestIsValidBillType(t *testing.T) {
 }
 
 func TestIsValidCountType(t *testing.T) {
-	// Test with valid count types
+	// Test with valid count types (case-insensitive)
 	t.Run("ValidCountTypes", func(t *testing.T) {
-		validTypes := []string{"Buried", "Plague"}
+		validTypes := []string{"Buried", "Plague", "buried", "BURIED", "plague", "PLAGUE"}
 		for _, countType := range validTypes {
 			if !apiary.IsValidCountType(countType) {
 				t.Errorf("Expected %s to be a valid count type, but it was rejected", countType)
@@ -335,7 +335,7 @@ func TestIsValidCountType(t *testing.T) {
 
 	// Test with invalid count types
 	t.Run("InvalidCountTypes", func(t *testing.T) {
-		invalidTypes := []string{"", "buried", "BURIED", "Invalid", "Deaths", "Christenings"}
+		invalidTypes := []string{"", "Invalid", "Deaths", "Christenings", "dead", "sick"}
 		for _, countType := range invalidTypes {
 			if apiary.IsValidCountType(countType) {
 				t.Errorf("Expected %s to be an invalid count type, but it was accepted", countType)

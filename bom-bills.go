@@ -454,11 +454,11 @@ func buildBillsQueryWithParams(params APIParameters) (*QueryBuilder, error) {
 	}
 
 	if params.BillType != "" {
-		conditions = append(conditions, fmt.Sprintf("b.bill_type = %s", qb.AddParam(params.BillType)))
+		conditions = append(conditions, fmt.Sprintf("b.bill_type = %s", qb.AddParam(strings.ToLower(params.BillType))))
 	}
 
 	if params.CountType != "" {
-		conditions = append(conditions, fmt.Sprintf("b.count_type = %s", qb.AddParam(params.CountType)))
+		conditions = append(conditions, fmt.Sprintf("b.count_type = %s", qb.AddParam(strings.ToLower(params.CountType))))
 	}
 
 	if params.Missing != nil {
@@ -522,7 +522,7 @@ func IsValidBillType(billType string) bool {
 		"general": true,
 		"total":   true,
 	}
-	return validTypes[billType]
+	return validTypes[strings.ToLower(billType)]
 }
 
 // IsValidCountType checks if the provided count type is valid
@@ -531,7 +531,7 @@ func IsValidCountType(countType string) bool {
 		"buried": true,
 		"plague": true,
 	}
-	return validTypes[countType]
+	return validTypes[strings.ToLower(countType)]
 }
 
 // generateCursor creates a base64-encoded cursor from year, week, and name

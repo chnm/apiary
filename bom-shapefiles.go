@@ -135,7 +135,9 @@ func (s *Server) BillsShapefilesHandler() http.HandlerFunc {
         FROM 
             bom.parishes_shp
 				LEFT JOIN
-      		filtered_bills fb ON fb.parish_id = parishes_shp.id
+      		bom.parishes p ON p.canonical_name = parishes_shp.civ_par
+				LEFT JOIN
+      		filtered_bills fb ON fb.parish_id = p.id
         WHERE 1=1
         -- Dynamic parish filters will be added here
         GROUP BY
@@ -258,11 +260,11 @@ func buildSeparateFilters(year, startYear, endYear, subunit, cityCounty, billTyp
 
 	// Bills-specific filters
 	if billType != "" && IsValidBillType(billType) {
-		billFilters = append(billFilters, fmt.Sprintf("AND b.bill_type = '%s'", billType))
+		billFilters = append(billFilters, fmt.Sprintf("AND b.bill_type = '%s'", strings.ToLower(billType)))
 	}
 
 	if countType != "" && IsValidCountType(countType) {
-		billFilters = append(billFilters, fmt.Sprintf("AND b.count_type = '%s'", countType))
+		billFilters = append(billFilters, fmt.Sprintf("AND b.count_type = '%s'", strings.ToLower(countType)))
 	}
 
 	// Add parish filter to both queries to ensure they're properly joined
