@@ -116,34 +116,51 @@ func (s *Server) BillsShapefilesHandler() http.HandlerFunc {
         WHERE 1=1
         -- Dynamic bill filters will be added here
     ),
+    unique_parishes AS (
+        SELECT DISTINCT ON (civ_par, start_yr, ST_AsText(geom_01))
+            id,
+            par,
+            civ_par,
+            dbn_par,
+            omeka_par,
+            subunit,
+            city_cnty,
+            start_yr,
+            sp_total,
+            sp_per,
+            geom_01
+        FROM bom.parishes_shp
+        WHERE 1=1
+        -- Dynamic parish filters will be added here
+    ),
     parish_data AS (
-        SELECT 
-            parishes_shp.id,
-            parishes_shp.par,
-            parishes_shp.civ_par,
-            parishes_shp.dbn_par,
-            parishes_shp.omeka_par,
-            parishes_shp.subunit,
-            parishes_shp.city_cnty,
-            parishes_shp.start_yr,
-            parishes_shp.sp_total,
-            parishes_shp.sp_per,
+        SELECT
+            unique_parishes.id,
+            unique_parishes.par,
+            unique_parishes.civ_par,
+            unique_parishes.dbn_par,
+            unique_parishes.omeka_par,
+            unique_parishes.subunit,
+            unique_parishes.city_cnty,
+            unique_parishes.start_yr,
+            unique_parishes.sp_total,
+            unique_parishes.sp_per,
             COALESCE(SUM(CASE WHEN fb.count_type = 'buried' THEN fb.count ELSE 0 END), 0) as total_buried,
             COALESCE(SUM(CASE WHEN fb.count_type = 'plague' THEN fb.count ELSE 0 END), 0) as total_plague,
             COUNT(fb.parish_id) as bill_count,
-            parishes_shp.geom_01
-        FROM 
-            bom.parishes_shp
+            unique_parishes.geom_01
+        FROM
+            unique_parishes
 				LEFT JOIN
-      		bom.parishes p ON p.canonical_name = parishes_shp.civ_par
+      		bom.parishes p ON LOWER(REPLACE(REPLACE(p.canonical_name, '-', ' '), '.', '')) = LOWER(REPLACE(REPLACE(unique_parishes.civ_par, '-', ' '), '.', ''))
 				LEFT JOIN
       		filtered_bills fb ON fb.parish_id = p.id
         WHERE 1=1
         -- Dynamic parish filters will be added here
         GROUP BY
-            parishes_shp.id, parishes_shp.par, parishes_shp.civ_par, parishes_shp.dbn_par,
-            parishes_shp.omeka_par, parishes_shp.subunit, parishes_shp.city_cnty,
-            parishes_shp.start_yr, parishes_shp.sp_total, parishes_shp.sp_per, parishes_shp.geom_01
+            unique_parishes.id, unique_parishes.par, unique_parishes.civ_par, unique_parishes.dbn_par,
+            unique_parishes.omeka_par, unique_parishes.subunit, unique_parishes.city_cnty,
+            unique_parishes.start_yr, unique_parishes.sp_total, unique_parishes.sp_per, unique_parishes.geom_01
     )
     SELECT json_build_object(
         'type', 'FeatureCollection',
@@ -230,10 +247,11 @@ func buildSeparateFilters(year, startYear, endYear, subunit, cityCounty, billTyp
 	var parishFilters []string
 
 	// Add filters based on provided parameters
+	// Note: Year filters only apply to bills, not parish geometries
+	// Parish geometries are filtered by other attributes (subunit, city_cnty, parish ID)
 	if year != "" {
 		if yearInt, err := strconv.Atoi(year); err == nil {
 			billFilters = append(billFilters, fmt.Sprintf("AND b.year = %d", yearInt))
-			parishFilters = append(parishFilters, fmt.Sprintf("AND parishes_shp.start_yr = %d", yearInt))
 		}
 	} else {
 		// Use start-year and end-year if provided
