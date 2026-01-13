@@ -38,6 +38,11 @@ func (s *Server) Routes() {
 	s.Router.HandleFunc("/relcensus/denominations", s.RelCensusDenominationsHandler()).Methods("GET", "HEAD")
 	s.Router.HandleFunc("/relcensus/city-membership", s.RelCensusCityMembershipHandler()).Methods("GET", "HEAD")
 	s.Router.HandleFunc("/relcensus/cities", s.RelCensusLocationsHandler()).Methods("GET", "HEAD")
+	s.Router.HandleFunc("/pinkertons/activities", s.ActivitiesHandler()).Methods("GET", "HEAD")
+	s.Router.HandleFunc("/pinkertons/activities/{id:[0-9]+}", s.ActivityByIDHandler()).Methods("GET", "HEAD")
+	s.Router.HandleFunc("/pinkertons/locations", s.LocationsHandler()).Methods("GET", "HEAD")
+	s.Router.HandleFunc("/pinkertons/operatives", s.OperativesHandler()).Methods("GET", "HEAD")
+	s.Router.HandleFunc("/pinkertons/subjects", s.SubjectsHandler()).Methods("GET", "HEAD")
 	s.Router.HandleFunc("/cache", s.CacheTest()).Methods("GET", "HEAD")
 	s.Router.HandleFunc("/", s.EndpointsHandler()).Methods("GET", "HEAD")
 

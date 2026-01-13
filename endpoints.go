@@ -338,6 +338,52 @@ func (s *Server) EndpointsHandler() http.HandlerFunc {
 				},
 			},
 			{
+				"Pinkertons: All activities",
+				baseurl + "/pinkertons/activities",
+				[]ExampleURL{
+					{
+						baseurl + "/pinkertons/activities?limit=10",
+						"First 10 activities with location coordinates",
+					},
+					{
+						baseurl + "/pinkertons/activities?operative=John+Doe",
+						"Follow a specific operative",
+					},
+					{
+						baseurl + "/pinkertons/activities?subject=Jane+Smith",
+						"Activities related to a specific subject",
+					},
+					{
+						baseurl + "/pinkertons/activities?start_date=1900-01-01&end_date=1900-12-31",
+						"Activities within a date range",
+					},
+					{
+						baseurl + "/pinkertons/activities?limit=50&start_date=1900-01-01",
+						"First 50 activities from 1900 onwards",
+					},
+				},
+			},
+			{
+				"Pinkertons: Activity by ID with locations",
+				baseurl + "/pinkertons/activities/1",
+				nil,
+			},
+			{
+				"Pinkertons: All locations with coordinates",
+				baseurl + "/pinkertons/locations",
+				nil,
+			},
+			{
+				"Pinkertons: List of unique operatives",
+				baseurl + "/pinkertons/operatives",
+				nil,
+			},
+			{
+				"Pinkertons: List of unique subjects",
+				baseurl + "/pinkertons/subjects",
+				nil,
+			},
+			{
 				"Cache test",
 				baseurl + "/cache",
 				[]ExampleURL{
