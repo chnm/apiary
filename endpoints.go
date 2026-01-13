@@ -342,20 +342,24 @@ func (s *Server) EndpointsHandler() http.HandlerFunc {
 				baseurl + "/pinkertons/activities",
 				[]ExampleURL{
 					{
-						baseurl + "/pinkertons/activities?include_locations=true",
-						"All activities with location coordinates included",
+						baseurl + "/pinkertons/activities?limit=10",
+						"First 10 activities with location coordinates",
 					},
 					{
-						baseurl + "/pinkertons/activities?operative=John+Doe&include_locations=true",
-						"Follow a specific operative with locations",
+						baseurl + "/pinkertons/activities?operative=John+Doe",
+						"Follow a specific operative",
 					},
 					{
-						baseurl + "/pinkertons/activities?subject=Jane+Smith&include_locations=true",
-						"Activities related to a specific subject with locations",
+						baseurl + "/pinkertons/activities?subject=Jane+Smith",
+						"Activities related to a specific subject",
 					},
 					{
-						baseurl + "/pinkertons/activities?start_date=1900-01-01&end_date=1900-12-31&include_locations=true",
-						"Activities within a date range with locations",
+						baseurl + "/pinkertons/activities?start_date=1900-01-01&end_date=1900-12-31",
+						"Activities within a date range",
+					},
+					{
+						baseurl + "/pinkertons/activities?limit=50&start_date=1900-01-01",
+						"First 50 activities from 1900 onwards",
 					},
 				},
 			},

@@ -38,6 +38,7 @@ type Location struct {
 	LocationName  NullString  `json:"location_name"`
 	LocationType  NullString  `json:"location_type"`
 	LocationNotes NullString  `json:"location_notes"`
+	Visits        NullInt64   `json:"visits"`
 	Latitude      NullFloat64 `json:"latitude"`
 	Longitude     NullFloat64 `json:"longitude"`
 }
@@ -71,20 +72,56 @@ func (v *NullFloat64) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-// ActivitiesHandler returns a list of all detective activities with optional filtering and location inclusion
+// Scan implements the sql.Scanner interface for database scanning
+func (v *NullFloat64) Scan(value interface{}) error {
+	if value == nil {
+		v.Float64, v.Valid = 0, false
+		return nil
+	}
+	v.Valid = true
+	switch val := value.(type) {
+	case float64:
+		v.Float64 = val
+	case float32:
+		v.Float64 = float64(val)
+	case int64:
+		v.Float64 = float64(val)
+	case int:
+		v.Float64 = float64(val)
+	case string:
+		// PostgreSQL numeric type may be returned as string
+		parsed, err := strconv.ParseFloat(val, 64)
+		if err != nil {
+			return fmt.Errorf("cannot parse string %q into NullFloat64: %w", val, err)
+		}
+		v.Float64 = parsed
+	case []byte:
+		// Handle byte slice (some drivers return numeric as bytes)
+		parsed, err := strconv.ParseFloat(string(val), 64)
+		if err != nil {
+			return fmt.Errorf("cannot parse bytes %q into NullFloat64: %w", val, err)
+		}
+		v.Float64 = parsed
+	default:
+		return fmt.Errorf("cannot scan %T into NullFloat64", value)
+	}
+	return nil
+}
+
+// ActivitiesHandler returns a list of all detective activities with location data and optional filtering
 // Query parameters:
-//   - include_locations: if "true", includes location data with coordinates
 //   - operative: filter by operative name
 //   - subject: filter by subject name
 //   - start_date: filter by start date (YYYY-MM-DD)
 //   - end_date: filter by end date (YYYY-MM-DD)
+//   - limit: maximum number of results to return (default: no limit)
 func (s *Server) ActivitiesHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		includeLocations := r.URL.Query().Get("include_locations") == "true"
 		operative := r.URL.Query().Get("operative")
 		subject := r.URL.Query().Get("subject")
 		startDate := r.URL.Query().Get("start_date")
 		endDate := r.URL.Query().Get("end_date")
+		limitStr := r.URL.Query().Get("limit")
 
 		// Build query dynamically based on parameters
 		baseQuery := `
@@ -124,7 +161,20 @@ func (s *Server) ActivitiesHandler() http.HandlerFunc {
 			argCount++
 		}
 
-		baseQuery += " ORDER BY a.date, a.time;"
+		baseQuery += " ORDER BY a.date, a.time"
+
+		// Add limit if specified
+		if limitStr != "" {
+			limit, err := strconv.Atoi(limitStr)
+			if err != nil || limit <= 0 {
+				http.Error(w, "Invalid limit parameter", http.StatusBadRequest)
+				return
+			}
+			baseQuery += fmt.Sprintf(" LIMIT $%d", argCount)
+			args = append(args, limit)
+		}
+
+		baseQuery += ";"
 
 		results := make([]Activity, 0)
 
@@ -157,39 +207,37 @@ func (s *Server) ActivitiesHandler() http.HandlerFunc {
 			return
 		}
 
-		// If include_locations is true, fetch locations for each activity
-		if includeLocations {
-			locationsQuery := `
-			SELECT
-				l.id, l.locality, l.street_address, l.location_name,
-				l.location_type, l.location_notes, l.latitude, l.longitude
-			FROM detectives.locations l
-			INNER JOIN detectives.activity_locations al ON l.id = al.location_id
-			WHERE al.activity_id = $1;
-			`
+		// Fetch locations for each activity
+		locationsQuery := `
+		SELECT
+			l.id, l.locality, l.street_address, l.location_name,
+			l.location_type, l.location_notes, l.visits, l.latitude, l.longitude
+		FROM detectives.locations l
+		INNER JOIN detectives.activity_locations al ON l.id = al.location_id
+		WHERE al.activity_id = $1;
+		`
 
-			for i := range results {
-				results[i].Locations = make([]Location, 0)
-				locRows, err := s.DB.Query(context.TODO(), locationsQuery, results[i].ID)
+		for i := range results {
+			results[i].Locations = make([]Location, 0)
+			locRows, err := s.DB.Query(context.TODO(), locationsQuery, results[i].ID)
+			if err != nil {
+				log.Println("Error querying locations for activity", results[i].ID, ":", err)
+				continue
+			}
+
+			for locRows.Next() {
+				var loc Location
+				err := locRows.Scan(
+					&loc.ID, &loc.Locality, &loc.StreetAddress, &loc.LocationName,
+					&loc.LocationType, &loc.LocationNotes, &loc.Visits, &loc.Latitude, &loc.Longitude,
+				)
 				if err != nil {
-					log.Println("Error querying locations for activity", results[i].ID, ":", err)
+					log.Println("Error scanning location row:", err)
 					continue
 				}
-
-				for locRows.Next() {
-					var loc Location
-					err := locRows.Scan(
-						&loc.ID, &loc.Locality, &loc.StreetAddress, &loc.LocationName,
-						&loc.LocationType, &loc.LocationNotes, &loc.Latitude, &loc.Longitude,
-					)
-					if err != nil {
-						log.Println("Error scanning location row:", err)
-						continue
-					}
-					results[i].Locations = append(results[i].Locations, loc)
-				}
-				locRows.Close()
+				results[i].Locations = append(results[i].Locations, loc)
 			}
+			locRows.Close()
 		}
 
 		response, err := json.Marshal(results)
@@ -218,7 +266,7 @@ func (s *Server) ActivityByIDHandler() http.HandlerFunc {
 	locationsQuery := `
 	SELECT
 		l.id, l.locality, l.street_address, l.location_name,
-		l.location_type, l.location_notes, l.latitude, l.longitude
+		l.location_type, l.location_notes, l.visits, l.latitude, l.longitude
 	FROM detectives.locations l
 	INNER JOIN detectives.activity_locations al ON l.id = al.location_id
 	WHERE al.activity_id = $1;
@@ -259,7 +307,7 @@ func (s *Server) ActivityByIDHandler() http.HandlerFunc {
 				var loc Location
 				err := rows.Scan(
 					&loc.ID, &loc.Locality, &loc.StreetAddress, &loc.LocationName,
-					&loc.LocationType, &loc.LocationNotes, &loc.Latitude, &loc.Longitude,
+					&loc.LocationType, &loc.LocationNotes, &loc.Visits, &loc.Latitude, &loc.Longitude,
 				)
 				if err != nil {
 					log.Println("Error scanning location row:", err)
@@ -286,7 +334,7 @@ func (s *Server) LocationsHandler() http.HandlerFunc {
 	query := `
 	SELECT
 		l.id, l.locality, l.street_address, l.location_name,
-		l.location_type, l.location_notes, l.latitude, l.longitude
+		l.location_type, l.location_notes, l.visits, l.latitude, l.longitude
 	FROM detectives.locations l
 	ORDER BY l.locality, l.location_name;
 	`
@@ -306,7 +354,7 @@ func (s *Server) LocationsHandler() http.HandlerFunc {
 			var row Location
 			err := rows.Scan(
 				&row.ID, &row.Locality, &row.StreetAddress, &row.LocationName,
-				&row.LocationType, &row.LocationNotes, &row.Latitude, &row.Longitude,
+				&row.LocationType, &row.LocationNotes, &row.Visits, &row.Latitude, &row.Longitude,
 			)
 			if err != nil {
 				log.Println("Error scanning location row:", err)

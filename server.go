@@ -38,7 +38,7 @@ func NewServer(ctx context.Context) *Server {
 
 	// Read the configuration from environment variables. The `getEnv()` function
 	// will provide a default.
-	s.Config.dbconn = getEnv("APIARY_DB_LOCAL", "")
+	s.Config.dbconn = getEnv("APIARY_DB", "")
 	s.Config.logging = getEnv("APIARY_LOGGING", "on") == "on"
 	s.Config.address = getEnv("APIARY_INTERFACE", "0.0.0.0") + ":" + getEnv("APIARY_PORT", "8090")
 
