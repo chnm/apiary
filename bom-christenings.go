@@ -30,8 +30,8 @@ type ChristeningsByYear struct {
 
 // Christenings describes a christening location.
 type Christenings struct {
-	Name string `json:"name"`
-	ID   int    `json:"id"`
+	Name     string `json:"name"`
+	BillType string `json:"bill_type"`
 }
 
 // ChristeningsHandler returns the christenings for a given range of years. It expects a start year and
@@ -212,30 +212,57 @@ func (s *Server) ChristeningsHandler() http.HandlerFunc {
 	}
 }
 
-// ListChristeningsHandler returns a list of parish names and ids where
-// christenings have been recorded.
+// ListChristeningsHandler returns a list of unique christening names filtered by bill type.
 func (s *Server) ListChristeningsHandler() http.HandlerFunc {
-	query := `
-	SELECT DISTINCT
-		name,
-		id
-	FROM 
-		bom.christening_locations
-	ORDER BY 
-		name ASC
-	`
-
 	return func(w http.ResponseWriter, r *http.Request) {
+		billType := r.URL.Query().Get("bill-type")
+
+		// Validate bill type if provided
+		if billType != "" {
+			if !IsValidBillType(billType) {
+				http.Error(w, "Invalid bill type", http.StatusBadRequest)
+				log.Printf("Invalid bill type: %s", billType)
+				return
+			}
+		}
+
+		query := `
+		SELECT DISTINCT
+			christening,
+			bill_type
+		FROM
+			bom.christenings
+		WHERE
+			christening IS NOT NULL
+		`
+
+		// Add bill type filter if provided
+		if billType != "" {
+			query += " AND bill_type = $1"
+		}
+
+		query += " ORDER BY christening ASC, bill_type ASC"
+
 		results := make([]Christenings, 0)
 		var row Christenings
+		var rows pgx.Rows
+		var err error
 
-		rows, err := s.DB.Query(context.TODO(), query)
+		// Execute query with or without bill type parameter
+		if billType != "" {
+			rows, err = s.DB.Query(context.TODO(), query, billType)
+		} else {
+			rows, err = s.DB.Query(context.TODO(), query)
+		}
+
 		if err != nil {
 			log.Println(err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
 		}
 		defer rows.Close()
 		for rows.Next() {
-			err := rows.Scan(&row.Name, &row.ID)
+			err := rows.Scan(&row.Name, &row.BillType)
 			if err != nil {
 				log.Println(err)
 			}
@@ -245,6 +272,7 @@ func (s *Server) ListChristeningsHandler() http.HandlerFunc {
 		if err != nil {
 			log.Println(err)
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
 		}
 
 		response, _ := json.Marshal(results)

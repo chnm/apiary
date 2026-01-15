@@ -40,7 +40,8 @@ type DeathCauses struct {
 
 // Causes describes a cause of death.
 type Causes struct {
-	Name string `json:"name"`
+	Name     string `json:"name"`
+	BillType string `json:"bill_type"`
 }
 
 // DeathCausesHandler returns a JSON array of causes of death. The list of causes
@@ -115,7 +116,7 @@ func (s *Server) DeathCausesHandler() http.HandlerFunc {
 
 		query := `
     SELECT 
-        c.original_name,
+        c.original_name as death,
         c.bill_type,
         c.count, 
         c.definition,
@@ -145,7 +146,14 @@ func (s *Server) DeathCausesHandler() http.HandlerFunc {
 
 		if len(apiParams.Death) > 0 {
 			paramCount++
-			query += fmt.Sprintf(" AND c.original_name = ANY($%d)", paramCount)
+			// Support filtering by canonical names with " & " separator
+			// This allows filtering by "consumption" to match both "consumption"
+			// and "consumption & cough" by splitting on ' & ' and checking for matches
+			query += fmt.Sprintf(` AND EXISTS (
+				SELECT 1
+				FROM unnest($%d::text[]) AS selected_cause
+				WHERE selected_cause = ANY(string_to_array(c.name, ' & '))
+			)`, paramCount)
 		}
 
 		if billType != "" {
@@ -243,30 +251,57 @@ func (s *Server) DeathCausesHandler() http.HandlerFunc {
 
 
 func (s *Server) ListCausesHandler() http.HandlerFunc {
-	// Query to get a unique list of canonical cause names
-
-	query := `
-	SELECT DISTINCT
-		name
-	FROM 
-		bom.causes_of_death
-	WHERE
-		name IS NOT NULL
-	ORDER BY 
-		name ASC
-	`
+	// Query to get a unique list of canonical cause names filtered by bill type
 
 	return func(w http.ResponseWriter, r *http.Request) {
+		billType := r.URL.Query().Get("bill-type")
+
+		// Validate bill type if provided
+		if billType != "" {
+			if !IsValidBillType(billType) {
+				http.Error(w, "Invalid bill type", http.StatusBadRequest)
+				log.Printf("Invalid bill type: %s", billType)
+				return
+			}
+		}
+
+		query := `
+		SELECT DISTINCT
+			name,
+			bill_type
+		FROM
+			bom.causes_of_death
+		WHERE
+			name IS NOT NULL
+		`
+
+		// Add bill type filter if provided
+		if billType != "" {
+			query += " AND bill_type = $1"
+		}
+
+		query += " ORDER BY name ASC, bill_type ASC"
+
 		results := make([]Causes, 0)
 		var row Causes
+		var rows pgx.Rows
+		var err error
 
-		rows, err := s.DB.Query(context.TODO(), query)
+		// Execute query with or without bill type parameter
+		if billType != "" {
+			rows, err = s.DB.Query(context.TODO(), query, billType)
+		} else {
+			rows, err = s.DB.Query(context.TODO(), query)
+		}
+
 		if err != nil {
 			log.Println(err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
 		}
 		defer rows.Close()
 		for rows.Next() {
-			err := rows.Scan(&row.Name)
+			err := rows.Scan(&row.Name, &row.BillType)
 			if err != nil {
 				log.Println(err)
 			}
@@ -276,6 +311,7 @@ func (s *Server) ListCausesHandler() http.HandlerFunc {
 		if err != nil {
 			log.Println(err)
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
 		}
 
 		response, _ := json.Marshal(results)
