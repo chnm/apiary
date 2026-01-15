@@ -115,7 +115,7 @@ func (s *Server) DeathCausesHandler() http.HandlerFunc {
 
 		query := `
     SELECT 
-        c.death,
+        c.original_name,
         c.bill_type,
         c.count, 
         c.definition,
@@ -145,7 +145,7 @@ func (s *Server) DeathCausesHandler() http.HandlerFunc {
 
 		if len(apiParams.Death) > 0 {
 			paramCount++
-			query += fmt.Sprintf(" AND c.death = ANY($%d)", paramCount)
+			query += fmt.Sprintf(" AND c.original_name = ANY($%d)", paramCount)
 		}
 
 		if billType != "" {
@@ -243,15 +243,17 @@ func (s *Server) DeathCausesHandler() http.HandlerFunc {
 
 
 func (s *Server) ListCausesHandler() http.HandlerFunc {
-	// Query to get a unique list of causes of death
+	// Query to get a unique list of canonical cause names
 
 	query := `
 	SELECT DISTINCT
-		death
+		name
 	FROM 
 		bom.causes_of_death
+	WHERE
+		name IS NOT NULL
 	ORDER BY 
-		death ASC
+		name ASC
 	`
 
 	return func(w http.ResponseWriter, r *http.Request) {
