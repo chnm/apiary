@@ -23,6 +23,7 @@ type DeathsAPIParameters struct {
 // cause and related metadata.
 type DeathCauses struct {
 	Death            string     `json:"death"`
+	Name             string     `json:"name"`
 	BillType         string     `json:"bill_type"`
 	Count            NullInt64  `json:"count"`
 	Definition       NullString `json:"definition"`
@@ -60,7 +61,7 @@ func (s *Server) DeathCausesHandler() http.HandlerFunc {
 			StartYear: 1648,
 			EndYear:   1750,
 			Death:     []string{},
-			Sort:      "year, week_number, death",
+			Sort:      "year, week_number, name",
 		}
 
 		// If a start year is provided, update the API parameters
@@ -117,6 +118,7 @@ func (s *Server) DeathCausesHandler() http.HandlerFunc {
 		query := `
     SELECT 
         c.original_name as death,
+				c.name,
         c.bill_type,
         c.count, 
         c.definition,
@@ -193,17 +195,16 @@ func (s *Server) DeathCausesHandler() http.HandlerFunc {
 
 		// Build parameters slice
 		params := []interface{}{apiParams.StartYear, apiParams.EndYear}
-		
+
 		if len(apiParams.Death) > 0 {
 			params = append(params, apiParams.Death)
 		}
-		
+
 		if billType != "" {
 			params = append(params, billType)
 		}
 
 		rows, err = s.DB.Query(context.TODO(), query, params...)
-
 		if err != nil {
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 			log.Fatal("Error preparing statement", err)
@@ -214,6 +215,7 @@ func (s *Server) DeathCausesHandler() http.HandlerFunc {
 		for rows.Next() {
 			err := rows.Scan(
 				&row.Death,
+				&row.Name,
 				&row.BillType,
 				&row.Count,
 				&row.Definition,
@@ -231,7 +233,7 @@ func (s *Server) DeathCausesHandler() http.HandlerFunc {
 			if err != nil {
 				log.Printf("Error scanning row: %v", err)
 				log.Printf("Types: death=%T, billType=%T, count=%T, definition=%T, definitionSource=%T, weekID=%T, weekNumber=%T, startDay=%T, startMonth=%T, endDay=%T, endMonth=%T, year=%T, splitYear=%T, totalRecords=%T",
-					row.Death, row.BillType, row.Count, row.Definition, row.DefinitionSource, row.WeekID, row.WeekNumber, row.StartDay, row.StartMonth, row.EndDay, row.EndMonth, row.Year, row.SplitYear, row.TotalRecords)
+					row.Death, row.Name, row.BillType, row.Count, row.Definition, row.DefinitionSource, row.WeekID, row.WeekNumber, row.StartDay, row.StartMonth, row.EndDay, row.EndMonth, row.Year, row.SplitYear, row.TotalRecords)
 				continue
 			}
 			results = append(results, row)
@@ -248,7 +250,6 @@ func (s *Server) DeathCausesHandler() http.HandlerFunc {
 		fmt.Fprint(w, string(response))
 	}
 }
-
 
 func (s *Server) ListCausesHandler() http.HandlerFunc {
 	// Query to get a unique list of canonical cause names filtered by bill type
