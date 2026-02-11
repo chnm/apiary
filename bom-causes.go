@@ -232,7 +232,7 @@ func (s *Server) DeathCausesHandler() http.HandlerFunc {
 			)
 			if err != nil {
 				log.Printf("Error scanning row: %v", err)
-				log.Printf("Types: death=%T, billType=%T, count=%T, definition=%T, definitionSource=%T, weekID=%T, weekNumber=%T, startDay=%T, startMonth=%T, endDay=%T, endMonth=%T, year=%T, splitYear=%T, totalRecords=%T",
+				log.Printf("Types: death=%T, name=%T, billType=%T, count=%T, definition=%T, definitionSource=%T, weekID=%T, weekNumber=%T, startDay=%T, startMonth=%T, endDay=%T, endMonth=%T, year=%T, splitYear=%T, totalRecords=%T",
 					row.Death, row.Name, row.BillType, row.Count, row.Definition, row.DefinitionSource, row.WeekID, row.WeekNumber, row.StartDay, row.StartMonth, row.EndDay, row.EndMonth, row.Year, row.SplitYear, row.TotalRecords)
 				continue
 			}

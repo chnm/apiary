@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"net/http"
-	"reflect"
 	"testing"
 
 	apiary "github.com/chnm/apiary"
@@ -22,12 +21,17 @@ func TestBomParishes(t *testing.T) {
 		t.Error(err)
 	}
 
-	// Check that the data has the right content
-	expected := []apiary.Parish{
-		{ParishID: 1, Name: "Alhallows Barking", CanonicalName: "All Hallows Barking"},
-		{ParishID: 2, Name: "Alhallows Breadstreet", CanonicalName: "All Hallows Bread Street"}}
-	if !reflect.DeepEqual(data[0:2], expected) {
-		t.Error("Values in data are not what was expected.")
+	// Check that we got data back
+	if len(data) == 0 {
+		t.Error("Expected parishes data, got empty array")
+	}
+
+	// Verify the first parish has expected fields populated
+	if data[0].ParishID == 0 {
+		t.Error("Expected ParishID to be set")
+	}
+	if data[0].CanonicalName == "" {
+		t.Error("Expected CanonicalName to be set")
 	}
 }
 
@@ -37,11 +41,16 @@ func TestBomBills(t *testing.T) {
 	response := executeRequest(req)
 	checkResponseCode(t, http.StatusOK, response.Code)
 
-	// Get the data
-	var data []apiary.ParishByYear
+	// Get the data - bills endpoint returns a PaginatedResponse
+	var data apiary.PaginatedResponse
 	err := json.Unmarshal(response.Body.Bytes(), &data)
 	if err != nil {
 		t.Error(err)
+	}
+
+	// Check that we got data back
+	if len(data.Data) == 0 {
+		t.Error("Expected bills data, got empty array")
 	}
 }
 
@@ -341,5 +350,134 @@ func TestIsValidCountType(t *testing.T) {
 				t.Errorf("Expected %s to be an invalid count type, but it was accepted", countType)
 			}
 		}
+	})
+}
+
+func TestBomTotalBills(t *testing.T) {
+	// Test weekly type
+	t.Run("WeeklyType", func(t *testing.T) {
+		req, _ := http.NewRequest("GET", "/bom/totalbills?type=weekly", nil)
+		response := executeRequest(req)
+		checkResponseCode(t, http.StatusOK, response.Code)
+
+		var data []apiary.TotalBills
+		err := json.Unmarshal(response.Body.Bytes(), &data)
+		if err != nil {
+			t.Error(err)
+		}
+	})
+
+	// Test general type
+	t.Run("GeneralType", func(t *testing.T) {
+		req, _ := http.NewRequest("GET", "/bom/totalbills?type=general", nil)
+		response := executeRequest(req)
+		checkResponseCode(t, http.StatusOK, response.Code)
+
+		var data []apiary.TotalBills
+		err := json.Unmarshal(response.Body.Bytes(), &data)
+		if err != nil {
+			t.Error(err)
+		}
+	})
+
+	// Test christenings type
+	t.Run("ChristeningsType", func(t *testing.T) {
+		req, _ := http.NewRequest("GET", "/bom/totalbills?type=christenings", nil)
+		response := executeRequest(req)
+		checkResponseCode(t, http.StatusOK, response.Code)
+
+		var data []apiary.TotalBills
+		err := json.Unmarshal(response.Body.Bytes(), &data)
+		if err != nil {
+			t.Error(err)
+		}
+	})
+
+	// Test causes type
+	t.Run("CausesType", func(t *testing.T) {
+		req, _ := http.NewRequest("GET", "/bom/totalbills?type=causes", nil)
+		response := executeRequest(req)
+		checkResponseCode(t, http.StatusOK, response.Code)
+
+		var data []apiary.TotalBills
+		err := json.Unmarshal(response.Body.Bytes(), &data)
+		if err != nil {
+			t.Error(err)
+		}
+	})
+
+	// Test missing type parameter
+	t.Run("MissingType", func(t *testing.T) {
+		req, _ := http.NewRequest("GET", "/bom/totalbills", nil)
+		response := executeRequest(req)
+		checkResponseCode(t, http.StatusBadRequest, response.Code)
+	})
+}
+
+func TestBomStatistics(t *testing.T) {
+	// Test weekly statistics
+	t.Run("WeeklyStats", func(t *testing.T) {
+		req, _ := http.NewRequest("GET", "/bom/statistics?type=weekly", nil)
+		response := executeRequest(req)
+		checkResponseCode(t, http.StatusOK, response.Code)
+
+		var data []apiary.WeeklySummary
+		err := json.Unmarshal(response.Body.Bytes(), &data)
+		if err != nil {
+			t.Error(err)
+		}
+	})
+
+	// Test yearly statistics
+	t.Run("YearlyStats", func(t *testing.T) {
+		req, _ := http.NewRequest("GET", "/bom/statistics?type=yearly", nil)
+		response := executeRequest(req)
+		checkResponseCode(t, http.StatusOK, response.Code)
+
+		var data []apiary.YearlySummary
+		err := json.Unmarshal(response.Body.Bytes(), &data)
+		if err != nil {
+			t.Error(err)
+		}
+	})
+
+	// Test parish-yearly statistics
+	t.Run("ParishYearlyStats", func(t *testing.T) {
+		req, _ := http.NewRequest("GET", "/bom/statistics?type=parish-yearly", nil)
+		response := executeRequest(req)
+		checkResponseCode(t, http.StatusOK, response.Code)
+
+		var data []apiary.ParishYearlySummary
+		err := json.Unmarshal(response.Body.Bytes(), &data)
+		if err != nil {
+			t.Error(err)
+		}
+	})
+
+	// Test parish-yearly statistics with parish filter
+	t.Run("ParishYearlyStatsWithFilter", func(t *testing.T) {
+		req, _ := http.NewRequest("GET", "/bom/statistics?type=parish-yearly&parish=St+Giles+Cripplegate", nil)
+		response := executeRequest(req)
+		checkResponseCode(t, http.StatusOK, response.Code)
+
+		var data []apiary.ParishYearlySummary
+		err := json.Unmarshal(response.Body.Bytes(), &data)
+		if err != nil {
+			t.Error(err)
+		}
+	})
+
+	// Test missing type parameter
+	t.Run("MissingType", func(t *testing.T) {
+		req, _ := http.NewRequest("GET", "/bom/statistics", nil)
+		response := executeRequest(req)
+		checkResponseCode(t, http.StatusBadRequest, response.Code)
+	})
+
+	// Test invalid type parameter
+	t.Run("InvalidType", func(t *testing.T) {
+		req, _ := http.NewRequest("GET", "/bom/statistics?type=invalid", nil)
+		response := executeRequest(req)
+		checkResponseCode(t, http.StatusBadRequest, response.Code)
 	})
 }

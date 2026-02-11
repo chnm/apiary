@@ -96,3 +96,22 @@ func TestRelCensusCityAggregates(t *testing.T) {
 		t.Error(err)
 	}
 }
+
+func TestRelCensusLocations(t *testing.T) {
+	// Check that we get the right response
+	req, _ := http.NewRequest("GET", "/relcensus/cities", nil)
+	response := executeRequest(req)
+	checkResponseCode(t, http.StatusOK, response.Code)
+
+	// Get the data
+	var data []apiary.LocationInfo
+	err := json.Unmarshal(response.Body.Bytes(), &data)
+	if err != nil {
+		t.Error(err)
+	}
+
+	// Check that we got an array
+	if data == nil {
+		t.Error("Expected array of locations, got nil")
+	}
+}
