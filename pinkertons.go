@@ -114,6 +114,7 @@ func (v *NullFloat64) Scan(value interface{}) error {
 //   - subject: filter by subject name
 //   - start_date: filter by start date (YYYY-MM-DD)
 //   - end_date: filter by end date (YYYY-MM-DD)
+//   - location_id: filter by location ID
 //   - limit: maximum number of results to return (default: no limit)
 func (s *Server) ActivitiesHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -121,6 +122,7 @@ func (s *Server) ActivitiesHandler() http.HandlerFunc {
 		subject := r.URL.Query().Get("subject")
 		startDate := r.URL.Query().Get("start_date")
 		endDate := r.URL.Query().Get("end_date")
+		locationIDStr := r.URL.Query().Get("location_id")
 		limitStr := r.URL.Query().Get("limit")
 
 		// Build query dynamically based on parameters
@@ -158,6 +160,17 @@ func (s *Server) ActivitiesHandler() http.HandlerFunc {
 		if endDate != "" {
 			baseQuery += fmt.Sprintf(" AND a.date <= $%d", argCount)
 			args = append(args, endDate)
+			argCount++
+		}
+
+		if locationIDStr != "" {
+			locationID, err := strconv.Atoi(locationIDStr)
+			if err != nil || locationID <= 0 {
+				http.Error(w, "Invalid location_id parameter", http.StatusBadRequest)
+				return
+			}
+			baseQuery += fmt.Sprintf(" AND a.id IN (SELECT activity_id FROM detectives.activity_locations WHERE location_id = $%d)", argCount)
+			args = append(args, locationID)
 			argCount++
 		}
 
