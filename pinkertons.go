@@ -19,7 +19,7 @@ type Activity struct {
 	Date            NullString `json:"date"`
 	Time            NullString `json:"time"`
 	Duration        NullString `json:"duration"`
-	Roping          NullString `json:"roping"`
+	Activity        NullString `json:"activity"`
 	Mode            NullString `json:"mode"`
 	ActivityNotes   NullString `json:"activity_notes"`
 	Subject         NullString `json:"subject"`
@@ -129,7 +129,7 @@ func (s *Server) ActivitiesHandler() http.HandlerFunc {
 		baseQuery := `
 		SELECT
 			a.id, a.source, a.operative, a.date, a.time, a.duration,
-			a.roping, a.mode, a.activity_notes, a.subject, a.information,
+			a.activity, a.mode, a.activity_notes, a.subject, a.information,
 			a.information_type, a.edited, a.edit_type
 		FROM detectives.activities a
 		WHERE 1=1
@@ -203,7 +203,7 @@ func (s *Server) ActivitiesHandler() http.HandlerFunc {
 			var row Activity
 			err := rows.Scan(
 				&row.ID, &row.Source, &row.Operative, &row.Date, &row.Time,
-				&row.Duration, &row.Roping, &row.Mode, &row.ActivityNotes,
+				&row.Duration, &row.Activity, &row.Mode, &row.ActivityNotes,
 				&row.Subject, &row.Information, &row.InformationType,
 				&row.Edited, &row.EditType,
 			)
@@ -270,7 +270,7 @@ func (s *Server) ActivityByIDHandler() http.HandlerFunc {
 	activityQuery := `
 	SELECT
 		a.id, a.source, a.operative, a.date, a.time, a.duration,
-		a.roping, a.mode, a.activity_notes, a.subject, a.information,
+		a.activity, a.mode, a.activity_notes, a.subject, a.information,
 		a.information_type, a.edited, a.edit_type
 	FROM detectives.activities a
 	WHERE a.id = $1;
@@ -299,7 +299,7 @@ func (s *Server) ActivityByIDHandler() http.HandlerFunc {
 		// Get activity
 		err = s.DB.QueryRow(context.TODO(), activityQuery, id).Scan(
 			&activity.ID, &activity.Source, &activity.Operative, &activity.Date,
-			&activity.Time, &activity.Duration, &activity.Roping, &activity.Mode,
+			&activity.Time, &activity.Duration, &activity.Activity, &activity.Mode,
 			&activity.ActivityNotes, &activity.Subject, &activity.Information,
 			&activity.InformationType, &activity.Edited, &activity.EditType,
 		)
