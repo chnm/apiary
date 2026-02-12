@@ -4,4 +4,5 @@ cmd/apiary/.env
 cmd/apiary/__debug_bin
 
 .env.fish
+.claude/
 

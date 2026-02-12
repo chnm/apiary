@@ -19,7 +19,7 @@ type Activity struct {
 	Date            NullString `json:"date"`
 	Time            NullString `json:"time"`
 	Duration        NullString `json:"duration"`
-	Roping          NullString `json:"roping"`
+	Activity        NullString `json:"activity"`
 	Mode            NullString `json:"mode"`
 	ActivityNotes   NullString `json:"activity_notes"`
 	Subject         NullString `json:"subject"`
@@ -114,6 +114,7 @@ func (v *NullFloat64) Scan(value interface{}) error {
 //   - subject: filter by subject name
 //   - start_date: filter by start date (YYYY-MM-DD)
 //   - end_date: filter by end date (YYYY-MM-DD)
+//   - location_id: filter by location ID
 //   - limit: maximum number of results to return (default: no limit)
 func (s *Server) ActivitiesHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -121,13 +122,14 @@ func (s *Server) ActivitiesHandler() http.HandlerFunc {
 		subject := r.URL.Query().Get("subject")
 		startDate := r.URL.Query().Get("start_date")
 		endDate := r.URL.Query().Get("end_date")
+		locationIDStr := r.URL.Query().Get("location_id")
 		limitStr := r.URL.Query().Get("limit")
 
 		// Build query dynamically based on parameters
 		baseQuery := `
 		SELECT
 			a.id, a.source, a.operative, a.date, a.time, a.duration,
-			a.roping, a.mode, a.activity_notes, a.subject, a.information,
+			a.activity, a.mode, a.activity_notes, a.subject, a.information,
 			a.information_type, a.edited, a.edit_type
 		FROM detectives.activities a
 		WHERE 1=1
@@ -161,6 +163,17 @@ func (s *Server) ActivitiesHandler() http.HandlerFunc {
 			argCount++
 		}
 
+		if locationIDStr != "" {
+			locationID, err := strconv.Atoi(locationIDStr)
+			if err != nil || locationID <= 0 {
+				http.Error(w, "Invalid location_id parameter", http.StatusBadRequest)
+				return
+			}
+			baseQuery += fmt.Sprintf(" AND a.id IN (SELECT activity_id FROM detectives.activity_locations WHERE location_id = $%d)", argCount)
+			args = append(args, locationID)
+			argCount++
+		}
+
 		baseQuery += " ORDER BY a.date, a.time"
 
 		// Add limit if specified
@@ -190,7 +203,7 @@ func (s *Server) ActivitiesHandler() http.HandlerFunc {
 			var row Activity
 			err := rows.Scan(
 				&row.ID, &row.Source, &row.Operative, &row.Date, &row.Time,
-				&row.Duration, &row.Roping, &row.Mode, &row.ActivityNotes,
+				&row.Duration, &row.Activity, &row.Mode, &row.ActivityNotes,
 				&row.Subject, &row.Information, &row.InformationType,
 				&row.Edited, &row.EditType,
 			)
@@ -257,7 +270,7 @@ func (s *Server) ActivityByIDHandler() http.HandlerFunc {
 	activityQuery := `
 	SELECT
 		a.id, a.source, a.operative, a.date, a.time, a.duration,
-		a.roping, a.mode, a.activity_notes, a.subject, a.information,
+		a.activity, a.mode, a.activity_notes, a.subject, a.information,
 		a.information_type, a.edited, a.edit_type
 	FROM detectives.activities a
 	WHERE a.id = $1;
@@ -286,7 +299,7 @@ func (s *Server) ActivityByIDHandler() http.HandlerFunc {
 		// Get activity
 		err = s.DB.QueryRow(context.TODO(), activityQuery, id).Scan(
 			&activity.ID, &activity.Source, &activity.Operative, &activity.Date,
-			&activity.Time, &activity.Duration, &activity.Roping, &activity.Mode,
+			&activity.Time, &activity.Duration, &activity.Activity, &activity.Mode,
 			&activity.ActivityNotes, &activity.Subject, &activity.Information,
 			&activity.InformationType, &activity.Edited, &activity.EditType,
 		)
