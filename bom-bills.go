@@ -267,6 +267,9 @@ func parseAPIParameters(r *http.Request) (APIParameters, error) {
 			if err != nil {
 				return params, fmt.Errorf("invalid parish ID: %v", err)
 			}
+			if parishInt < 1 || parishInt > 158 {
+				return params, fmt.Errorf("parish ID must be between 1 and 158")
+			}
 			params.Parish = append(params.Parish, parishInt)
 		}
 	}
