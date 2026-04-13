@@ -32,15 +32,16 @@ type Activity struct {
 
 // Location represents a location in the database
 type Location struct {
-	ID            int         `json:"id"`
-	Locality      NullString  `json:"locality"`
-	StreetAddress NullString  `json:"street_address"`
-	LocationName  NullString  `json:"location_name"`
-	LocationType  NullString  `json:"location_type"`
-	LocationNotes NullString  `json:"location_notes"`
-	Visits        NullInt64   `json:"visits"`
-	Latitude      NullFloat64 `json:"latitude"`
-	Longitude     NullFloat64 `json:"longitude"`
+	ID                   int         `json:"id"`
+	Locality             NullString  `json:"locality"`
+	StreetAddress        NullString  `json:"street_address"`
+	LocationName         NullString  `json:"location_name"`
+	LocationType         NullString  `json:"location_type"`
+	SpecificLocationType NullString  `json:"specific_location_type"`
+	LocationNotes        NullString  `json:"location_notes"`
+	Visits               NullInt64   `json:"visits"`
+	Latitude             NullFloat64 `json:"latitude"`
+	Longitude            NullFloat64 `json:"longitude"`
 }
 
 // NullFloat64 handles nullable float64 values for JSON marshaling
@@ -224,7 +225,7 @@ func (s *Server) ActivitiesHandler() http.HandlerFunc {
 		locationsQuery := `
 		SELECT
 			l.id, l.locality, l.street_address, l.location_name,
-			l.location_type, l.location_notes, l.visits, l.latitude, l.longitude
+			l.location_type, l.specific_location_type, l.location_notes, l.visits, l.latitude, l.longitude
 		FROM detectives.locations l
 		INNER JOIN detectives.activity_locations al ON l.id = al.location_id
 		WHERE al.activity_id = $1;
@@ -242,7 +243,7 @@ func (s *Server) ActivitiesHandler() http.HandlerFunc {
 				var loc Location
 				err := locRows.Scan(
 					&loc.ID, &loc.Locality, &loc.StreetAddress, &loc.LocationName,
-					&loc.LocationType, &loc.LocationNotes, &loc.Visits, &loc.Latitude, &loc.Longitude,
+					&loc.LocationType, &loc.SpecificLocationType, &loc.LocationNotes, &loc.Visits, &loc.Latitude, &loc.Longitude,
 				)
 				if err != nil {
 					log.Println("Error scanning location row:", err)
@@ -279,7 +280,7 @@ func (s *Server) ActivityByIDHandler() http.HandlerFunc {
 	locationsQuery := `
 	SELECT
 		l.id, l.locality, l.street_address, l.location_name,
-		l.location_type, l.location_notes, l.visits, l.latitude, l.longitude
+		l.location_type, l.specific_location_type, l.location_notes, l.visits, l.latitude, l.longitude
 	FROM detectives.locations l
 	INNER JOIN detectives.activity_locations al ON l.id = al.location_id
 	WHERE al.activity_id = $1;
@@ -320,7 +321,7 @@ func (s *Server) ActivityByIDHandler() http.HandlerFunc {
 				var loc Location
 				err := rows.Scan(
 					&loc.ID, &loc.Locality, &loc.StreetAddress, &loc.LocationName,
-					&loc.LocationType, &loc.LocationNotes, &loc.Visits, &loc.Latitude, &loc.Longitude,
+					&loc.LocationType, &loc.SpecificLocationType, &loc.LocationNotes, &loc.Visits, &loc.Latitude, &loc.Longitude,
 				)
 				if err != nil {
 					log.Println("Error scanning location row:", err)
@@ -347,7 +348,7 @@ func (s *Server) LocationsHandler() http.HandlerFunc {
 	query := `
 	SELECT
 		l.id, l.locality, l.street_address, l.location_name,
-		l.location_type, l.location_notes, l.visits, l.latitude, l.longitude
+		l.location_type, l.specific_location_type, l.location_notes, l.visits, l.latitude, l.longitude
 	FROM detectives.locations l
 	ORDER BY l.locality, l.location_name;
 	`
@@ -367,7 +368,7 @@ func (s *Server) LocationsHandler() http.HandlerFunc {
 			var row Location
 			err := rows.Scan(
 				&row.ID, &row.Locality, &row.StreetAddress, &row.LocationName,
-				&row.LocationType, &row.LocationNotes, &row.Visits, &row.Latitude, &row.Longitude,
+				&row.LocationType, &row.SpecificLocationType, &row.LocationNotes, &row.Visits, &row.Latitude, &row.Longitude,
 			)
 			if err != nil {
 				log.Println("Error scanning location row:", err)
