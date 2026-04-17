@@ -27,6 +27,7 @@ type Activity struct {
 	InformationType NullString `json:"information_type"`
 	Edited          NullString `json:"edited"`
 	EditType        NullString `json:"edit_type"`
+	Investigation   NullString `json:"investigation"`
 	Locations       []Location `json:"locations,omitempty"`
 }
 
@@ -131,7 +132,7 @@ func (s *Server) ActivitiesHandler() http.HandlerFunc {
 		SELECT
 			a.id, a.source, a.operative, a.date, a.time, a.duration,
 			a.activity, a.mode, a.activity_notes, a.subject, a.information,
-			a.information_type, a.edited, a.edit_type
+			a.information_type, a.edited, a.edit_type, a.investigation
 		FROM detectives.activities a
 		WHERE 1=1
 		`
@@ -206,7 +207,7 @@ func (s *Server) ActivitiesHandler() http.HandlerFunc {
 				&row.ID, &row.Source, &row.Operative, &row.Date, &row.Time,
 				&row.Duration, &row.Activity, &row.Mode, &row.ActivityNotes,
 				&row.Subject, &row.Information, &row.InformationType,
-				&row.Edited, &row.EditType,
+				&row.Edited, &row.EditType, &row.Investigation,
 			)
 			if err != nil {
 				log.Println("Error scanning activity row:", err)
@@ -272,7 +273,7 @@ func (s *Server) ActivityByIDHandler() http.HandlerFunc {
 	SELECT
 		a.id, a.source, a.operative, a.date, a.time, a.duration,
 		a.activity, a.mode, a.activity_notes, a.subject, a.information,
-		a.information_type, a.edited, a.edit_type
+		a.information_type, a.edited, a.edit_type, a.investigation
 	FROM detectives.activities a
 	WHERE a.id = $1;
 	`
@@ -302,7 +303,7 @@ func (s *Server) ActivityByIDHandler() http.HandlerFunc {
 			&activity.ID, &activity.Source, &activity.Operative, &activity.Date,
 			&activity.Time, &activity.Duration, &activity.Activity, &activity.Mode,
 			&activity.ActivityNotes, &activity.Subject, &activity.Information,
-			&activity.InformationType, &activity.Edited, &activity.EditType,
+			&activity.InformationType, &activity.Edited, &activity.EditType, &activity.Investigation,
 		)
 		if err != nil {
 			log.Println("Error querying activity:", err)
