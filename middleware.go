@@ -32,12 +32,27 @@ func corsMiddleware(next http.Handler) http.Handler {
 	})
 }
 
-// clientCacheMiddleware sets HTTP headers to permit client-side caching.
+// clientCacheMiddleware sets HTTP headers to permit client-side caching of
+// successful responses. Error responses are marked no-store so clients do
+// not cache them.
 func clientCacheMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Cache-Control", "max-age=604800") // One week
-		next.ServeHTTP(w, r)
+		next.ServeHTTP(&noStoreOnError{ResponseWriter: w}, r)
 	})
+}
+
+// noStoreOnError rewrites the Cache-Control header to no-store when a
+// handler writes an error status.
+type noStoreOnError struct {
+	http.ResponseWriter
+}
+
+func (w *noStoreOnError) WriteHeader(status int) {
+	if status >= 400 {
+		w.Header().Set("Cache-Control", "no-store")
+	}
+	w.ResponseWriter.WriteHeader(status)
 }
 
 // NotFoundHandler returns 404 errors
