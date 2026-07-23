@@ -343,3 +343,15 @@ func TestIsValidCountType(t *testing.T) {
 		}
 	})
 }
+
+func TestBomBillsInvalidParish(t *testing.T) {
+	// Unknown parish IDs return 400 rather than an empty result set.
+	req, _ := http.NewRequest("GET", "/bom/bills?start-year=1669&end-year=1754&parish=99999", nil)
+	response := executeRequest(req)
+	checkResponseCode(t, http.StatusBadRequest, response.Code)
+
+	// A valid parish ID still returns 200.
+	req, _ = http.NewRequest("GET", "/bom/bills?start-year=1669&end-year=1754&parish=1", nil)
+	response = executeRequest(req)
+	checkResponseCode(t, http.StatusOK, response.Code)
+}
