@@ -18,6 +18,20 @@ type Parish struct {
 	Notes          NullString `json:"notes"`
 }
 
+// missingIDs returns the members of requested that are not present in found,
+// in request order and without duplicates. A nil result means nothing is missing.
+func missingIDs(requested []int, found map[int]bool) []int {
+	var missing []int
+	seen := make(map[int]bool, len(requested))
+	for _, id := range requested {
+		if !found[id] && !seen[id] {
+			missing = append(missing, id)
+			seen[id] = true
+		}
+	}
+	return missing
+}
+
 // ParishesHandler returns a list of unique parish IDs and names.
 func (s *Server) ParishesHandler() http.HandlerFunc {
 	query := `

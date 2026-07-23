@@ -93,3 +93,12 @@ func TestNullString(t *testing.T) {
 		t.Errorf("Want: null. Got: %s.", out)
 	}
 }
+
+func TestIntsToString(t *testing.T) {
+	if got := intsToString([]int{152, 999}); got != "152, 999" {
+		t.Errorf(`intsToString([152 999]) = %q, want "152, 999"`, got)
+	}
+	if got := intsToString([]int{7}); got != "7" {
+		t.Errorf(`intsToString([7]) = %q, want "7"`, got)
+	}
+}
