@@ -32,6 +32,36 @@ func missingIDs(requested []int, found map[int]bool) []int {
 	return missing
 }
 
+// invalidParishIDs returns the parish IDs from ids that do not exist in the
+// bom.parishes table. A nil result means all IDs are valid. An error is
+// returned only if the lookup query itself fails.
+func (s *Server) invalidParishIDs(ctx context.Context, ids []int) ([]int, error) {
+	if len(ids) == 0 {
+		return nil, nil
+	}
+
+	query := `SELECT id FROM bom.parishes WHERE id = ANY($1);`
+	rows, err := s.DB.Query(ctx, query, ids)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	found := make(map[int]bool, len(ids))
+	for rows.Next() {
+		var id int
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		found[id] = true
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return missingIDs(ids, found), nil
+}
+
 // ParishesHandler returns a list of unique parish IDs and names.
 func (s *Server) ParishesHandler() http.HandlerFunc {
 	query := `
