@@ -11,7 +11,12 @@ on:
       - '!.github/**'
 
 jobs:
+  # Gate: build/publish/deploy only run if the hermetic checks pass.
+  test:
+    uses: ./.github/workflows/test.yml
+
   build-publish:
+    needs: [test]
     uses: chnm/.github/.github/workflows/docker--build-publish.yml@main
     secrets: inherit
     with:
