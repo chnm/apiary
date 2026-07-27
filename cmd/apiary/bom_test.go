@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"reflect"
+	"strings"
 	"testing"
 
 	apiary "github.com/chnm/apiary"
@@ -342,4 +343,27 @@ func TestIsValidCountType(t *testing.T) {
 			}
 		}
 	})
+}
+
+func TestBomBillsInvalidParish(t *testing.T) {
+	// Unknown parish IDs return 400 naming the offending IDs.
+	req, _ := http.NewRequest("GET", "/bom/bills?start-year=1669&end-year=1754&parish=99999", nil)
+	response := executeRequest(req)
+	checkResponseCode(t, http.StatusBadRequest, response.Code)
+	if body := strings.TrimSpace(response.Body.String()); body != "invalid parish ID(s): 99999" {
+		t.Errorf("unexpected error body: %q", body)
+	}
+
+	// Multiple unknown IDs are all reported, comma-space separated, in request order.
+	req, _ = http.NewRequest("GET", "/bom/bills?start-year=1669&end-year=1754&parish=99998,99999", nil)
+	response = executeRequest(req)
+	checkResponseCode(t, http.StatusBadRequest, response.Code)
+	if body := strings.TrimSpace(response.Body.String()); body != "invalid parish ID(s): 99998, 99999" {
+		t.Errorf("unexpected error body: %q", body)
+	}
+
+	// A valid parish ID still returns 200.
+	req, _ = http.NewRequest("GET", "/bom/bills?start-year=1669&end-year=1754&parish=1", nil)
+	response = executeRequest(req)
+	checkResponseCode(t, http.StatusOK, response.Code)
 }

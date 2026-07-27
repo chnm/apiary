@@ -94,6 +94,7 @@ type TotalBills struct {
 
 // BillsHandler returns the bills for a given range of years. It expects a start year and
 // an end year. It returns a JSON array of ParishByYear objects.
+// Parish IDs are validated against the bom.parishes table; unknown IDs return 400 Bad Request.
 func (s *Server) BillsHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Parse and validate query parameters
@@ -102,6 +103,20 @@ func (s *Server) BillsHandler() http.HandlerFunc {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			log.Printf("Error parsing API parameters: %v", err)
 			return
+		}
+
+		// Reject parish IDs that don't exist in the database
+		if len(apiParams.Parish) > 0 {
+			invalid, err := s.invalidParishIDs(r.Context(), apiParams.Parish)
+			if err != nil {
+				log.Printf("Error validating parish IDs: %v", err)
+				http.Error(w, "Database error", http.StatusInternalServerError)
+				return
+			}
+			if len(invalid) > 0 {
+				http.Error(w, fmt.Sprintf("invalid parish ID(s): %s", intsToString(invalid)), http.StatusBadRequest)
+				return
+			}
 		}
 
 		// Build query with parameters

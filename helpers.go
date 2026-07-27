@@ -4,6 +4,8 @@ import (
 	"database/sql"
 	"encoding/json"
 	"os"
+	"strconv"
+	"strings"
 	"time"
 )
 
@@ -31,6 +33,15 @@ func dateInRange(d string, min, max time.Time) (time.Time, error) {
 		date = max
 	}
 	return date, nil
+}
+
+// intsToString formats a slice of ints as a comma-separated list, e.g. "152, 999".
+func intsToString(ids []int) string {
+	parts := make([]string, len(ids))
+	for i, id := range ids {
+		parts[i] = strconv.Itoa(id)
+	}
+	return strings.Join(parts, ", ")
 }
 
 // NullInt64 embeds the sql.NullInt64 type, so that it can be extended
