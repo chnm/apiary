@@ -219,56 +219,32 @@ func TestBomShapefiles(t *testing.T) {
 		}
 	})
 
-	// Test invalid bill type (should still work but ignore the invalid filter)
+	// Test invalid bill type
 	t.Run("InvalidBillType", func(t *testing.T) {
 		req, _ := http.NewRequest("GET", "/bom/shapefiles?bill-type=Invalid", nil)
 		response := executeRequest(req)
-		checkResponseCode(t, http.StatusOK, response.Code)
-
-		var data GeoJSONFeatureCollection
-		err := json.Unmarshal(response.Body.Bytes(), &data)
-		if err != nil {
-			t.Error(err)
-		}
+		checkResponseCode(t, http.StatusBadRequest, response.Code)
 	})
 
-	// Test invalid count type (should still work but ignore the invalid filter)
+	// Test invalid count type
 	t.Run("InvalidCountType", func(t *testing.T) {
 		req, _ := http.NewRequest("GET", "/bom/shapefiles?count-type=Invalid", nil)
 		response := executeRequest(req)
-		checkResponseCode(t, http.StatusOK, response.Code)
-
-		var data GeoJSONFeatureCollection
-		err := json.Unmarshal(response.Body.Bytes(), &data)
-		if err != nil {
-			t.Error(err)
-		}
+		checkResponseCode(t, http.StatusBadRequest, response.Code)
 	})
 
 	// Test invalid parish ID format
 	t.Run("InvalidParishID", func(t *testing.T) {
 		req, _ := http.NewRequest("GET", "/bom/shapefiles?parish=abc", nil)
 		response := executeRequest(req)
-		checkResponseCode(t, http.StatusOK, response.Code)
-
-		var data GeoJSONFeatureCollection
-		err := json.Unmarshal(response.Body.Bytes(), &data)
-		if err != nil {
-			t.Error(err)
-		}
+		checkResponseCode(t, http.StatusBadRequest, response.Code)
 	})
 
 	// Test with invalid year format
 	t.Run("InvalidYearFormat", func(t *testing.T) {
 		req, _ := http.NewRequest("GET", "/bom/shapefiles?year=abc", nil)
 		response := executeRequest(req)
-		checkResponseCode(t, http.StatusOK, response.Code)
-
-		var data GeoJSONFeatureCollection
-		err := json.Unmarshal(response.Body.Bytes(), &data)
-		if err != nil {
-			t.Error(err)
-		}
+		checkResponseCode(t, http.StatusBadRequest, response.Code)
 	})
 
 	// Test content type
@@ -277,7 +253,7 @@ func TestBomShapefiles(t *testing.T) {
 		response := executeRequest(req)
 		contentType := response.Header().Get("Content-Type")
 		expectedContentType := "application/geo+json"
-		
+
 		if contentType != expectedContentType {
 			t.Errorf("Expected Content-Type %s, got %s", expectedContentType, contentType)
 		}
@@ -287,12 +263,12 @@ func TestBomShapefiles(t *testing.T) {
 	t.Run("CacheHeaders", func(t *testing.T) {
 		req, _ := http.NewRequest("GET", "/bom/shapefiles", nil)
 		response := executeRequest(req)
-		
+
 		cacheControl := response.Header().Get("Cache-Control")
 		if cacheControl != "public, max-age=86400" {
 			t.Errorf("Expected Cache-Control: public, max-age=86400, got %s", cacheControl)
 		}
-		
+
 		vary := response.Header().Get("Vary")
 		if vary != "Accept-Encoding" {
 			t.Errorf("Expected Vary: Accept-Encoding, got %s", vary)

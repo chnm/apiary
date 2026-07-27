@@ -2,6 +2,7 @@ package apiary
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -101,7 +102,7 @@ func (s *Server) ParishShpHandler() http.HandlerFunc {
 
 // BillsShapefilesHandler returns a GeoJSON FeatureCollection containing parish
 // polygons joined with the bills data. It accepts filtering by year, bill_type,
-// count_type, etc.
+// count_type, etc. Malformed filter values return 400 Bad Request.
 func (s *Server) BillsShapefilesHandler() http.HandlerFunc {
 	// Base query with materialized CTE and spatial index hints for performance
 	baseQuery := `
@@ -208,19 +209,23 @@ func (s *Server) BillsShapefilesHandler() http.HandlerFunc {
 		parish := r.URL.Query().Get("parish")
 
 		// Build the query with separate filters for bills and parishes
-		billFilters, parishFilters := buildSeparateFilters(
+		billFilters, parishFilters, params, err := buildSeparateFilters(
 			year, startYear, endYear, subunit, cityCounty, billType, countType, parish)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
 
 		// Apply the filters to their respective sections
 		query := strings.Replace(baseQuery, "-- Dynamic bill filters will be added here", billFilters, 1)
 		query = strings.Replace(query, "-- Dynamic parish filters will be added here", parishFilters, 1)
 
 		// Execute query with a timeout context to prevent long-running queries
-		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		ctx, cancel := context.WithTimeout(r.Context(), 30*time.Second)
 		defer cancel()
 
 		var result string
-		err := s.DB.QueryRow(ctx, query).Scan(&result)
+		err = s.DB.QueryRow(ctx, query, params...).Scan(&result)
 		if err != nil {
 			log.Printf("Error executing bills shapefile query: %v", err)
 			// Check for context deadline exceeded to provide better error messaging
@@ -241,70 +246,87 @@ func (s *Server) BillsShapefilesHandler() http.HandlerFunc {
 	}
 }
 
-// buildSeparateFilters constructs separate SQL filters for bills and parishes based on URL parameters
-func buildSeparateFilters(year, startYear, endYear, subunit, cityCounty, billType, countType, parish string) (string, string) {
+// buildSeparateFilters constructs parameterized SQL filters for bills and
+// parishes based on URL parameters.
+func buildSeparateFilters(year, startYear, endYear, subunit, cityCounty, billType, countType, parish string) (string, string, []any, error) {
 	var billFilters []string
 	var parishFilters []string
+	var params []any
+
+	addParam := func(value any) string {
+		params = append(params, value)
+		return fmt.Sprintf("$%d", len(params))
+	}
 
 	// Add filters based on provided parameters
 	// Note: Year filters only apply to bills, not parish geometries
 	// Parish geometries are filtered by other attributes (subunit, city_cnty, parish ID)
 	if year != "" {
-		if yearInt, err := strconv.Atoi(year); err == nil {
-			billFilters = append(billFilters, fmt.Sprintf("AND b.year = %d", yearInt))
+		yearInt, err := strconv.Atoi(year)
+		if err != nil {
+			return "", "", nil, errors.New("year must be an integer")
 		}
+		billFilters = append(billFilters, fmt.Sprintf("AND b.year = %s", addParam(yearInt)))
 	} else {
 		// Use start-year and end-year if provided
 		if startYear != "" {
-			if startYearInt, err := strconv.Atoi(startYear); err == nil {
-				billFilters = append(billFilters, fmt.Sprintf("AND b.year >= %d", startYearInt))
+			startYearInt, err := strconv.Atoi(startYear)
+			if err != nil {
+				return "", "", nil, errors.New("start-year must be an integer")
 			}
+			billFilters = append(billFilters, fmt.Sprintf("AND b.year >= %s", addParam(startYearInt)))
 		}
 		if endYear != "" {
-			if endYearInt, err := strconv.Atoi(endYear); err == nil {
-				billFilters = append(billFilters, fmt.Sprintf("AND b.year <= %d", endYearInt))
+			endYearInt, err := strconv.Atoi(endYear)
+			if err != nil {
+				return "", "", nil, errors.New("end-year must be an integer")
 			}
+			billFilters = append(billFilters, fmt.Sprintf("AND b.year <= %s", addParam(endYearInt)))
 		}
 	}
 
 	// Parish-specific filters
 	if subunit != "" {
-		parishFilters = append(parishFilters, fmt.Sprintf("AND parishes_shp.subunit = '%s'", subunit))
+		parishFilters = append(parishFilters, fmt.Sprintf("AND parishes_shp.subunit = %s", addParam(subunit)))
 	}
 
 	if cityCounty != "" {
-		parishFilters = append(parishFilters, fmt.Sprintf("AND parishes_shp.city_cnty = '%s'", cityCounty))
+		parishFilters = append(parishFilters, fmt.Sprintf("AND parishes_shp.city_cnty = %s", addParam(cityCounty)))
 	}
 
 	// Bills-specific filters
-	if billType != "" && IsValidBillType(billType) {
-		billFilters = append(billFilters, fmt.Sprintf("AND b.bill_type = '%s'", strings.ToLower(billType)))
+	if billType != "" {
+		if !IsValidBillType(billType) {
+			return "", "", nil, errors.New("invalid bill-type")
+		}
+		billFilters = append(billFilters, fmt.Sprintf("AND b.bill_type = %s", addParam(strings.ToLower(billType))))
 	}
 
-	if countType != "" && IsValidCountType(countType) {
-		billFilters = append(billFilters, fmt.Sprintf("AND b.count_type = '%s'", strings.ToLower(countType)))
+	if countType != "" {
+		if !IsValidCountType(countType) {
+			return "", "", nil, errors.New("invalid count-type")
+		}
+		billFilters = append(billFilters, fmt.Sprintf("AND b.count_type = %s", addParam(strings.ToLower(countType))))
 	}
 
 	// Add parish filter to both queries to ensure they're properly joined
 	if parish != "" {
 		parishIDs := strings.Split(parish, ",")
-		var validParishIDs []string
+		validParishIDs := make([]int, 0, len(parishIDs))
 
 		for _, id := range parishIDs {
-			if trimmedID := strings.TrimSpace(id); trimmedID != "" {
-				if _, err := strconv.Atoi(trimmedID); err == nil {
-					validParishIDs = append(validParishIDs, trimmedID)
-				}
+			trimmedID := strings.TrimSpace(id)
+			parishID, err := strconv.Atoi(trimmedID)
+			if err != nil || parishID <= 0 {
+				return "", "", nil, errors.New("invalid parish ID")
 			}
+			validParishIDs = append(validParishIDs, parishID)
 		}
 
-		if len(validParishIDs) > 0 {
-			parishFilter := fmt.Sprintf("AND parishes_shp.id IN (%s)", strings.Join(validParishIDs, ","))
-			parishFilters = append(parishFilters, parishFilter)
-			billFilter := fmt.Sprintf("AND b.parish_id IN (%s)", strings.Join(validParishIDs, ","))
-			billFilters = append(billFilters, billFilter)
-		}
+		parishIDsParam := addParam(validParishIDs)
+		parishFilters = append(parishFilters, fmt.Sprintf("AND parishes_shp.id = ANY(%s)", parishIDsParam))
+		billFilters = append(billFilters, fmt.Sprintf("AND b.parish_id = ANY(%s)", parishIDsParam))
 	}
 
-	return strings.Join(billFilters, " "), strings.Join(parishFilters, " ")
+	return strings.Join(billFilters, " "), strings.Join(parishFilters, " "), params, nil
 }
