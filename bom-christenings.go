@@ -1,7 +1,6 @@
 package apiary
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -170,15 +169,17 @@ func (s *Server) ChristeningsHandler() http.HandlerFunc {
 
 		switch {
 		case location == "{}":
-			rows, err = s.DB.Query(context.TODO(), query, startYearInt, endYearInt, limitInt, offsetInt, billTypeParam)
+			rows, err = s.DB.Query(r.Context(), query, startYearInt, endYearInt, limitInt, offsetInt, billTypeParam)
 		case location != "{}":
-			rows, err = s.DB.Query(context.TODO(), queryLocation, startYearInt, endYearInt, location, limitInt, offsetInt, billTypeParam)
+			rows, err = s.DB.Query(r.Context(), queryLocation, startYearInt, endYearInt, location, limitInt, offsetInt, billTypeParam)
 		default:
-			rows, err = s.DB.Query(context.TODO(), query, startYearInt, endYearInt, limitInt, offsetInt, billTypeParam)
+			rows, err = s.DB.Query(r.Context(), query, startYearInt, endYearInt, limitInt, offsetInt, billTypeParam)
 		}
 
 		if err != nil {
 			log.Println(err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
 		}
 		defer rows.Close()
 		for rows.Next() {
@@ -250,9 +251,9 @@ func (s *Server) ListChristeningsHandler() http.HandlerFunc {
 
 		// Execute query with or without bill type parameter
 		if billType != "" {
-			rows, err = s.DB.Query(context.TODO(), query, billType)
+			rows, err = s.DB.Query(r.Context(), query, billType)
 		} else {
-			rows, err = s.DB.Query(context.TODO(), query)
+			rows, err = s.DB.Query(r.Context(), query)
 		}
 
 		if err != nil {

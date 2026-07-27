@@ -61,6 +61,34 @@ func TestBomBills(t *testing.T) {
 	}
 }
 
+func TestBomTotalBills(t *testing.T) {
+	req, _ := http.NewRequest("GET", "/bom/totalbills?type=weekly", nil)
+	response := executeRequest(req)
+	checkResponseCode(t, http.StatusOK, response.Code)
+
+	var data []apiary.TotalBills
+	if err := json.Unmarshal(response.Body.Bytes(), &data); err != nil {
+		t.Fatal(err)
+	}
+	if len(data) == 0 {
+		t.Fatal("expected total bill data")
+	}
+}
+
+func TestBomStatistics(t *testing.T) {
+	req, _ := http.NewRequest("GET", "/bom/statistics?type=yearly", nil)
+	response := executeRequest(req)
+	checkResponseCode(t, http.StatusOK, response.Code)
+
+	var data []apiary.YearlySummary
+	if err := json.Unmarshal(response.Body.Bytes(), &data); err != nil {
+		t.Fatal(err)
+	}
+	if len(data) == 0 {
+		t.Fatal("expected yearly statistics")
+	}
+}
+
 func TestBomChristenings(t *testing.T) {
 	// Check that we get the right response
 	req, _ := http.NewRequest("GET", "/bom/christenings?start-year=1669&end-year=1754", nil)

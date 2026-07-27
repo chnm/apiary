@@ -84,9 +84,9 @@ func (s *Server) ParishShpHandler() http.HandlerFunc {
 		var err error
 
 		if len(params) == 0 {
-			err = s.DB.QueryRow(context.Background(), query).Scan(&result)
+			err = s.DB.QueryRow(r.Context(), query).Scan(&result)
 		} else {
-			err = s.DB.QueryRow(context.Background(), query, params...).Scan(&result)
+			err = s.DB.QueryRow(r.Context(), query, params...).Scan(&result)
 		}
 
 		if err != nil {

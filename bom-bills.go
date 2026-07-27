@@ -1,7 +1,6 @@
 package apiary
 
 import (
-	"context"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -128,7 +127,7 @@ func (s *Server) BillsHandler() http.HandlerFunc {
 		}
 
 		// Execute query with parameters
-		rows, err := s.DB.Query(context.TODO(), qb.Query, qb.Params...)
+		rows, err := s.DB.Query(r.Context(), qb.Query, qb.Params...)
 		if err != nil {
 			http.Error(w, "Database error", http.StatusInternalServerError)
 			log.Printf("Error executing query: %v", err)
@@ -644,16 +643,18 @@ func (s *Server) TotalBillsHandler() http.HandlerFunc {
 
 		switch {
 		case totalValues == "weekly":
-			rows, err = s.DB.Query(context.TODO(), queryWeekly)
+			rows, err = s.DB.Query(r.Context(), queryWeekly)
 		case totalValues == "general":
-			rows, err = s.DB.Query(context.TODO(), queryGeneral)
+			rows, err = s.DB.Query(r.Context(), queryGeneral)
 		case totalValues == "christenings":
-			rows, err = s.DB.Query(context.TODO(), queryChristenings)
+			rows, err = s.DB.Query(r.Context(), queryChristenings)
 		case totalValues == "causes":
-			rows, err = s.DB.Query(context.TODO(), queryCauses)
+			rows, err = s.DB.Query(r.Context(), queryCauses)
 		}
 		if err != nil {
 			log.Println(err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
 		}
 		defer rows.Close()
 
@@ -788,10 +789,10 @@ func (s *Server) StatisticsHandler() http.HandlerFunc {
 		switch statType {
 		case "weekly":
 			query := buildWeeklyStatsQuery()
-			rows, err = s.DB.Query(context.TODO(), query)
+			rows, err = s.DB.Query(r.Context(), query)
 		case "yearly":
 			query := buildYearlyStatsQuery()
-			rows, err = s.DB.Query(context.TODO(), query)
+			rows, err = s.DB.Query(r.Context(), query)
 		case "parish-yearly":
 			qb, buildErr := buildParishYearlyStatsQuery(parishName)
 			if buildErr != nil {
@@ -799,7 +800,7 @@ func (s *Server) StatisticsHandler() http.HandlerFunc {
 				log.Printf("Error building parish-yearly query: %v", buildErr)
 				return
 			}
-			rows, err = s.DB.Query(context.TODO(), qb.Query, qb.Params...)
+			rows, err = s.DB.Query(r.Context(), qb.Query, qb.Params...)
 		default:
 			http.Error(w, "Invalid type parameter. Must be 'weekly', 'yearly', or 'parish-yearly'", http.StatusBadRequest)
 			return
