@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/orlangure/gnomock"
 	"github.com/orlangure/gnomock/preset/postgres"
 	"github.com/stretchr/testify/require"

@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"net/http"
-	"reflect"
 	"strings"
 	"testing"
 
@@ -24,11 +23,24 @@ func TestBomParishes(t *testing.T) {
 	}
 
 	// Check that the data has the right content
-	expected := []apiary.Parish{
-		{ParishID: 1, Name: "Alhallows Barking", CanonicalName: "All Hallows Barking"},
-		{ParishID: 2, Name: "Alhallows Breadstreet", CanonicalName: "All Hallows Bread Street"}}
-	if !reflect.DeepEqual(data[0:2], expected) {
-		t.Error("Values in data are not what was expected.")
+	if len(data) < 2 {
+		t.Fatalf("expected at least two parishes, got %d", len(data))
+	}
+	expected := []struct {
+		id            int
+		name          string
+		canonicalName string
+	}{
+		{1, "Alhallows Barking", "All Hallows Barking"},
+		{2, "Alhallows Breadstreet", "All Hallows Bread Street"},
+	}
+	for i, want := range expected {
+		got := data[i]
+		if got.ParishID != want.id || got.Name != want.name || got.CanonicalName != want.canonicalName {
+			t.Errorf("parish %d = (%d, %q, %q), want (%d, %q, %q)",
+				i, got.ParishID, got.Name, got.CanonicalName,
+				want.id, want.name, want.canonicalName)
+		}
 	}
 }
 
@@ -39,10 +51,13 @@ func TestBomBills(t *testing.T) {
 	checkResponseCode(t, http.StatusOK, response.Code)
 
 	// Get the data
-	var data []apiary.ParishByYear
+	var data apiary.PaginatedResponse
 	err := json.Unmarshal(response.Body.Bytes(), &data)
 	if err != nil {
 		t.Error(err)
+	}
+	if data.Data == nil {
+		t.Error("expected paginated bill data, got nil")
 	}
 }
 

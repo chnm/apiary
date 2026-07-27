@@ -23,7 +23,7 @@ bench :
 
 .PHONY : vuln
 vuln : 
-	govulncheck ./...
+	go run golang.org/x/vuln/cmd/govulncheck@v1.6.0 ./...
 
 .PHONY : docker-build
 docker-build : 

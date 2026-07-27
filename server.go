@@ -9,8 +9,7 @@ import (
 
 	"github.com/chnm/apiary/db"
 	"github.com/gorilla/mux"
-	_ "github.com/jackc/pgx/v4" // Driver for database
-	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/jackc/pgx/v5/pgxpool"
 
 	cache "github.com/victorspringer/http-cache"
 	"github.com/victorspringer/http-cache/adapter/memory"

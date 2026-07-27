@@ -19,7 +19,9 @@ Set the following environment variables to configure the server:
 
 ## Compiling or running a container
 
-There is a `Makefile` in the root of the repository that can be used for compiling and for running the service locally.
+Building from source requires Go 1.25 or newer. The module selects Go 1.26.5
+as its preferred toolchain. There is a `Makefile` in the root of the repository
+that can be used for compiling and for running the service locally.
 
 - `make build` will build the binary.
 - `make install` will build the binary and install it under the name `apiary` to your `$GOPATH`.

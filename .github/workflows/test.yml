@@ -1,0 +1,64 @@
+name: Test
+
+on:
+  pull_request:
+  workflow_dispatch:
+  # Called by cicd.yml as a required gate before build/publish/deploy.
+  workflow_call:
+
+# Cancel superseded runs on the same ref to save runner minutes.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: Lint, vet & unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # 'stable' is needed for `go mod tidy -diff` (added in Go 1.23); it is
+      # newer than the toolchain directive in go.mod, which is fine.
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: stable
+
+      # Module hygiene: checksums match the module cache, and go.mod/go.sum
+      # are already tidy (fails with a diff if not).
+      - name: Verify modules
+        run: go mod verify
+
+      - name: Check go.mod/go.sum are tidy
+        run: go mod tidy -diff
+
+      # Compile everything, including the cmd/ and db/ packages.
+      - name: Build
+        run: go build ./...
+
+      - name: Vet
+        run: go vet ./...
+
+      # Hermetic unit tests (root package) with the race detector. CGO is
+      # available on ubuntu runners, which -race requires.
+      - name: Unit tests (race)
+        run: go test -race .
+
+      # Compile the gnomock-based db tests without running them; actually
+      # running them needs a Docker daemon, so we only type-check here.
+      - name: Compile db package tests
+        run: go test -run '^$' ./db
+
+      # Lint the workflow files themselves, reusing the Go toolchain above.
+      - name: Install actionlint
+        run: |
+          go install github.com/rhysd/actionlint/cmd/actionlint@v1.7.7
+          echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
+
+      - name: Run actionlint
+        run: actionlint -color
