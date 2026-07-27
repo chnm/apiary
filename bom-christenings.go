@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v5"
 )
 
 // ChristeningsByYear describes a christening's description, total count, week number,
@@ -137,13 +137,13 @@ func (s *Server) ChristeningsHandler() http.HandlerFunc {
 
 		// location needs to be a postgres array
 		location = fmt.Sprintf("{%s}", strings.TrimSpace(location))
-		
+
 		// Validate bill_type parameter
 		if billType != "" && billType != "general" && billType != "weekly" {
 			http.Error(w, "bill-type must be 'general' or 'weekly'", http.StatusBadRequest)
 			return
 		}
-		
+
 		// Convert empty bill_type to nil for SQL query
 		var billTypeParam interface{}
 		if billType == "" {

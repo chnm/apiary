@@ -6,7 +6,7 @@ import (
 	"fmt"
 
 	"github.com/cenkalti/backoff/v4"
-	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 // Connect returns a pool of connections to the database using the pgx native interface.
@@ -24,13 +24,14 @@ func Connect(ctx context.Context, connstr string) (*pgxpool.Pool, error) {
 		case <-ctx.Done():
 			return backoff.Permanent(errors.New("cancelled attempt to connect to database"))
 		default:
-			conn, err := pgxpool.ConnectConfig(ctx, cfg)
+			conn, err := pgxpool.NewWithConfig(ctx, cfg)
 			if err != nil {
 				return fmt.Errorf("error creating connection pool: %w", err)
 			}
 
 			err = conn.Ping(ctx)
 			if err != nil {
+				conn.Close()
 				return fmt.Errorf("error pinging database: %w", err)
 			}
 			pool = conn
