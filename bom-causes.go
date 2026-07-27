@@ -204,10 +204,10 @@ func (s *Server) DeathCausesHandler() http.HandlerFunc {
 			params = append(params, billType)
 		}
 
-		rows, err = s.DB.Query(context.TODO(), query, params...)
+		rows, err = s.DB.Query(r.Context(), query, params...)
 		if err != nil {
+			log.Printf("error querying death causes: %v", err)
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			log.Fatal("Error preparing statement", err)
 			return
 		}
 
