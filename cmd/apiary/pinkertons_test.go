@@ -11,7 +11,7 @@ import (
 
 func TestDetectivesActivities(t *testing.T) {
 	// Check that we get the right response
-	req, _ := http.NewRequest("GET", "/detectives/activities", nil)
+	req, _ := http.NewRequest("GET", "/pinkertons/activities", nil)
 	response := executeRequest(req)
 	checkResponseCode(t, http.StatusOK, response.Code)
 
@@ -30,7 +30,7 @@ func TestDetectivesActivities(t *testing.T) {
 
 func TestDetectivesActivitiesWithLocations(t *testing.T) {
 	// Check that we get activities with locations included
-	req, _ := http.NewRequest("GET", "/detectives/activities?include_locations=true", nil)
+	req, _ := http.NewRequest("GET", "/pinkertons/activities?include_locations=true", nil)
 	response := executeRequest(req)
 	checkResponseCode(t, http.StatusOK, response.Code)
 
@@ -57,7 +57,7 @@ func TestDetectivesActivitiesWithLocations(t *testing.T) {
 
 func TestDetectivesActivitiesFilterByOperative(t *testing.T) {
 	// Test filtering by operative
-	req, _ := http.NewRequest("GET", "/detectives/activities?operative=TestOperative", nil)
+	req, _ := http.NewRequest("GET", "/pinkertons/activities?operative=TestOperative", nil)
 	response := executeRequest(req)
 	checkResponseCode(t, http.StatusOK, response.Code)
 
@@ -77,7 +77,7 @@ func TestDetectivesActivitiesFilterByOperative(t *testing.T) {
 
 func TestDetectivesActivitiesFilterByDateRange(t *testing.T) {
 	// Test filtering by date range
-	req, _ := http.NewRequest("GET", "/detectives/activities?start_date=1900-01-01&end_date=1900-12-31", nil)
+	req, _ := http.NewRequest("GET", "/pinkertons/activities?start_date=1900-01-01&end_date=1900-12-31", nil)
 	response := executeRequest(req)
 	checkResponseCode(t, http.StatusOK, response.Code)
 
@@ -95,7 +95,7 @@ func TestDetectivesActivitiesFilterByDateRange(t *testing.T) {
 
 func TestDetectivesActivityByID(t *testing.T) {
 	// First, get all activities to find a valid ID
-	req, _ := http.NewRequest("GET", "/detectives/activities", nil)
+	req, _ := http.NewRequest("GET", "/pinkertons/activities", nil)
 	response := executeRequest(req)
 
 	if response.Code != http.StatusOK {
@@ -112,7 +112,7 @@ func TestDetectivesActivityByID(t *testing.T) {
 	activityID := activities[0].ID
 
 	// Now test getting that specific activity
-	req, _ = http.NewRequest("GET", "/detectives/activities/"+strconv.Itoa(activityID), nil)
+	req, _ = http.NewRequest("GET", "/pinkertons/activities/"+strconv.Itoa(activityID), nil)
 	response = executeRequest(req)
 	checkResponseCode(t, http.StatusOK, response.Code)
 
@@ -135,7 +135,7 @@ func TestDetectivesActivityByID(t *testing.T) {
 
 func TestDetectivesActivityByInvalidID(t *testing.T) {
 	// Test with an invalid ID
-	req, _ := http.NewRequest("GET", "/detectives/activities/invalid", nil)
+	req, _ := http.NewRequest("GET", "/pinkertons/activities/invalid", nil)
 	response := executeRequest(req)
 
 	// Should not match the route pattern or return bad request
@@ -146,7 +146,7 @@ func TestDetectivesActivityByInvalidID(t *testing.T) {
 
 func TestDetectivesLocations(t *testing.T) {
 	// Check that we get the right response
-	req, _ := http.NewRequest("GET", "/detectives/locations", nil)
+	req, _ := http.NewRequest("GET", "/pinkertons/locations", nil)
 	response := executeRequest(req)
 	checkResponseCode(t, http.StatusOK, response.Code)
 
@@ -173,7 +173,7 @@ func TestDetectivesLocations(t *testing.T) {
 
 func TestDetectivesOperatives(t *testing.T) {
 	// Check that we get the right response
-	req, _ := http.NewRequest("GET", "/detectives/operatives", nil)
+	req, _ := http.NewRequest("GET", "/pinkertons/operatives", nil)
 	response := executeRequest(req)
 	checkResponseCode(t, http.StatusOK, response.Code)
 
@@ -192,7 +192,7 @@ func TestDetectivesOperatives(t *testing.T) {
 
 func TestDetectivesSubjects(t *testing.T) {
 	// Check that we get the right response
-	req, _ := http.NewRequest("GET", "/detectives/subjects", nil)
+	req, _ := http.NewRequest("GET", "/pinkertons/subjects", nil)
 	response := executeRequest(req)
 	checkResponseCode(t, http.StatusOK, response.Code)
 
@@ -211,7 +211,7 @@ func TestDetectivesSubjects(t *testing.T) {
 
 func TestDetectivesCombinedFilters(t *testing.T) {
 	// Test combining multiple filters
-	req, _ := http.NewRequest("GET", "/detectives/activities?operative=TestOp&start_date=1900-01-01&end_date=1900-12-31&include_locations=true", nil)
+	req, _ := http.NewRequest("GET", "/pinkertons/activities?operative=TestOp&start_date=1900-01-01&end_date=1900-12-31&include_locations=true", nil)
 	response := executeRequest(req)
 	checkResponseCode(t, http.StatusOK, response.Code)
 

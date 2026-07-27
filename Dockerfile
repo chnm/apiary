@@ -1,7 +1,7 @@
 # Dockerfile References: https://docs.docker.com/engine/reference/builder/
 
-# Start from the latest golang base image
-FROM golang:latest AS compiler
+# Match the patched toolchain declared in go.mod.
+FROM golang:1.26.5 AS compiler
 
 # Add Maintainer Info
 LABEL maintainer="Lincoln Mullen <lincoln@lincolnmullen.com>"
