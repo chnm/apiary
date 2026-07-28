@@ -1,7 +1,6 @@
 package apiary
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -39,9 +38,11 @@ func (s *Server) APBVerseQuotationsHandler() http.HandlerFunc {
 		results := make([]VerseQuotation, 0)
 		var row VerseQuotation
 
-		rows, err := s.DB.Query(context.TODO(), query, refs[0])
+		rows, err := s.DB.Query(r.Context(), query, refs[0])
 		if err != nil {
 			log.Println(err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
 		}
 		defer rows.Close()
 		for rows.Next() {

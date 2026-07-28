@@ -1,7 +1,6 @@
 package apiary
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -46,9 +45,11 @@ func (s *Server) APBIndexFeaturedHandler() http.HandlerFunc {
 		var results []APBIndexItem
 		var row APBIndexItem
 
-		rows, err := s.DB.Query(context.TODO(), query)
+		rows, err := s.DB.Query(r.Context(), query)
 		if err != nil {
 			log.Println(err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
 		}
 		defer rows.Close()
 		for rows.Next() {
@@ -87,9 +88,11 @@ func (s *Server) APBIndexBiblicalOrderHandler() http.HandlerFunc {
 		var results []APBIndexItem
 		var row APBIndexItem
 
-		rows, err := s.DB.Query(context.TODO(), query)
+		rows, err := s.DB.Query(r.Context(), query)
 		if err != nil {
 			log.Println(err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
 		}
 		defer rows.Close()
 		for rows.Next() {
@@ -128,9 +131,11 @@ func (s *Server) APBIndexTopHandler() http.HandlerFunc {
 		var results []APBIndexItem
 		var row APBIndexItem
 
-		rows, err := s.DB.Query(context.TODO(), query)
+		rows, err := s.DB.Query(r.Context(), query)
 		if err != nil {
 			log.Println(err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
 		}
 		defer rows.Close()
 		for rows.Next() {
@@ -170,9 +175,11 @@ func (s *Server) APBIndexChronologicalHandler() http.HandlerFunc {
 		var results []APBIndexItemWithYear
 		var row APBIndexItemWithYear
 
-		rows, err := s.DB.Query(context.TODO(), query)
+		rows, err := s.DB.Query(r.Context(), query)
 		if err != nil {
 			log.Println(err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
 		}
 		defer rows.Close()
 		for rows.Next() {
@@ -211,9 +218,11 @@ func (s *Server) APBIndexAllHandler() http.HandlerFunc {
 		var results []APBIndexItemText
 		var row APBIndexItemText
 
-		rows, err := s.DB.Query(context.TODO(), query)
+		rows, err := s.DB.Query(r.Context(), query)
 		if err != nil {
 			log.Println(err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
 		}
 		defer rows.Close()
 		for rows.Next() {

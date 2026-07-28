@@ -1,7 +1,6 @@
 package apiary
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -48,9 +47,11 @@ func (s *Server) APBBibleSimilarityHandler() http.HandlerFunc {
 		var edge BibleSimilarityEdge
 		var result []BibleSimilarityEdge
 
-		rows, err := s.DB.Query(context.TODO(), query)
+		rows, err := s.DB.Query(r.Context(), query)
 		if err != nil {
 			log.Println(err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
 		}
 		defer rows.Close()
 
