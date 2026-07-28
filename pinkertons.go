@@ -220,6 +220,7 @@ func (v *NullFloat64) Scan(value interface{}) error {
 //   - end_date: filter by end date (YYYY-MM-DD)
 //   - location_id: filter by location ID
 //   - limit: maximum number of results to return (default: no limit)
+//   - offset: number of ordered results to skip (default: 0)
 func (s *Server) ActivitiesHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		operative := r.URL.Query().Get("operative")
@@ -228,6 +229,7 @@ func (s *Server) ActivitiesHandler() http.HandlerFunc {
 		endDate := r.URL.Query().Get("end_date")
 		locationIDStr := r.URL.Query().Get("location_id")
 		limitStr := r.URL.Query().Get("limit")
+		offsetStr := r.URL.Query().Get("offset")
 
 		// Build query dynamically based on parameters
 		baseQuery := `
@@ -278,7 +280,7 @@ func (s *Server) ActivitiesHandler() http.HandlerFunc {
 			argCount++
 		}
 
-		baseQuery += " ORDER BY a.date, a.time"
+		baseQuery += " ORDER BY a.date, a.time, a.id"
 
 		// Add limit if specified
 		if limitStr != "" {
@@ -289,6 +291,18 @@ func (s *Server) ActivitiesHandler() http.HandlerFunc {
 			}
 			baseQuery += fmt.Sprintf(" LIMIT $%d", argCount)
 			args = append(args, limit)
+			argCount++
+		}
+
+		// Add offset if specified
+		if offsetStr != "" {
+			offset, err := strconv.Atoi(offsetStr)
+			if err != nil || offset < 0 {
+				http.Error(w, "Invalid offset parameter", http.StatusBadRequest)
+				return
+			}
+			baseQuery += fmt.Sprintf(" OFFSET $%d", argCount)
+			args = append(args, offset)
 		}
 
 		baseQuery += ";"
