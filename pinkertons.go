@@ -66,6 +66,8 @@ INNER JOIN detectives.activity_locations al ON l.id = al.location_id
 WHERE al.activity_id = ANY($1);
 `
 
+const defaultActivitiesLimit = 500
+
 func (s *Server) activityLocations(ctx context.Context, activityID int) ([]Location, error) {
 	locations := make([]Location, 0)
 	rows, err := s.DB.Query(ctx, activityLocationsQuery, activityID)
@@ -212,14 +214,14 @@ func (v *NullFloat64) Scan(value interface{}) error {
 	return nil
 }
 
-// ActivitiesHandler returns a list of all detective activities with location data and optional filtering
+// ActivitiesHandler returns detective activities with location data and optional filtering.
 // Query parameters:
 //   - operative: filter by operative name
 //   - subject: filter by subject name
 //   - start_date: filter by start date (YYYY-MM-DD)
 //   - end_date: filter by end date (YYYY-MM-DD)
 //   - location_id: filter by location ID
-//   - limit: maximum number of results to return (default: no limit)
+//   - limit: maximum number of results to return (default: 500)
 //   - offset: number of ordered results to skip (default: 0)
 func (s *Server) ActivitiesHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -282,17 +284,18 @@ func (s *Server) ActivitiesHandler() http.HandlerFunc {
 
 		baseQuery += " ORDER BY a.date, a.time, a.id"
 
-		// Add limit if specified
+		limit := defaultActivitiesLimit
 		if limitStr != "" {
-			limit, err := strconv.Atoi(limitStr)
+			var err error
+			limit, err = strconv.Atoi(limitStr)
 			if err != nil || limit <= 0 {
 				http.Error(w, "Invalid limit parameter", http.StatusBadRequest)
 				return
 			}
-			baseQuery += fmt.Sprintf(" LIMIT $%d", argCount)
-			args = append(args, limit)
-			argCount++
 		}
+		baseQuery += fmt.Sprintf(" LIMIT $%d", argCount)
+		args = append(args, limit)
+		argCount++
 
 		// Add offset if specified
 		if offsetStr != "" {

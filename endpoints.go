@@ -338,7 +338,7 @@ func (s *Server) EndpointsHandler() http.HandlerFunc {
 				},
 			},
 			{
-				"Pinkertons: All activities",
+				"Pinkertons: Activities (first 500 by default)",
 				baseurl + "/pinkertons/activities",
 				[]ExampleURL{
 					{
