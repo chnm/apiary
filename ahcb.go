@@ -1,7 +1,6 @@
 package apiary
 
 import (
-	"context"
 	"fmt"
 	"log"
 	"net/http"
@@ -53,10 +52,11 @@ func (s *Server) AHCBStatesHandler() http.HandlerFunc {
 		}
 
 		var result string // result will be a string containing GeoJSON
-		err = s.DB.QueryRow(context.TODO(), query, date).Scan(&result)
+		err = s.DB.QueryRow(r.Context(), query, date).Scan(&result)
 		if err != nil {
 			log.Println(err)
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
 		}
 
 		w.Header().Set("Content-Type", "application/json")
@@ -101,10 +101,11 @@ func (s *Server) AHCBCountiesHandler() http.HandlerFunc {
 			return
 		}
 		var result string
-		err = s.DB.QueryRow(context.TODO(), query, date).Scan(&result)
+		err = s.DB.QueryRow(r.Context(), query, date).Scan(&result)
 		if err != nil {
 			log.Println(err)
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
 		}
 		w.Header().Set("Content-Type", "application/json")
 		fmt.Fprint(w, result)
@@ -152,10 +153,11 @@ func (s *Server) AHCBCountiesByIDHandler() http.HandlerFunc {
 
 		// ids := pq.Array(strings.Split(params["id"], ","))
 		ids := strings.Split(params["id"], ",")
-		err = s.DB.QueryRow(context.TODO(), query, date, ids).Scan(&result)
+		err = s.DB.QueryRow(r.Context(), query, date, ids).Scan(&result)
 		if err != nil {
 			log.Println(err)
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
 		}
 		w.Header().Set("Content-Type", "application/json")
 		fmt.Fprint(w, result)
@@ -202,10 +204,11 @@ func (s *Server) AHCBCountiesByStateTerrIDHandler() http.HandlerFunc {
 		var result string
 		// stateTerrIds := pq.Array(strings.Split(params["state-terr-id"], ","))
 		stateTerrIds := strings.Split(params["state-terr-id"], ",")
-		err = s.DB.QueryRow(context.TODO(), query, date, stateTerrIds).Scan(&result)
+		err = s.DB.QueryRow(r.Context(), query, date, stateTerrIds).Scan(&result)
 		if err != nil {
 			log.Println(err)
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
 		}
 		w.Header().Set("Content-Type", "application/json")
 		fmt.Fprint(w, result)
@@ -252,10 +255,11 @@ func (s *Server) AHCBCountiesByStateCodeHandler() http.HandlerFunc {
 		var result string
 		// stateCodes := pq.Array(strings.Split(params["state-code"], ","))
 		stateCodes := strings.Split(params["state-code"], ",")
-		err = s.DB.QueryRow(context.TODO(), query, date, stateCodes).Scan(&result)
+		err = s.DB.QueryRow(r.Context(), query, date, stateCodes).Scan(&result)
 		if err != nil {
 			log.Println(err)
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
 		}
 		w.Header().Set("Content-Type", "application/json")
 		fmt.Fprint(w, result)
