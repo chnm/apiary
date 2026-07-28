@@ -3,12 +3,14 @@ package apiary
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
 	"strconv"
 
 	"github.com/gorilla/mux"
+	"github.com/jackc/pgx/v5"
 )
 
 // Activity represents a detective activity from the database
@@ -43,6 +45,48 @@ type Location struct {
 	Visits               NullInt64   `json:"visits"`
 	Latitude             NullFloat64 `json:"latitude"`
 	Longitude            NullFloat64 `json:"longitude"`
+}
+
+const activityLocationsQuery = `
+SELECT
+	l.id, l.locality, l.street_address, l.location_name,
+	l.location_type, l.specific_location_type, l.location_notes, l.visits, l.latitude, l.longitude
+FROM detectives.locations l
+INNER JOIN detectives.activity_locations al ON l.id = al.location_id
+WHERE al.activity_id = $1;
+`
+
+func (s *Server) activityLocations(ctx context.Context, activityID int) ([]Location, error) {
+	locations := make([]Location, 0)
+	rows, err := s.DB.Query(ctx, activityLocationsQuery, activityID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var location Location
+		if err := rows.Scan(
+			&location.ID,
+			&location.Locality,
+			&location.StreetAddress,
+			&location.LocationName,
+			&location.LocationType,
+			&location.SpecificLocationType,
+			&location.LocationNotes,
+			&location.Visits,
+			&location.Latitude,
+			&location.Longitude,
+		); err != nil {
+			return nil, err
+		}
+		locations = append(locations, location)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return locations, nil
 }
 
 // NullFloat64 handles nullable float64 values for JSON marshaling
@@ -193,7 +237,7 @@ func (s *Server) ActivitiesHandler() http.HandlerFunc {
 
 		results := make([]Activity, 0)
 
-		rows, err := s.DB.Query(context.TODO(), baseQuery, args...)
+		rows, err := s.DB.Query(r.Context(), baseQuery, args...)
 		if err != nil {
 			log.Println("Error querying activities:", err)
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -211,7 +255,8 @@ func (s *Server) ActivitiesHandler() http.HandlerFunc {
 			)
 			if err != nil {
 				log.Println("Error scanning activity row:", err)
-				continue
+				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+				return
 			}
 			results = append(results, row)
 		}
@@ -222,37 +267,14 @@ func (s *Server) ActivitiesHandler() http.HandlerFunc {
 			return
 		}
 
-		// Fetch locations for each activity
-		locationsQuery := `
-		SELECT
-			l.id, l.locality, l.street_address, l.location_name,
-			l.location_type, l.specific_location_type, l.location_notes, l.visits, l.latitude, l.longitude
-		FROM detectives.locations l
-		INNER JOIN detectives.activity_locations al ON l.id = al.location_id
-		WHERE al.activity_id = $1;
-		`
-
 		for i := range results {
-			results[i].Locations = make([]Location, 0)
-			locRows, err := s.DB.Query(context.TODO(), locationsQuery, results[i].ID)
+			locations, err := s.activityLocations(r.Context(), results[i].ID)
 			if err != nil {
 				log.Println("Error querying locations for activity", results[i].ID, ":", err)
-				continue
+				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+				return
 			}
-
-			for locRows.Next() {
-				var loc Location
-				err := locRows.Scan(
-					&loc.ID, &loc.Locality, &loc.StreetAddress, &loc.LocationName,
-					&loc.LocationType, &loc.SpecificLocationType, &loc.LocationNotes, &loc.Visits, &loc.Latitude, &loc.Longitude,
-				)
-				if err != nil {
-					log.Println("Error scanning location row:", err)
-					continue
-				}
-				results[i].Locations = append(results[i].Locations, loc)
-			}
-			locRows.Close()
+			results[i].Locations = locations
 		}
 
 		response, err := json.Marshal(results)
@@ -278,15 +300,6 @@ func (s *Server) ActivityByIDHandler() http.HandlerFunc {
 	WHERE a.id = $1;
 	`
 
-	locationsQuery := `
-	SELECT
-		l.id, l.locality, l.street_address, l.location_name,
-		l.location_type, l.specific_location_type, l.location_notes, l.visits, l.latitude, l.longitude
-	FROM detectives.locations l
-	INNER JOIN detectives.activity_locations al ON l.id = al.location_id
-	WHERE al.activity_id = $1;
-	`
-
 	return func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
 		idStr := vars["id"]
@@ -299,37 +312,28 @@ func (s *Server) ActivityByIDHandler() http.HandlerFunc {
 		var activity Activity
 
 		// Get activity
-		err = s.DB.QueryRow(context.TODO(), activityQuery, id).Scan(
+		err = s.DB.QueryRow(r.Context(), activityQuery, id).Scan(
 			&activity.ID, &activity.Source, &activity.Operative, &activity.Date,
 			&activity.Time, &activity.Duration, &activity.Activity, &activity.Mode,
 			&activity.ActivityNotes, &activity.Subject, &activity.Information,
 			&activity.InformationType, &activity.Edited, &activity.EditType, &activity.Investigation,
 		)
+		if errors.Is(err, pgx.ErrNoRows) {
+			http.Error(w, "Activity not found", http.StatusNotFound)
+			return
+		}
 		if err != nil {
 			log.Println("Error querying activity:", err)
-			http.Error(w, "Activity not found", http.StatusNotFound)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 			return
 		}
 
 		// Get locations for this activity
-		activity.Locations = make([]Location, 0)
-		rows, err := s.DB.Query(context.TODO(), locationsQuery, id)
+		activity.Locations, err = s.activityLocations(r.Context(), id)
 		if err != nil {
 			log.Println("Error querying locations:", err)
-		} else {
-			defer rows.Close()
-			for rows.Next() {
-				var loc Location
-				err := rows.Scan(
-					&loc.ID, &loc.Locality, &loc.StreetAddress, &loc.LocationName,
-					&loc.LocationType, &loc.SpecificLocationType, &loc.LocationNotes, &loc.Visits, &loc.Latitude, &loc.Longitude,
-				)
-				if err != nil {
-					log.Println("Error scanning location row:", err)
-					continue
-				}
-				activity.Locations = append(activity.Locations, loc)
-			}
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
 		}
 
 		response, err := json.Marshal(activity)
@@ -357,7 +361,7 @@ func (s *Server) LocationsHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		results := make([]Location, 0)
 
-		rows, err := s.DB.Query(context.TODO(), query)
+		rows, err := s.DB.Query(r.Context(), query)
 		if err != nil {
 			log.Println("Error querying locations:", err)
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -373,7 +377,8 @@ func (s *Server) LocationsHandler() http.HandlerFunc {
 			)
 			if err != nil {
 				log.Println("Error scanning location row:", err)
-				continue
+				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+				return
 			}
 			results = append(results, row)
 		}
@@ -408,7 +413,7 @@ func (s *Server) OperativesHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		results := make([]string, 0)
 
-		rows, err := s.DB.Query(context.TODO(), query)
+		rows, err := s.DB.Query(r.Context(), query)
 		if err != nil {
 			log.Println("Error querying operatives:", err)
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -421,7 +426,8 @@ func (s *Server) OperativesHandler() http.HandlerFunc {
 			err := rows.Scan(&operative)
 			if err != nil {
 				log.Println("Error scanning operative:", err)
-				continue
+				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+				return
 			}
 			results = append(results, operative)
 		}
@@ -456,7 +462,7 @@ func (s *Server) SubjectsHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		results := make([]string, 0)
 
-		rows, err := s.DB.Query(context.TODO(), query)
+		rows, err := s.DB.Query(r.Context(), query)
 		if err != nil {
 			log.Println("Error querying subjects:", err)
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -469,7 +475,8 @@ func (s *Server) SubjectsHandler() http.HandlerFunc {
 			err := rows.Scan(&subject)
 			if err != nil {
 				log.Println("Error scanning subject:", err)
-				continue
+				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+				return
 			}
 			results = append(results, subject)
 		}
