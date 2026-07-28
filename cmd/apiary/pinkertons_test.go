@@ -11,7 +11,7 @@ import (
 
 func TestDetectivesActivities(t *testing.T) {
 	// Check that we get the right response
-	req, _ := http.NewRequest("GET", "/pinkertons/activities", nil)
+	req, _ := http.NewRequest("GET", "/pinkertons/activities?limit=10", nil)
 	response := executeRequest(req)
 	checkResponseCode(t, http.StatusOK, response.Code)
 
@@ -30,7 +30,7 @@ func TestDetectivesActivities(t *testing.T) {
 
 func TestDetectivesActivitiesWithLocations(t *testing.T) {
 	// Check that we get activities with locations included
-	req, _ := http.NewRequest("GET", "/pinkertons/activities?include_locations=true", nil)
+	req, _ := http.NewRequest("GET", "/pinkertons/activities?include_locations=true&limit=10", nil)
 	response := executeRequest(req)
 	checkResponseCode(t, http.StatusOK, response.Code)
 
@@ -95,7 +95,7 @@ func TestDetectivesActivitiesFilterByDateRange(t *testing.T) {
 
 func TestDetectivesActivityByID(t *testing.T) {
 	// First, get all activities to find a valid ID
-	req, _ := http.NewRequest("GET", "/pinkertons/activities", nil)
+	req, _ := http.NewRequest("GET", "/pinkertons/activities?limit=1", nil)
 	response := executeRequest(req)
 
 	if response.Code != http.StatusOK {
