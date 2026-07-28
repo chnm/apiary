@@ -1,7 +1,6 @@
 package apiary
 
 import (
-	"context"
 	"database/sql"
 	"encoding/json"
 	"fmt"
@@ -45,19 +44,23 @@ func (s *Server) APBVerseHandler() http.HandlerFunc {
 
 		var result Verse
 
-		err := s.DB.QueryRow(context.TODO(), verseQuery, refs[0]).Scan(&result.Reference, &result.Text)
+		err := s.DB.QueryRow(r.Context(), verseQuery, refs[0]).Scan(&result.Reference, &result.Text)
 		if err == sql.ErrNoRows {
 			w.WriteHeader(http.StatusNotFound)
 			w.Write([]byte("404 Not found."))
 			return
 		} else if err != nil {
 			log.Println(err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
 		}
 
 		related := make([]string, 0)
-		rows, err := s.DB.Query(context.TODO(), relatedVerseQuery, refs[0])
+		rows, err := s.DB.Query(r.Context(), relatedVerseQuery, refs[0])
 		if err != nil {
 			log.Println(err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
 		}
 		defer rows.Close()
 		var rel string

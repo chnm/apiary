@@ -1,7 +1,6 @@
 package apiary
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -41,9 +40,11 @@ func (s *Server) APBBibleTrendHandler() http.HandlerFunc {
 		results := make([]VerseTrend, 0, 87) // Preallocate slice capacity
 		var row VerseTrend
 
-		rows, err := s.DB.Query(context.TODO(), query, corpus, minYear, maxYear)
+		rows, err := s.DB.Query(r.Context(), query, corpus, minYear, maxYear)
 		if err != nil {
 			log.Println(err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
 		}
 		defer rows.Close()
 		for rows.Next() {
