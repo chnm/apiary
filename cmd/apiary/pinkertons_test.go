@@ -34,6 +34,23 @@ func (*pinkertonsQueryCounter) TraceQueryEnd(
 ) {
 }
 
+func fetchDetectiveActivities(t *testing.T, path string) []apiary.Activity {
+	t.Helper()
+
+	req, err := http.NewRequest(http.MethodGet, path, nil)
+	if err != nil {
+		t.Fatalf("Create request: %v", err)
+	}
+	response := executeRequest(req)
+	checkResponseCode(t, http.StatusOK, response.Code)
+
+	var activities []apiary.Activity
+	if err := json.Unmarshal(response.Body.Bytes(), &activities); err != nil {
+		t.Fatalf("Unmarshal response: %v", err)
+	}
+	return activities
+}
+
 func TestDetectivesActivities(t *testing.T) {
 	// Check that we get the right response
 	req, _ := http.NewRequest("GET", "/pinkertons/activities?limit=10", nil)
@@ -50,6 +67,42 @@ func TestDetectivesActivities(t *testing.T) {
 	// Check that we got an array (even if empty)
 	if data == nil {
 		t.Error("Expected array of activities, got nil")
+	}
+}
+
+func TestDetectivesActivitiesDefaultLimit(t *testing.T) {
+	const defaultLimit = 500
+
+	defaultPage := fetchDetectiveActivities(t, "/pinkertons/activities")
+	if len(defaultPage) != defaultLimit {
+		t.Fatalf(
+			"Default page length = %d, want %d",
+			len(defaultPage),
+			defaultLimit,
+		)
+	}
+
+	explicitPage := fetchDetectiveActivities(
+		t,
+		"/pinkertons/activities?limit=501",
+	)
+	if len(explicitPage) != defaultLimit+1 {
+		t.Fatalf(
+			"Explicit page length = %d, want %d",
+			len(explicitPage),
+			defaultLimit+1,
+		)
+	}
+
+	for index := range defaultPage {
+		if defaultPage[index].ID != explicitPage[index].ID {
+			t.Fatalf(
+				"Default page activity %d ID = %d, want %d",
+				index,
+				defaultPage[index].ID,
+				explicitPage[index].ID,
+			)
+		}
 	}
 }
 
@@ -80,29 +133,16 @@ func TestDetectivesActivitiesUsesTwoQueries(t *testing.T) {
 }
 
 func TestDetectivesActivitiesOffsetPagination(t *testing.T) {
-	fetchActivities := func(path string) []apiary.Activity {
-		t.Helper()
-
-		req, err := http.NewRequest(http.MethodGet, path, nil)
-		if err != nil {
-			t.Fatalf("Create request: %v", err)
-		}
-		response := executeRequest(req)
-		checkResponseCode(t, http.StatusOK, response.Code)
-
-		var activities []apiary.Activity
-		if err := json.Unmarshal(response.Body.Bytes(), &activities); err != nil {
-			t.Fatalf("Unmarshal response: %v", err)
-		}
-		return activities
-	}
-
-	firstTwo := fetchActivities("/pinkertons/activities?limit=2&offset=0")
+	firstTwo := fetchDetectiveActivities(
+		t,
+		"/pinkertons/activities?limit=2&offset=0",
+	)
 	if len(firstTwo) != 2 {
 		t.Fatalf("First page length = %d, want 2", len(firstTwo))
 	}
 
-	secondActivity := fetchActivities(
+	secondActivity := fetchDetectiveActivities(
+		t,
 		"/pinkertons/activities?limit=1&offset=1",
 	)
 	if len(secondActivity) != 1 {
@@ -127,9 +167,10 @@ func TestDetectivesActivitiesOffsetPagination(t *testing.T) {
 		t.Fatal("First page has no location to test filtered pagination")
 	}
 
-	filteredPage := fetchActivities(
-		"/pinkertons/activities?location_id=" +
-			strconv.Itoa(locationID) +
+	filteredPage := fetchDetectiveActivities(
+		t,
+		"/pinkertons/activities?location_id="+
+			strconv.Itoa(locationID)+
 			"&limit=1&offset=0",
 	)
 	if len(filteredPage) != 1 {
