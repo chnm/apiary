@@ -2,6 +2,7 @@ package apiary
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"math"
 	"net/http"
@@ -98,13 +99,15 @@ func (s *Server) Run() error {
 	return err
 }
 
-// Shutdown closes the connection to the database and shutsdown the server.
-func (s *Server) Shutdown() {
+// Shutdown stops accepting requests, drains active requests, and then closes
+// the database connection pool.
+func (s *Server) Shutdown(ctx context.Context) error {
+	log.Println("shutting down the web server")
+	if err := s.Server.Shutdown(ctx); err != nil {
+		return fmt.Errorf("shut down HTTP server: %w", err)
+	}
+
 	log.Println("closing the connection to the database")
 	s.DB.Close()
-	log.Println("shutting down the web server")
-	err := s.Server.Shutdown(context.TODO())
-	if err != nil {
-		log.Println("error shutting down web server:", err)
-	}
+	return nil
 }
