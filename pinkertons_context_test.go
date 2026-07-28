@@ -190,3 +190,34 @@ func TestActivityLocationsPropagatesRequestCancellation(t *testing.T) {
 		t.Fatal("location query did not stop after request cancellation")
 	}
 }
+
+func TestBulkActivityLocationsPropagatesRequestCancellation(t *testing.T) {
+	observedContext := make(chan context.Context, 1)
+	pool := newPinkertonsCancellationPool(t, observedContext)
+	request, cancel := newPinkertonsRequest(t, "/pinkertons/activities?limit=2")
+	t.Cleanup(cancel)
+
+	queryDone := make(chan error, 1)
+	go func() {
+		_, err := (&Server{DB: pool}).activityLocationsByActivityIDs(
+			request.Context(),
+			[]int{1, 2},
+		)
+		queryDone <- err
+	}()
+
+	assertPinkertonsDatabaseContext(t, observedContext)
+	cancel()
+
+	select {
+	case err := <-queryDone:
+		if !errors.Is(err, context.Canceled) {
+			t.Fatalf(
+				"activityLocationsByActivityIDs error = %v, want context.Canceled",
+				err,
+			)
+		}
+	case <-time.After(2 * time.Second):
+		t.Fatal("bulk location query did not stop after request cancellation")
+	}
+}
