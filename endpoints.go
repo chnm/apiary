@@ -346,6 +346,10 @@ func (s *Server) EndpointsHandler() http.HandlerFunc {
 						"First 10 activities with location coordinates",
 					},
 					{
+						baseurl + "/pinkertons/activities?limit=10&offset=10",
+						"Next 10 activities with location coordinates",
+					},
+					{
 						baseurl + "/pinkertons/activities?operative=John+Doe",
 						"Follow a specific operative",
 					},

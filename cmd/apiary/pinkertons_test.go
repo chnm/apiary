@@ -79,6 +79,64 @@ func TestDetectivesActivitiesUsesTwoQueries(t *testing.T) {
 	}
 }
 
+func TestDetectivesActivitiesOffsetPagination(t *testing.T) {
+	fetchActivities := func(path string) []apiary.Activity {
+		t.Helper()
+
+		req, err := http.NewRequest(http.MethodGet, path, nil)
+		if err != nil {
+			t.Fatalf("Create request: %v", err)
+		}
+		response := executeRequest(req)
+		checkResponseCode(t, http.StatusOK, response.Code)
+
+		var activities []apiary.Activity
+		if err := json.Unmarshal(response.Body.Bytes(), &activities); err != nil {
+			t.Fatalf("Unmarshal response: %v", err)
+		}
+		return activities
+	}
+
+	firstTwo := fetchActivities("/pinkertons/activities?limit=2&offset=0")
+	if len(firstTwo) != 2 {
+		t.Fatalf("First page length = %d, want 2", len(firstTwo))
+	}
+
+	secondActivity := fetchActivities(
+		"/pinkertons/activities?limit=1&offset=1",
+	)
+	if len(secondActivity) != 1 {
+		t.Fatalf("Second page length = %d, want 1", len(secondActivity))
+	}
+	if secondActivity[0].ID != firstTwo[1].ID {
+		t.Fatalf(
+			"Offset activity ID = %d, want %d",
+			secondActivity[0].ID,
+			firstTwo[1].ID,
+		)
+	}
+
+	var locationID int
+	for _, activity := range firstTwo {
+		if len(activity.Locations) > 0 {
+			locationID = activity.Locations[0].ID
+			break
+		}
+	}
+	if locationID == 0 {
+		t.Fatal("First page has no location to test filtered pagination")
+	}
+
+	filteredPage := fetchActivities(
+		"/pinkertons/activities?location_id=" +
+			strconv.Itoa(locationID) +
+			"&limit=1&offset=0",
+	)
+	if len(filteredPage) != 1 {
+		t.Fatalf("Filtered page length = %d, want 1", len(filteredPage))
+	}
+}
+
 func TestDetectivesActivitiesWithLocations(t *testing.T) {
 	// Check that we get activities with locations included
 	req, _ := http.NewRequest("GET", "/pinkertons/activities?include_locations=true&limit=10", nil)
