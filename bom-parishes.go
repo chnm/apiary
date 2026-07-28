@@ -74,9 +74,11 @@ func (s *Server) ParishesHandler() http.HandlerFunc {
 		results := make([]Parish, 0)
 		var row Parish
 
-		rows, err := s.DB.Query(context.TODO(), query)
+		rows, err := s.DB.Query(r.Context(), query)
 		if err != nil {
 			log.Println(err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
 		}
 		defer rows.Close()
 		for rows.Next() {
@@ -90,6 +92,7 @@ func (s *Server) ParishesHandler() http.HandlerFunc {
 		if err != nil {
 			log.Println(err)
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
 		}
 
 		response, _ := json.Marshal(results)

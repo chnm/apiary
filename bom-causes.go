@@ -1,7 +1,6 @@
 package apiary
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -290,9 +289,9 @@ func (s *Server) ListCausesHandler() http.HandlerFunc {
 
 		// Execute query with or without bill type parameter
 		if billType != "" {
-			rows, err = s.DB.Query(context.TODO(), query, billType)
+			rows, err = s.DB.Query(r.Context(), query, billType)
 		} else {
-			rows, err = s.DB.Query(context.TODO(), query)
+			rows, err = s.DB.Query(r.Context(), query)
 		}
 
 		if err != nil {
