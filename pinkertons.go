@@ -56,6 +56,16 @@ INNER JOIN detectives.activity_locations al ON l.id = al.location_id
 WHERE al.activity_id = $1;
 `
 
+const activityLocationsByActivityIDsQuery = `
+SELECT
+	al.activity_id,
+	l.id, l.locality, l.street_address, l.location_name,
+	l.location_type, l.specific_location_type, l.location_notes, l.visits, l.latitude, l.longitude
+FROM detectives.locations l
+INNER JOIN detectives.activity_locations al ON l.id = al.location_id
+WHERE al.activity_id = ANY($1);
+`
+
 func (s *Server) activityLocations(ctx context.Context, activityID int) ([]Location, error) {
 	locations := make([]Location, 0)
 	rows, err := s.DB.Query(ctx, activityLocationsQuery, activityID)
@@ -87,6 +97,54 @@ func (s *Server) activityLocations(ctx context.Context, activityID int) ([]Locat
 	}
 
 	return locations, nil
+}
+
+func (s *Server) activityLocationsByActivityIDs(
+	ctx context.Context,
+	activityIDs []int,
+) (map[int][]Location, error) {
+	locationsByActivityID := make(map[int][]Location, len(activityIDs))
+	for _, activityID := range activityIDs {
+		locationsByActivityID[activityID] = make([]Location, 0)
+	}
+	if len(activityIDs) == 0 {
+		return locationsByActivityID, nil
+	}
+
+	rows, err := s.DB.Query(ctx, activityLocationsByActivityIDsQuery, activityIDs)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var activityID int
+		var location Location
+		if err := rows.Scan(
+			&activityID,
+			&location.ID,
+			&location.Locality,
+			&location.StreetAddress,
+			&location.LocationName,
+			&location.LocationType,
+			&location.SpecificLocationType,
+			&location.LocationNotes,
+			&location.Visits,
+			&location.Latitude,
+			&location.Longitude,
+		); err != nil {
+			return nil, err
+		}
+		locationsByActivityID[activityID] = append(
+			locationsByActivityID[activityID],
+			location,
+		)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return locationsByActivityID, nil
 }
 
 // NullFloat64 handles nullable float64 values for JSON marshaling
@@ -267,14 +325,22 @@ func (s *Server) ActivitiesHandler() http.HandlerFunc {
 			return
 		}
 
+		activityIDs := make([]int, len(results))
 		for i := range results {
-			locations, err := s.activityLocations(r.Context(), results[i].ID)
-			if err != nil {
-				log.Println("Error querying locations for activity", results[i].ID, ":", err)
-				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-				return
-			}
-			results[i].Locations = locations
+			activityIDs[i] = results[i].ID
+		}
+
+		locationsByActivityID, err := s.activityLocationsByActivityIDs(
+			r.Context(),
+			activityIDs,
+		)
+		if err != nil {
+			log.Println("Error querying activity locations:", err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
+		for i := range results {
+			results[i].Locations = locationsByActivityID[results[i].ID]
 		}
 
 		response, err := json.Marshal(results)

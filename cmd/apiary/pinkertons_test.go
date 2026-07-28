@@ -1,13 +1,38 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
+	"net/http/httptest"
 	"strconv"
+	"sync/atomic"
 	"testing"
 
 	apiary "github.com/chnm/apiary"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
+
+type pinkertonsQueryCounter struct {
+	count atomic.Int64
+}
+
+func (counter *pinkertonsQueryCounter) TraceQueryStart(
+	ctx context.Context,
+	_ *pgx.Conn,
+	_ pgx.TraceQueryStartData,
+) context.Context {
+	counter.count.Add(1)
+	return ctx
+}
+
+func (*pinkertonsQueryCounter) TraceQueryEnd(
+	context.Context,
+	*pgx.Conn,
+	pgx.TraceQueryEndData,
+) {
+}
 
 func TestDetectivesActivities(t *testing.T) {
 	// Check that we get the right response
@@ -25,6 +50,32 @@ func TestDetectivesActivities(t *testing.T) {
 	// Check that we got an array (even if empty)
 	if data == nil {
 		t.Error("Expected array of activities, got nil")
+	}
+}
+
+func TestDetectivesActivitiesUsesTwoQueries(t *testing.T) {
+	config := s.DB.Config()
+	queryCounter := &pinkertonsQueryCounter{}
+	config.ConnConfig.Tracer = queryCounter
+
+	pool, err := pgxpool.NewWithConfig(context.Background(), config)
+	if err != nil {
+		t.Fatalf("Failed to create traced database pool: %v", err)
+	}
+	t.Cleanup(pool.Close)
+
+	server := &apiary.Server{DB: pool}
+	req := httptest.NewRequest(
+		http.MethodGet,
+		"/pinkertons/activities?limit=10",
+		nil,
+	)
+	response := httptest.NewRecorder()
+	server.ActivitiesHandler().ServeHTTP(response, req)
+	checkResponseCode(t, http.StatusOK, response.Code)
+
+	if got := queryCounter.count.Load(); got != 2 {
+		t.Fatalf("Expected 2 database queries, got %d", got)
 	}
 }
 
