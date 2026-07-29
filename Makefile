@@ -1,16 +1,16 @@
-.PHONY : serve
-serve : build
-	APIARY_INTERFACE=localhost ./cmd/apiary/apiary
+BINARY := cmd/apiary/apiary
 
 .PHONY : build
 build :
-	go build
-	cd cmd/apiary && go build
+	go build -o $(BINARY) ./cmd/apiary
+
+.PHONY : serve
+serve : build
+	APIARY_INTERFACE=localhost ./$(BINARY)
 
 .PHONY : install
 install :
-	go build
-	cd cmd/apiary && go install
+	go install ./cmd/apiary
 
 .PHONY : test
 test :
