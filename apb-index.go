@@ -1,9 +1,6 @@
 package apiary
 
 import (
-	"encoding/json"
-	"fmt"
-	"log"
 	"net/http"
 )
 
@@ -47,27 +44,23 @@ func (s *Server) APBIndexFeaturedHandler() http.HandlerFunc {
 
 		rows, err := s.DB.Query(r.Context(), query)
 		if err != nil {
-			log.Println(err)
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			internalServerError(w, "error querying featured verse index", err)
 			return
 		}
 		defer rows.Close()
 		for rows.Next() {
-			err := rows.Scan(&row.Reference, &row.Text, &row.Count)
-			if err != nil {
-				log.Println(err)
+			if err := rows.Scan(&row.Reference, &row.Text, &row.Count); err != nil {
+				internalServerError(w, "error scanning featured verse index", err)
+				return
 			}
 			results = append(results, row)
 		}
-		err = rows.Err()
-		if err != nil {
-			log.Println(err)
+		if err := rows.Err(); err != nil {
+			internalServerError(w, "error iterating featured verse index", err)
+			return
 		}
 
-		response, _ := json.Marshal(results)
-
-		w.Header().Set("Content-Type", "application/json")
-		fmt.Fprint(w, string(response))
+		writeJSONResponse(w, results)
 	}
 
 }
@@ -90,27 +83,23 @@ func (s *Server) APBIndexBiblicalOrderHandler() http.HandlerFunc {
 
 		rows, err := s.DB.Query(r.Context(), query)
 		if err != nil {
-			log.Println(err)
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			internalServerError(w, "error querying biblical verse index", err)
 			return
 		}
 		defer rows.Close()
 		for rows.Next() {
-			err := rows.Scan(&row.Reference, &row.Text, &row.Count)
-			if err != nil {
-				log.Println(err)
+			if err := rows.Scan(&row.Reference, &row.Text, &row.Count); err != nil {
+				internalServerError(w, "error scanning biblical verse index", err)
+				return
 			}
 			results = append(results, row)
 		}
-		err = rows.Err()
-		if err != nil {
-			log.Println(err)
+		if err := rows.Err(); err != nil {
+			internalServerError(w, "error iterating biblical verse index", err)
+			return
 		}
 
-		response, _ := json.Marshal(results)
-
-		w.Header().Set("Content-Type", "application/json")
-		fmt.Fprint(w, string(response))
+		writeJSONResponse(w, results)
 	}
 
 }
@@ -133,27 +122,23 @@ func (s *Server) APBIndexTopHandler() http.HandlerFunc {
 
 		rows, err := s.DB.Query(r.Context(), query)
 		if err != nil {
-			log.Println(err)
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			internalServerError(w, "error querying top verse index", err)
 			return
 		}
 		defer rows.Close()
 		for rows.Next() {
-			err := rows.Scan(&row.Reference, &row.Text, &row.Count)
-			if err != nil {
-				log.Println(err)
+			if err := rows.Scan(&row.Reference, &row.Text, &row.Count); err != nil {
+				internalServerError(w, "error scanning top verse index", err)
+				return
 			}
 			results = append(results, row)
 		}
-		err = rows.Err()
-		if err != nil {
-			log.Println(err)
+		if err := rows.Err(); err != nil {
+			internalServerError(w, "error iterating top verse index", err)
+			return
 		}
 
-		response, _ := json.Marshal(results)
-
-		w.Header().Set("Content-Type", "application/json")
-		fmt.Fprint(w, string(response))
+		writeJSONResponse(w, results)
 	}
 
 }
@@ -177,27 +162,23 @@ func (s *Server) APBIndexChronologicalHandler() http.HandlerFunc {
 
 		rows, err := s.DB.Query(r.Context(), query)
 		if err != nil {
-			log.Println(err)
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			internalServerError(w, "error querying chronological verse index", err)
 			return
 		}
 		defer rows.Close()
 		for rows.Next() {
-			err := rows.Scan(&row.Reference, &row.Text, &row.Count, &row.Peak)
-			if err != nil {
-				log.Println(err)
+			if err := rows.Scan(&row.Reference, &row.Text, &row.Count, &row.Peak); err != nil {
+				internalServerError(w, "error scanning chronological verse index", err)
+				return
 			}
 			results = append(results, row)
 		}
-		err = rows.Err()
-		if err != nil {
-			log.Println(err)
+		if err := rows.Err(); err != nil {
+			internalServerError(w, "error iterating chronological verse index", err)
+			return
 		}
 
-		response, _ := json.Marshal(results)
-
-		w.Header().Set("Content-Type", "application/json")
-		fmt.Fprint(w, string(response))
+		writeJSONResponse(w, results)
 	}
 
 }
@@ -220,27 +201,23 @@ func (s *Server) APBIndexAllHandler() http.HandlerFunc {
 
 		rows, err := s.DB.Query(r.Context(), query)
 		if err != nil {
-			log.Println(err)
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			internalServerError(w, "error querying complete verse index", err)
 			return
 		}
 		defer rows.Close()
 		for rows.Next() {
-			err := rows.Scan(&row.Reference, &row.Text)
-			if err != nil {
-				log.Println(err)
+			if err := rows.Scan(&row.Reference, &row.Text); err != nil {
+				internalServerError(w, "error scanning complete verse index", err)
+				return
 			}
 			results = append(results, row)
 		}
-		err = rows.Err()
-		if err != nil {
-			log.Println(err)
+		if err := rows.Err(); err != nil {
+			internalServerError(w, "error iterating complete verse index", err)
+			return
 		}
 
-		response, _ := json.Marshal(results)
-
-		w.Header().Set("Content-Type", "application/json")
-		fmt.Fprint(w, string(response))
+		writeJSONResponse(w, results)
 	}
 
 }

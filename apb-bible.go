@@ -1,9 +1,6 @@
 package apiary
 
 import (
-	"encoding/json"
-	"fmt"
-	"log"
 	"net/http"
 )
 
@@ -31,28 +28,24 @@ func (s *Server) APBBibleBooksHandler() http.HandlerFunc {
 
 		rows, err := s.DB.Query(r.Context(), query)
 		if err != nil {
-			log.Println(err)
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			internalServerError(w, "error querying Bible books", err)
 			return
 		}
 		defer rows.Close()
 
 		for rows.Next() {
-			err := rows.Scan(&book.Book, &book.Part, &book.Order)
-			if err != nil {
-				log.Println(err)
+			if err := rows.Scan(&book.Book, &book.Part, &book.Order); err != nil {
+				internalServerError(w, "error scanning Bible book", err)
+				return
 			}
 			result = append(result, book)
 		}
-		err = rows.Err()
-		if err != nil {
-			log.Println(err)
+		if err := rows.Err(); err != nil {
+			internalServerError(w, "error iterating Bible books", err)
+			return
 		}
 
-		response, _ := json.Marshal(result)
-
-		w.Header().Set("Content-Type", "application/json")
-		fmt.Fprint(w, string(response))
+		writeJSONResponse(w, result)
 	}
 
 }

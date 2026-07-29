@@ -1,9 +1,7 @@
 package apiary
 
 import (
-	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"strconv"
 	"strings"
@@ -177,8 +175,7 @@ func (s *Server) ChristeningsHandler() http.HandlerFunc {
 		}
 
 		if err != nil {
-			log.Println(err)
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			internalServerError(w, "error querying christenings", err)
 			return
 		}
 		defer rows.Close()
@@ -196,20 +193,17 @@ func (s *Server) ChristeningsHandler() http.HandlerFunc {
 				&row.TotalRecords,
 			)
 			if err != nil {
-				log.Println(err)
+				internalServerError(w, "error scanning christening", err)
+				return
 			}
 			results = append(results, row)
 		}
-		err = rows.Err()
-		if err != nil {
-			log.Println(err)
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		if err := rows.Err(); err != nil {
+			internalServerError(w, "error iterating christenings", err)
 			return
 		}
 
-		response, _ := json.Marshal(results)
-		w.Header().Set("Content-Type", "application/json")
-		fmt.Fprint(w, string(response))
+		writeJSONResponse(w, results)
 	}
 }
 
@@ -256,27 +250,22 @@ func (s *Server) ListChristeningsHandler() http.HandlerFunc {
 		}
 
 		if err != nil {
-			log.Println(err)
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			internalServerError(w, "error querying christening list", err)
 			return
 		}
 		defer rows.Close()
 		for rows.Next() {
-			err := rows.Scan(&row.Name, &row.BillType)
-			if err != nil {
-				log.Println(err)
+			if err := rows.Scan(&row.Name, &row.BillType); err != nil {
+				internalServerError(w, "error scanning christening list", err)
+				return
 			}
 			results = append(results, row)
 		}
-		err = rows.Err()
-		if err != nil {
-			log.Println(err)
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		if err := rows.Err(); err != nil {
+			internalServerError(w, "error iterating christening list", err)
 			return
 		}
 
-		response, _ := json.Marshal(results)
-		w.Header().Set("Content-Type", "application/json")
-		fmt.Fprint(w, string(response))
+		writeJSONResponse(w, results)
 	}
 }

@@ -2,7 +2,6 @@ package apiary
 
 import (
 	"encoding/base64"
-	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -108,8 +107,7 @@ func (s *Server) BillsHandler() http.HandlerFunc {
 		if len(apiParams.Parish) > 0 {
 			invalid, err := s.invalidParishIDs(r.Context(), apiParams.Parish)
 			if err != nil {
-				log.Printf("Error validating parish IDs: %v", err)
-				http.Error(w, "Database error", http.StatusInternalServerError)
+				internalServerError(w, "error validating parish IDs", err)
 				return
 			}
 			if len(invalid) > 0 {
@@ -121,18 +119,14 @@ func (s *Server) BillsHandler() http.HandlerFunc {
 		// Build query with parameters
 		qb, err := buildBillsQueryWithParams(apiParams)
 		if err != nil {
-			http.Error(w, "Error building query", http.StatusInternalServerError)
-			log.Printf("Error building query: %v", err)
+			internalServerError(w, "error building bills query", err)
 			return
 		}
 
 		// Execute query with parameters
 		rows, err := s.DB.Query(r.Context(), qb.Query, qb.Params...)
 		if err != nil {
-			http.Error(w, "Database error", http.StatusInternalServerError)
-			log.Printf("Error executing query: %v", err)
-			log.Printf("Query: %s", qb.Query)
-			log.Printf("Params: %v", qb.Params)
+			internalServerError(w, "error querying bills", err)
 			return
 		}
 		defer rows.Close()
@@ -168,8 +162,7 @@ func (s *Server) BillsHandler() http.HandlerFunc {
 				&parish.Notes,
 			)
 			if err != nil {
-				http.Error(w, "Error processing results", http.StatusInternalServerError)
-				log.Printf("Error scanning row: %v", err)
+				internalServerError(w, "error scanning bill", err)
 				return
 			}
 			result.Parish = &parish
@@ -177,8 +170,7 @@ func (s *Server) BillsHandler() http.HandlerFunc {
 		}
 
 		if err = rows.Err(); err != nil {
-			http.Error(w, "Error processing results", http.StatusInternalServerError)
-			log.Printf("Error iterating through rows: %v", err)
+			internalServerError(w, "error iterating bills", err)
 			return
 		}
 
@@ -196,16 +188,7 @@ func (s *Server) BillsHandler() http.HandlerFunc {
 			}
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		response, err := json.Marshal(paginatedResponse)
-		if err != nil {
-			http.Error(w, "Error encoding response", http.StatusInternalServerError)
-			log.Printf("Error marshaling JSON: %v", err)
-			return
-		}
-		if _, err := w.Write(response); err != nil {
-			log.Printf("Error writing bills response: %v", err)
-		}
+		writeJSONResponse(w, paginatedResponse)
 	}
 }
 
@@ -652,10 +635,12 @@ func (s *Server) TotalBillsHandler() http.HandlerFunc {
 			rows, err = s.DB.Query(r.Context(), queryChristenings)
 		case totalValues == "causes":
 			rows, err = s.DB.Query(r.Context(), queryCauses)
+		default:
+			http.Error(w, "Invalid type parameter. Must be 'weekly', 'general', 'christenings', or 'causes'", http.StatusBadRequest)
+			return
 		}
 		if err != nil {
-			log.Println(err)
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			internalServerError(w, "error querying bill totals", err)
 			return
 		}
 		defer rows.Close()
@@ -663,16 +648,17 @@ func (s *Server) TotalBillsHandler() http.HandlerFunc {
 		for rows.Next() {
 			err := rows.Scan(&row.TotalRecords)
 			if err != nil {
-				log.Println(err)
-				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+				internalServerError(w, "error scanning bill total", err)
 				return
 			}
 			results = append(results, row)
 		}
+		if err := rows.Err(); err != nil {
+			internalServerError(w, "error iterating bill totals", err)
+			return
+		}
 
-		response, _ := json.Marshal(results)
-		w.Header().Set("Content-Type", "application/json")
-		fmt.Fprint(w, string(response))
+		writeJSONResponse(w, results)
 	}
 }
 
@@ -798,8 +784,7 @@ func (s *Server) StatisticsHandler() http.HandlerFunc {
 		case "parish-yearly":
 			qb, buildErr := buildParishYearlyStatsQuery(parishName)
 			if buildErr != nil {
-				log.Printf("Error building parish-yearly query: %v", buildErr)
-				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+				internalServerError(w, "error building parish-yearly statistics query", buildErr)
 				return
 			}
 			rows, err = s.DB.Query(r.Context(), qb.Query, qb.Params...)
@@ -808,8 +793,7 @@ func (s *Server) StatisticsHandler() http.HandlerFunc {
 			return
 		}
 		if err != nil {
-			log.Printf("Database error executing query: %v", err)
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			internalServerError(w, "error querying statistics", err)
 			return
 		}
 		defer rows.Close()
@@ -821,8 +805,7 @@ func (s *Server) StatisticsHandler() http.HandlerFunc {
 				var summary WeeklySummary
 				err := rows.Scan(&summary.Year, &summary.WeekNumber, &summary.RowsCount)
 				if err != nil {
-					log.Printf("Error scanning weekly summary: %v", err)
-					http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+					internalServerError(w, "error scanning weekly statistics", err)
 					return
 				}
 				stats = append(stats, summary)
@@ -830,15 +813,11 @@ func (s *Server) StatisticsHandler() http.HandlerFunc {
 
 			// Check for errors from iterating over rows
 			if err = rows.Err(); err != nil {
-				log.Printf("Error iterating over rows: %v", err)
-				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+				internalServerError(w, "error iterating weekly statistics", err)
 				return
 			}
 
-			w.Header().Set("Content-Type", "application/json")
-			if err := json.NewEncoder(w).Encode(stats); err != nil {
-				log.Printf("Error encoding JSON response: %v", err)
-			}
+			writeJSONResponse(w, stats)
 
 		case "yearly":
 			stats := []YearlySummary{}
@@ -847,8 +826,7 @@ func (s *Server) StatisticsHandler() http.HandlerFunc {
 				err := rows.Scan(&summary.Year, &summary.WeeksCompleted,
 					&summary.RowsCount, &summary.TotalCount)
 				if err != nil {
-					log.Printf("Error scanning yearly summary: %v", err)
-					http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+					internalServerError(w, "error scanning yearly statistics", err)
 					return
 				}
 				stats = append(stats, summary)
@@ -856,15 +834,11 @@ func (s *Server) StatisticsHandler() http.HandlerFunc {
 
 			// Check for errors from iterating over rows
 			if err = rows.Err(); err != nil {
-				log.Printf("Error iterating over rows: %v", err)
-				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+				internalServerError(w, "error iterating yearly statistics", err)
 				return
 			}
 
-			w.Header().Set("Content-Type", "application/json")
-			if err := json.NewEncoder(w).Encode(stats); err != nil {
-				log.Printf("Error encoding JSON response: %v", err)
-			}
+			writeJSONResponse(w, stats)
 
 		case "parish-yearly":
 			stats := []ParishYearlySummary{}
@@ -877,8 +851,7 @@ func (s *Server) StatisticsHandler() http.HandlerFunc {
 					&summary.TotalPlague,
 				)
 				if err != nil {
-					log.Printf("Error scanning parish-yearly summary: %v", err)
-					http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+					internalServerError(w, "error scanning parish-yearly statistics", err)
 					return
 				}
 				stats = append(stats, summary)
@@ -886,16 +859,12 @@ func (s *Server) StatisticsHandler() http.HandlerFunc {
 
 			// Check for errors from iterating over rows
 			if err = rows.Err(); err != nil {
-				log.Printf("Error iterating over rows: %v", err)
-				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+				internalServerError(w, "error iterating parish-yearly statistics", err)
 				return
 			}
 
 			log.Printf("Returning %d parish-yearly summary records", len(stats))
-			w.Header().Set("Content-Type", "application/json")
-			if err := json.NewEncoder(w).Encode(stats); err != nil {
-				log.Printf("Error encoding JSON response: %v", err)
-			}
+			writeJSONResponse(w, stats)
 		}
 	}
 }

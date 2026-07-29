@@ -1,10 +1,26 @@
 package apiary
 
 import (
+	"net/http"
 	"net/http/httptest"
 	"reflect"
+	"strings"
 	"testing"
 )
+
+func TestTotalBillsHandlerRejectsInvalidType(t *testing.T) {
+	request := httptest.NewRequest(http.MethodGet, "/bom/totalbills?type=unknown", nil)
+	response := httptest.NewRecorder()
+
+	(&Server{}).TotalBillsHandler().ServeHTTP(response, request)
+
+	if response.Code != http.StatusBadRequest {
+		t.Fatalf("status = %d, want %d", response.Code, http.StatusBadRequest)
+	}
+	if body := strings.TrimSpace(response.Body.String()); !strings.HasPrefix(body, "Invalid type parameter.") {
+		t.Fatalf("body = %q, want invalid type error", body)
+	}
+}
 
 func TestParseAPIParametersParish(t *testing.T) {
 	// Non-integer parish IDs are rejected by the parser.

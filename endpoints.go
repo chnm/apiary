@@ -3,6 +3,7 @@ package apiary
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"strings"
 )
@@ -397,9 +398,15 @@ func (s *Server) EndpointsHandler() http.HandlerFunc {
 			},
 		}
 
-		response, _ := json.MarshalIndent(endpoints, "", "  ")
+		response, err := json.MarshalIndent(endpoints, "", "  ")
+		if err != nil {
+			internalServerError(w, "error marshaling endpoint index", err)
+			return
+		}
 		resp := strings.Replace(string(response), "\\u0026", "&", -1)
 		w.Header().Set("Content-Type", "application/json")
-		fmt.Fprint(w, resp)
+		if _, err := fmt.Fprint(w, resp); err != nil {
+			log.Printf("error writing endpoint index: %v", err)
+		}
 	}
 }
