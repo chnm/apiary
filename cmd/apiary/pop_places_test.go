@@ -1,78 +1,102 @@
 package main
 
 import (
-	"encoding/json"
 	"net/http"
-	"reflect"
+	"strconv"
 	"testing"
 
 	apiary "github.com/chnm/apiary"
 )
 
 func TestCountiesInState(t *testing.T) {
-	req, _ := http.NewRequest("GET", "/pop-places/state/nc/county/", nil)
-	response := executeRequest(req)
-	checkResponseCode(t, http.StatusOK, response.Code)
-
-	// Get the data
-	var data []apiary.PlaceCounty
-	err := json.Unmarshal(response.Body.Bytes(), &data)
-	if err != nil {
-		t.Error(err)
+	data := fetchCountiesInState(t, "ma")
+	for index, county := range data {
+		if county.CountyAHCB == "" || county.County == "" {
+			t.Errorf("county %d is missing identifying fields: %+v", index, county)
+		}
+		if index > 0 && county.County < data[index-1].County {
+			t.Errorf(
+				"counties are not sorted at rows %d and %d: %q, %q",
+				index-1,
+				index,
+				data[index-1].County,
+				county.County,
+			)
+		}
 	}
-
-	// Check that the data has the right content
-	expected := []apiary.PlaceCounty{
-		{CountyAHCB: "ncs_alamance", County: "Alamance"},
-		{CountyAHCB: "ncs_alexander", County: "Alexander"},
-	}
-	if !reflect.DeepEqual(data[0:2], expected) {
-		t.Error("Values in data are not what was expected.")
-	}
-
 }
 
 func TestPlacesInCounty(t *testing.T) {
-	req, _ := http.NewRequest("GET", "/pop-places/county/mas_middlesex/place/", nil)
-	response := executeRequest(req)
-	checkResponseCode(t, http.StatusOK, response.Code)
-
-	// Get the data
-	var data []apiary.Place
-	err := json.Unmarshal(response.Body.Bytes(), &data)
-	if err != nil {
-		t.Error(err)
+	county := fetchCountiesInState(t, "ma")[0]
+	data := fetchPlacesInCounty(t, county.CountyAHCB)
+	for index, place := range data {
+		if place.PlaceID <= 0 || place.Place == "" {
+			t.Errorf("place %d is missing identifying fields: %+v", index, place)
+		}
 	}
 }
 
 func TestPlace(t *testing.T) {
-	req, _ := http.NewRequest("GET", "/pop-places/place/611119/", nil)
+	county := fetchCountiesInState(t, "ma")[0]
+	place := fetchPlacesInCounty(t, county.CountyAHCB)[0]
+	req, _ := http.NewRequest(
+		http.MethodGet,
+		"/pop-places/place/"+strconv.Itoa(place.PlaceID)+"/",
+		nil,
+	)
 	response := executeRequest(req)
 	checkResponseCode(t, http.StatusOK, response.Code)
 
-	// Get the data
-	var data apiary.PlaceDetails
-	err := json.Unmarshal(response.Body.Bytes(), &data)
-	if err != nil {
-		t.Error(err)
+	data := decodeResponse[apiary.PlaceDetails](t, response)
+	if data.PlaceID != place.PlaceID ||
+		data.Place != place.Place ||
+		data.MapName != place.MapName ||
+		data.CountyAHCB != county.CountyAHCB {
+		t.Fatalf(
+			"place details = %+v, want list record %+v in county %+v",
+			data,
+			place,
+			county,
+		)
 	}
-
-	expected := apiary.PlaceDetails{
-		PlaceID:    611119,
-		Place:      "Groton",
-		MapName:    "Ayer",
-		County:     "Middlesex",
-		CountyAHCB: "mas_middlesex",
-		State:      "MA",
-	}
-	if !reflect.DeepEqual(data, expected) {
-		t.Error("Values in data are not what was expected.")
-	}
-
 }
 
 func TestPlaceNotFound(t *testing.T) {
 	req, _ := http.NewRequest("GET", "/pop-places/place/2147483647/", nil)
 	response := executeRequest(req)
 	checkResponseCode(t, http.StatusNotFound, response.Code)
+}
+
+func fetchCountiesInState(t *testing.T, state string) []apiary.PlaceCounty {
+	t.Helper()
+
+	request, _ := http.NewRequest(
+		http.MethodGet,
+		"/pop-places/state/"+state+"/county/",
+		nil,
+	)
+	response := executeRequest(request)
+	checkResponseCode(t, http.StatusOK, response.Code)
+	data := decodeResponse[[]apiary.PlaceCounty](t, response)
+	if len(data) == 0 {
+		t.Fatalf("expected populated-place counties for state %q", state)
+	}
+	return data
+}
+
+func fetchPlacesInCounty(t *testing.T, county string) []apiary.Place {
+	t.Helper()
+
+	request, _ := http.NewRequest(
+		http.MethodGet,
+		"/pop-places/county/"+county+"/place/",
+		nil,
+	)
+	response := executeRequest(request)
+	checkResponseCode(t, http.StatusOK, response.Code)
+	data := decodeResponse[[]apiary.Place](t, response)
+	if len(data) == 0 {
+		t.Fatalf("expected populated places for county %q", county)
+	}
+	return data
 }

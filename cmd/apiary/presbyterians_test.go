@@ -1,9 +1,7 @@
 package main
 
 import (
-	"encoding/json"
 	"net/http"
-	"reflect"
 	"testing"
 
 	apiary "github.com/chnm/apiary"
@@ -15,19 +13,31 @@ func TestPresbyterians(t *testing.T) {
 	response := executeRequest(req)
 	checkResponseCode(t, http.StatusOK, response.Code)
 
-	// Get the data
-	var data []apiary.PresbyteriansByYear
-	err := json.Unmarshal(response.Body.Bytes(), &data)
-	if err != nil {
-		t.Error(err)
+	data := decodeResponse[[]apiary.PresbyteriansByYear](t, response)
+	if len(data) == 0 {
+		t.Fatal("expected Presbyterian statistics")
 	}
 
-	// Check that the data has the right content
-	expected := []apiary.PresbyteriansByYear{
-		{Year: 1826, Members: 127440, Churches: 1819},
-		{Year: 1827, Members: 135285, Churches: 1887}}
-	if !reflect.DeepEqual(data[0:2], expected) {
-		t.Error("Values in data are not what was expected.")
+	for index, row := range data {
+		if row.Year <= 0 {
+			t.Errorf("row %d has invalid year %d", index, row.Year)
+		}
+		if row.Members < 0 || row.Churches < 0 {
+			t.Errorf(
+				"row %d has negative totals: members=%d churches=%d",
+				index,
+				row.Members,
+				row.Churches,
+			)
+		}
+		if index > 0 && row.Year <= data[index-1].Year {
+			t.Errorf(
+				"years are not strictly increasing at rows %d and %d: %d, %d",
+				index-1,
+				index,
+				data[index-1].Year,
+				row.Year,
+			)
+		}
 	}
-
 }

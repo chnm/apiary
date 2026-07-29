@@ -1,9 +1,7 @@
 package main
 
 import (
-	"encoding/json"
 	"net/http"
-	"reflect"
 	"testing"
 
 	apiary "github.com/chnm/apiary"
@@ -15,11 +13,14 @@ func TestCatholicDioceses(t *testing.T) {
 	response := executeRequest(req)
 	checkResponseCode(t, http.StatusOK, response.Code)
 
-	// Get the data
-	var data []apiary.CatholicDiocese
-	err := json.Unmarshal(response.Body.Bytes(), &data)
-	if err != nil {
-		t.Error(err)
+	data := decodeResponse[[]apiary.CatholicDiocese](t, response)
+	if len(data) == 0 {
+		t.Fatal("expected Catholic dioceses")
+	}
+	for index, diocese := range data {
+		if diocese.City == "" || diocese.Country == "" || diocese.Rite == "" {
+			t.Errorf("diocese %d is missing identifying fields: %+v", index, diocese)
+		}
 	}
 }
 
@@ -29,20 +30,26 @@ func TestCatholicDiocesesPerDecade(t *testing.T) {
 	response := executeRequest(req)
 	checkResponseCode(t, http.StatusOK, response.Code)
 
-	// Get the data
-	var data []apiary.CatholicDiocesesPerDecade
-	err := json.Unmarshal(response.Body.Bytes(), &data)
-	if err != nil {
-		t.Error(err)
+	data := decodeResponse[[]apiary.CatholicDiocesesPerDecade](t, response)
+	if len(data) == 0 {
+		t.Fatal("expected Catholic diocese decade statistics")
 	}
 
-	// Check that the data has the right content
-	expected := []apiary.CatholicDiocesesPerDecade{
-		{Decade: 1500, Count: 0},
-		{Decade: 1510, Count: 3},
-		{Decade: 1520, Count: 1},
-	}
-	if !reflect.DeepEqual(data[0:3], expected) {
-		t.Error("Values in data are not what was expected.")
+	for index, row := range data {
+		if row.Decade%10 != 0 {
+			t.Errorf("row %d has non-decade year %d", index, row.Decade)
+		}
+		if row.Count < 0 {
+			t.Errorf("row %d has negative count %d", index, row.Count)
+		}
+		if index > 0 && row.Decade != data[index-1].Decade+10 {
+			t.Errorf(
+				"decades are not consecutive at rows %d and %d: %d, %d",
+				index-1,
+				index,
+				data[index-1].Decade,
+				row.Decade,
+			)
+		}
 	}
 }

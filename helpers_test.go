@@ -6,6 +6,7 @@ import (
 	"errors"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"reflect"
 	"strings"
 	"testing"
@@ -126,18 +127,98 @@ func Test_dateInRange(t *testing.T) {
 }
 
 func TestNullInt64(t *testing.T) {
-	emptyInt := NullInt64{sql.NullInt64{Int64: 0, Valid: false}}
-	out, _ := json.Marshal(emptyInt)
-	if string(out) != "null" {
-		t.Errorf("Want: null. Got: %s.", out)
+	tests := []struct {
+		name  string
+		value NullInt64
+		want  string
+	}{
+		{
+			name:  "valid",
+			value: NullInt64{NullInt64: sql.NullInt64{Int64: 42, Valid: true}},
+			want:  "42",
+		},
+		{
+			name:  "null",
+			value: NullInt64{NullInt64: sql.NullInt64{Valid: false}},
+			want:  "null",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			out, err := json.Marshal(tt.value)
+			if err != nil {
+				t.Fatalf("marshal NullInt64: %v", err)
+			}
+			if got := string(out); got != tt.want {
+				t.Fatalf("marshal NullInt64 = %s, want %s", got, tt.want)
+			}
+		})
+	}
+
+	var value NullInt64
+	if err := json.Unmarshal([]byte("27"), &value); err != nil {
+		t.Fatalf("unmarshal valid NullInt64: %v", err)
+	}
+	if !value.Valid || value.Int64 != 27 {
+		t.Fatalf("unmarshal valid NullInt64 = %+v, want 27 and valid", value)
+	}
+	if err := json.Unmarshal([]byte("null"), &value); err != nil {
+		t.Fatalf("unmarshal null NullInt64: %v", err)
+	}
+	if value.Valid {
+		t.Fatalf("unmarshal null NullInt64 = %+v, want invalid", value)
+	}
+	if err := json.Unmarshal([]byte(`"invalid"`), &value); err == nil {
+		t.Fatal("unmarshal invalid NullInt64 returned nil error")
 	}
 }
 
 func TestNullString(t *testing.T) {
-	emptyString := NullString{sql.NullString{String: "", Valid: false}}
-	out, _ := json.Marshal(emptyString)
-	if string(out) != "null" {
-		t.Errorf("Want: null. Got: %s.", out)
+	tests := []struct {
+		name  string
+		value NullString
+		want  string
+	}{
+		{
+			name:  "valid",
+			value: NullString{NullString: sql.NullString{String: "value", Valid: true}},
+			want:  `"value"`,
+		},
+		{
+			name:  "null",
+			value: NullString{NullString: sql.NullString{Valid: false}},
+			want:  "null",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			out, err := json.Marshal(tt.value)
+			if err != nil {
+				t.Fatalf("marshal NullString: %v", err)
+			}
+			if got := string(out); got != tt.want {
+				t.Fatalf("marshal NullString = %s, want %s", got, tt.want)
+			}
+		})
+	}
+
+	var value NullString
+	if err := json.Unmarshal([]byte(`"text"`), &value); err != nil {
+		t.Fatalf("unmarshal valid NullString: %v", err)
+	}
+	if !value.Valid || value.String != "text" {
+		t.Fatalf("unmarshal valid NullString = %+v, want text and valid", value)
+	}
+	if err := json.Unmarshal([]byte("null"), &value); err != nil {
+		t.Fatalf("unmarshal null NullString: %v", err)
+	}
+	if value.Valid {
+		t.Fatalf("unmarshal null NullString = %+v, want invalid", value)
+	}
+	if err := json.Unmarshal([]byte("42"), &value); err == nil {
+		t.Fatal("unmarshal invalid NullString returned nil error")
 	}
 }
 
@@ -147,5 +228,32 @@ func TestIntsToString(t *testing.T) {
 	}
 	if got := intsToString([]int{7}); got != "7" {
 		t.Errorf(`intsToString([7]) = %q, want "7"`, got)
+	}
+}
+
+func TestGetEnv(t *testing.T) {
+	const key = "APIARY_HELPERS_TEST_ENV"
+
+	original, existed := os.LookupEnv(key)
+	if err := os.Unsetenv(key); err != nil {
+		t.Fatalf("unset test environment variable: %v", err)
+	}
+	t.Cleanup(func() {
+		if existed {
+			_ = os.Setenv(key, original)
+			return
+		}
+		_ = os.Unsetenv(key)
+	})
+
+	if got := getEnv(key, "fallback"); got != "fallback" {
+		t.Fatalf("getEnv missing = %q, want fallback", got)
+	}
+
+	if err := os.Setenv(key, "configured"); err != nil {
+		t.Fatalf("set test environment variable: %v", err)
+	}
+	if got := getEnv(key, "fallback"); got != "configured" {
+		t.Fatalf("getEnv configured = %q, want configured", got)
 	}
 }
