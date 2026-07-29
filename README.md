@@ -33,4 +33,12 @@ that can be used for compiling and for running the service locally.
 
 ## Testing
 
-You can run `make test` to run integration tests with the database. Or run `go test -v ./...` to get more verbose tests.
+The test suites have different runtime requirements:
+
+- `go test -race .` runs the deterministic root-package unit tests.
+- `go test ./cmd/apiary` runs integration tests against the PostgreSQL
+  database configured by `APIARY_DB`. These tests validate response contracts
+  and stable invariants rather than snapshotting mutable database records.
+- `go test ./db` runs the Gnomock connection test and requires a Docker daemon.
+- `make test` or `go test ./...` runs all suites and therefore requires both
+  PostgreSQL and Docker.

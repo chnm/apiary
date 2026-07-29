@@ -1,9 +1,8 @@
 package main
 
 import (
-	"encoding/json"
 	"net/http"
-	"reflect"
+	"net/url"
 	"testing"
 
 	apiary "github.com/chnm/apiary"
@@ -15,16 +14,10 @@ func TestRelCensusDenominations(t *testing.T) {
 	response := executeRequest(req)
 	checkResponseCode(t, http.StatusOK, response.Code)
 
-	// Get the data
-	var data []apiary.Denomination
-	err := json.Unmarshal(response.Body.Bytes(), &data)
-	if err != nil {
-		t.Error(err)
+	data := decodeResponse[[]apiary.Denomination](t, response)
+	if len(data) == 0 {
+		t.Fatal("expected Religious Census denominations")
 	}
-}
-
-type FamilyMap struct {
-	Param map[string]string `json:"family_relec"`
 }
 
 func TestRelCensusFamilies(t *testing.T) {
@@ -33,53 +26,104 @@ func TestRelCensusFamilies(t *testing.T) {
 	response := executeRequest(req)
 	checkResponseCode(t, http.StatusOK, response.Code)
 
-	// Get the data
-	// var data []apiary.DenominationFamily
-	data := struct {
+	data := decodeResponse[struct {
 		FamilyRelec []apiary.DenominationFamily `json:"family_relec"`
-	}{}
-	err := json.Unmarshal(response.Body.Bytes(), &data)
-	if err != nil {
-		t.Error(err)
+	}](t, response)
+	if len(data.FamilyRelec) == 0 {
+		t.Fatal("expected Religious Census denomination families")
 	}
 
-	// Check that the data has the right content
-	expected := []apiary.DenominationFamily{
-		{Name: "Adventist"},
-		{Name: "Anabaptist"},
-		{Name: "Baptist"},
+	for index, family := range data.FamilyRelec {
+		if family.Name == "" {
+			t.Errorf("family %d has an empty name", index)
+		}
+		if index > 0 && family.Name < data.FamilyRelec[index-1].Name {
+			t.Errorf(
+				"families are not sorted at rows %d and %d: %q, %q",
+				index-1,
+				index,
+				data.FamilyRelec[index-1].Name,
+				family.Name,
+			)
+		}
 	}
+}
 
-	if !reflect.DeepEqual(data.FamilyRelec[0:3], expected) {
-		t.Errorf("Expected %v, got %v", expected, data.FamilyRelec)
+func fetchRelCensusDenominations(t *testing.T) []apiary.Denomination {
+	t.Helper()
+
+	request, _ := http.NewRequest(http.MethodGet, "/relcensus/denominations", nil)
+	response := executeRequest(request)
+	checkResponseCode(t, http.StatusOK, response.Code)
+	data := decodeResponse[[]apiary.Denomination](t, response)
+	if len(data) == 0 {
+		t.Fatal("expected Religious Census denominations")
 	}
+	return data
+}
+
+func fetchRelCensusFamilies(t *testing.T) []apiary.DenominationFamily {
+	t.Helper()
+
+	request, _ := http.NewRequest(http.MethodGet, "/relcensus/denomination-families", nil)
+	response := executeRequest(request)
+	checkResponseCode(t, http.StatusOK, response.Code)
+	data := decodeResponse[struct {
+		FamilyRelec []apiary.DenominationFamily `json:"family_relec"`
+	}](t, response)
+	if len(data.FamilyRelec) == 0 {
+		t.Fatal("expected Religious Census denomination families")
+	}
+	return data.FamilyRelec
 }
 
 func TestRelCensusCityDenominations(t *testing.T) {
 	// Check that we get the right response
-	req, _ := http.NewRequest("GET", "/relcensus/city-membership?year=1926&denomination=Church+of+God+in+Christ", nil)
+	denomination := fetchRelCensusDenominations(t)[0].Name
+	req, _ := http.NewRequest(
+		http.MethodGet,
+		"/relcensus/city-membership?year=1926&denomination="+url.QueryEscape(denomination),
+		nil,
+	)
 	response := executeRequest(req)
 	checkResponseCode(t, http.StatusOK, response.Code)
 
-	// Get the data
-	var data []apiary.CityMembership
-	err := json.Unmarshal(response.Body.Bytes(), &data)
-	if err != nil {
-		t.Error(err)
+	data := decodeResponse[[]apiary.CityMembership](t, response)
+	for index, row := range data {
+		if row.Year != 1926 || row.Group != denomination {
+			t.Errorf(
+				"row %d = year %d group %q, want 1926 and %q",
+				index,
+				row.Year,
+				row.Group,
+				denomination,
+			)
+		}
 	}
 }
 
 func TestRelCensusCityFamilies(t *testing.T) {
 	// Check that we get the right response
-	req, _ := http.NewRequest("GET", "/relcensus/city-membership?year=1926&denominationFamily=Pentecostal", nil)
+	family := fetchRelCensusFamilies(t)[0].Name
+	req, _ := http.NewRequest(
+		http.MethodGet,
+		"/relcensus/city-membership?year=1926&denominationFamily="+url.QueryEscape(family),
+		nil,
+	)
 	response := executeRequest(req)
 	checkResponseCode(t, http.StatusOK, response.Code)
 
-	// Get the data
-	var data []apiary.CityMembership
-	err := json.Unmarshal(response.Body.Bytes(), &data)
-	if err != nil {
-		t.Error(err)
+	data := decodeResponse[[]apiary.CityMembership](t, response)
+	for index, row := range data {
+		if row.Year != 1926 || row.Group != family {
+			t.Errorf(
+				"row %d = year %d group %q, want 1926 and %q",
+				index,
+				row.Year,
+				row.Group,
+				family,
+			)
+		}
 	}
 }
 
@@ -89,11 +133,19 @@ func TestRelCensusCityAggregates(t *testing.T) {
 	response := executeRequest(req)
 	checkResponseCode(t, http.StatusOK, response.Code)
 
-	// Get the data
-	var data []apiary.CityMembership
-	err := json.Unmarshal(response.Body.Bytes(), &data)
-	if err != nil {
-		t.Error(err)
+	data := decodeResponse[[]apiary.CityMembership](t, response)
+	if len(data) == 0 {
+		t.Fatal("expected aggregated Religious Census city membership")
+	}
+	for index, row := range data {
+		if row.Year != 1926 || row.Group != "All denominations" {
+			t.Errorf(
+				"row %d = year %d group %q, want 1926 and All denominations",
+				index,
+				row.Year,
+				row.Group,
+			)
+		}
 	}
 }
 
@@ -102,10 +154,7 @@ func TestRelCensusLocations(t *testing.T) {
 	response := executeRequest(req)
 	checkResponseCode(t, http.StatusOK, response.Code)
 
-	var data []apiary.LocationInfo
-	if err := json.Unmarshal(response.Body.Bytes(), &data); err != nil {
-		t.Fatal(err)
-	}
+	data := decodeResponse[[]apiary.LocationInfo](t, response)
 	if len(data) == 0 {
 		t.Fatal("expected Religious Census locations")
 	}

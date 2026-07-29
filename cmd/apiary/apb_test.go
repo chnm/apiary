@@ -21,8 +21,8 @@ func TestAPBFeaturedVerses(t *testing.T) {
 		t.Error(err)
 	}
 
-	if len(data) < 4 {
-		t.Error("Not enough verses returned.")
+	if len(data) == 0 {
+		t.Error("No featured verses returned.")
 	}
 
 }
@@ -40,8 +40,8 @@ func TestAPBTopVerses(t *testing.T) {
 		t.Error(err)
 	}
 
-	if len(data) < 100 {
-		t.Error("Not enough verses returned.")
+	if len(data) == 0 {
+		t.Error("No top verses returned.")
 	}
 
 }
@@ -59,8 +59,8 @@ func TestAPBVersePeaks(t *testing.T) {
 		t.Error(err)
 	}
 
-	if len(data) < 100 {
-		t.Error("Not enough verses returned.")
+	if len(data) == 0 {
+		t.Error("No verse peaks returned.")
 	}
 
 }
@@ -169,8 +169,8 @@ func TestAPBVerseQuotations(t *testing.T) {
 		t.Error(err)
 	}
 
-	if len(data) < 100 {
-		t.Error("Not enough verses returned.")
+	if len(data) == 0 {
+		t.Error("No verse quotations returned.")
 	}
 
 }

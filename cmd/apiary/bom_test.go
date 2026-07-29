@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"net/http"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -22,25 +23,19 @@ func TestBomParishes(t *testing.T) {
 		t.Error(err)
 	}
 
-	// Check that the data has the right content
-	if len(data) < 2 {
-		t.Fatalf("expected at least two parishes, got %d", len(data))
+	if len(data) == 0 {
+		t.Fatal("expected BOM parishes")
 	}
-	expected := []struct {
-		id            int
-		name          string
-		canonicalName string
-	}{
-		{1, "Alhallows Barking", "All Hallows Barking"},
-		{2, "Alhallows Breadstreet", "All Hallows Bread Street"},
-	}
-	for i, want := range expected {
-		got := data[i]
-		if got.ParishID != want.id || got.Name != want.name || got.CanonicalName != want.canonicalName {
-			t.Errorf("parish %d = (%d, %q, %q), want (%d, %q, %q)",
-				i, got.ParishID, got.Name, got.CanonicalName,
-				want.id, want.name, want.canonicalName)
+
+	seenIDs := make(map[int]bool, len(data))
+	for index, parish := range data {
+		if parish.ParishID <= 0 || parish.Name == "" || parish.CanonicalName == "" {
+			t.Errorf("parish %d is missing identifying fields: %+v", index, parish)
 		}
+		if seenIDs[parish.ParishID] {
+			t.Errorf("parish ID %d appears more than once", parish.ParishID)
+		}
+		seenIDs[parish.ParishID] = true
 	}
 }
 
@@ -366,23 +361,44 @@ func TestIsValidCountType(t *testing.T) {
 
 func TestBomBillsInvalidParish(t *testing.T) {
 	// Unknown parish IDs return 400 naming the offending IDs.
-	req, _ := http.NewRequest("GET", "/bom/bills?start-year=1669&end-year=1754&parish=99999", nil)
+	req, _ := http.NewRequest(
+		"GET",
+		"/bom/bills?start-year=1669&end-year=1754&parish=2147483647",
+		nil,
+	)
 	response := executeRequest(req)
 	checkResponseCode(t, http.StatusBadRequest, response.Code)
-	if body := strings.TrimSpace(response.Body.String()); body != "invalid parish ID(s): 99999" {
+	if body := strings.TrimSpace(response.Body.String()); body != "invalid parish ID(s): 2147483647" {
 		t.Errorf("unexpected error body: %q", body)
 	}
 
 	// Multiple unknown IDs are all reported, comma-space separated, in request order.
-	req, _ = http.NewRequest("GET", "/bom/bills?start-year=1669&end-year=1754&parish=99998,99999", nil)
+	req, _ = http.NewRequest(
+		"GET",
+		"/bom/bills?start-year=1669&end-year=1754&parish=2147483646,2147483647",
+		nil,
+	)
 	response = executeRequest(req)
 	checkResponseCode(t, http.StatusBadRequest, response.Code)
-	if body := strings.TrimSpace(response.Body.String()); body != "invalid parish ID(s): 99998, 99999" {
+	if body := strings.TrimSpace(response.Body.String()); body != "invalid parish ID(s): 2147483646, 2147483647" {
 		t.Errorf("unexpected error body: %q", body)
 	}
 
-	// A valid parish ID still returns 200.
-	req, _ = http.NewRequest("GET", "/bom/bills?start-year=1669&end-year=1754&parish=1", nil)
+	// Select a valid parish ID from the database rather than assuming one.
+	parishRequest, _ := http.NewRequest(http.MethodGet, "/bom/parishes", nil)
+	parishResponse := executeRequest(parishRequest)
+	checkResponseCode(t, http.StatusOK, parishResponse.Code)
+	parishes := decodeResponse[[]apiary.Parish](t, parishResponse)
+	if len(parishes) == 0 {
+		t.Fatal("expected at least one parish")
+	}
+
+	req, _ = http.NewRequest(
+		"GET",
+		"/bom/bills?start-year=1669&end-year=1754&parish="+
+			strconv.Itoa(parishes[0].ParishID),
+		nil,
+	)
 	response = executeRequest(req)
 	checkResponseCode(t, http.StatusOK, response.Code)
 }
