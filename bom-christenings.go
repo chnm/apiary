@@ -222,7 +222,6 @@ func (s *Server) ListChristeningsHandler() http.HandlerFunc {
 		if billType != "" {
 			if !IsValidBillType(billType) {
 				http.Error(w, "Invalid bill type", http.StatusBadRequest)
-				log.Printf("Invalid bill type: %s", billType)
 				return
 			}
 		}

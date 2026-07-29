@@ -203,7 +203,9 @@ func (s *Server) BillsHandler() http.HandlerFunc {
 			log.Printf("Error marshaling JSON: %v", err)
 			return
 		}
-		w.Write(response)
+		if _, err := w.Write(response); err != nil {
+			log.Printf("Error writing bills response: %v", err)
+		}
 	}
 }
 
@@ -796,8 +798,8 @@ func (s *Server) StatisticsHandler() http.HandlerFunc {
 		case "parish-yearly":
 			qb, buildErr := buildParishYearlyStatsQuery(parishName)
 			if buildErr != nil {
-				http.Error(w, "Error building query", http.StatusInternalServerError)
 				log.Printf("Error building parish-yearly query: %v", buildErr)
+				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 				return
 			}
 			rows, err = s.DB.Query(r.Context(), qb.Query, qb.Params...)
@@ -807,10 +809,7 @@ func (s *Server) StatisticsHandler() http.HandlerFunc {
 		}
 		if err != nil {
 			log.Printf("Database error executing query: %v", err)
-			if statType == "parish-yearly" {
-				log.Printf("Parish name: %s", parishName)
-			}
-			http.Error(w, fmt.Sprintf("Database error: %v", err), http.StatusInternalServerError)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 			return
 		}
 		defer rows.Close()
@@ -823,7 +822,7 @@ func (s *Server) StatisticsHandler() http.HandlerFunc {
 				err := rows.Scan(&summary.Year, &summary.WeekNumber, &summary.RowsCount)
 				if err != nil {
 					log.Printf("Error scanning weekly summary: %v", err)
-					http.Error(w, fmt.Sprintf("Error processing results: %v", err), http.StatusInternalServerError)
+					http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 					return
 				}
 				stats = append(stats, summary)
@@ -832,7 +831,7 @@ func (s *Server) StatisticsHandler() http.HandlerFunc {
 			// Check for errors from iterating over rows
 			if err = rows.Err(); err != nil {
 				log.Printf("Error iterating over rows: %v", err)
-				http.Error(w, fmt.Sprintf("Error processing results: %v", err), http.StatusInternalServerError)
+				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 				return
 			}
 
@@ -849,7 +848,7 @@ func (s *Server) StatisticsHandler() http.HandlerFunc {
 					&summary.RowsCount, &summary.TotalCount)
 				if err != nil {
 					log.Printf("Error scanning yearly summary: %v", err)
-					http.Error(w, fmt.Sprintf("Error processing results: %v", err), http.StatusInternalServerError)
+					http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 					return
 				}
 				stats = append(stats, summary)
@@ -858,7 +857,7 @@ func (s *Server) StatisticsHandler() http.HandlerFunc {
 			// Check for errors from iterating over rows
 			if err = rows.Err(); err != nil {
 				log.Printf("Error iterating over rows: %v", err)
-				http.Error(w, fmt.Sprintf("Error processing results: %v", err), http.StatusInternalServerError)
+				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 				return
 			}
 
@@ -879,7 +878,7 @@ func (s *Server) StatisticsHandler() http.HandlerFunc {
 				)
 				if err != nil {
 					log.Printf("Error scanning parish-yearly summary: %v", err)
-					http.Error(w, fmt.Sprintf("Error processing results: %v", err), http.StatusInternalServerError)
+					http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 					return
 				}
 				stats = append(stats, summary)
@@ -888,7 +887,7 @@ func (s *Server) StatisticsHandler() http.HandlerFunc {
 			// Check for errors from iterating over rows
 			if err = rows.Err(); err != nil {
 				log.Printf("Error iterating over rows: %v", err)
-				http.Error(w, fmt.Sprintf("Error processing results: %v", err), http.StatusInternalServerError)
+				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 				return
 			}
 

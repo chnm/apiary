@@ -54,8 +54,7 @@ func (s *Server) APBVerseTrendHandler() http.HandlerFunc {
 		if len(queryRef) == 1 {
 			ref = queryRef[0]
 		} else {
-			w.WriteHeader(http.StatusBadRequest)
-			w.Write([]byte("400 Bad request. Please provide exactly one reference."))
+			http.Error(w, "400 Bad request. Please provide exactly one reference.", http.StatusBadRequest)
 			return
 		}
 
@@ -65,8 +64,7 @@ func (s *Server) APBVerseTrendHandler() http.HandlerFunc {
 		if len(corpusRef) > 0 {
 			corpus = corpusRef[0]
 			if !(corpus == "ncnp" || corpus == "chronam") {
-				w.WriteHeader(http.StatusBadRequest)
-				w.Write([]byte("400 Bad request. Corpus must be 'ncnp' or 'chronam'."))
+				http.Error(w, "400 Bad request. Corpus must be 'ncnp' or 'chronam'.", http.StatusBadRequest)
 				return
 			}
 		}

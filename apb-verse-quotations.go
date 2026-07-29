@@ -58,8 +58,8 @@ func (s *Server) APBVerseQuotationsHandler() http.HandlerFunc {
 		}
 
 		if len(results) == 0 {
-			w.WriteHeader(http.StatusNotFound)
-			w.Write([]byte("404 Not found."))
+			http.Error(w, "404 Not found.", http.StatusNotFound)
+			return
 		}
 
 		response, _ := json.Marshal(results)
