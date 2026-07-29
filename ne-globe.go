@@ -1,7 +1,6 @@
 package apiary
 
 import (
-	"context"
 	"fmt"
 	"log"
 	"net/http"
@@ -41,7 +40,7 @@ func (s *Server) NaturalEarthHandler() http.HandlerFunc {
 
 		// If no location is provided, return all countries.
 		if len(location) == 0 {
-			err := s.DB.QueryRow(context.Background(), query).Scan(&result)
+			err := s.DB.QueryRow(r.Context(), query).Scan(&result)
 			if err != nil {
 				log.Println(err)
 				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -73,7 +72,7 @@ func (s *Server) NaturalEarthHandler() http.HandlerFunc {
 			) AS countries;
 		`
 
-		err := s.DB.QueryRow(context.Background(), query, location).Scan(&result)
+		err := s.DB.QueryRow(r.Context(), query, location).Scan(&result)
 		if err != nil {
 			log.Println(err)
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)

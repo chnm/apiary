@@ -96,3 +96,17 @@ func TestRelCensusCityAggregates(t *testing.T) {
 		t.Error(err)
 	}
 }
+
+func TestRelCensusLocations(t *testing.T) {
+	req, _ := http.NewRequest("GET", "/relcensus/cities", nil)
+	response := executeRequest(req)
+	checkResponseCode(t, http.StatusOK, response.Code)
+
+	var data []apiary.LocationInfo
+	if err := json.Unmarshal(response.Body.Bytes(), &data); err != nil {
+		t.Fatal(err)
+	}
+	if len(data) == 0 {
+		t.Fatal("expected Religious Census locations")
+	}
+}

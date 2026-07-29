@@ -1,9 +1,7 @@
 package apiary
 
 import (
-	"context"
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
 )
@@ -31,29 +29,40 @@ func (s *Server) PresbyteriansHandler() http.HandlerFunc {
 
 	return func(w http.ResponseWriter, r *http.Request) {
 		results := make([]PresbyteriansByYear, 0)
-		var row PresbyteriansByYear
 
-		rows, err := s.DB.Query(context.TODO(), query)
+		rows, err := s.DB.Query(r.Context(), query)
 		if err != nil {
-			log.Println(err)
+			log.Printf("query Presbyterian statistics: %v", err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
 		}
 		defer rows.Close()
+
 		for rows.Next() {
-			err := rows.Scan(&row.Year, &row.Members, &row.Churches)
-			if err != nil {
-				log.Println(err)
+			var row PresbyteriansByYear
+			if err := rows.Scan(&row.Year, &row.Members, &row.Churches); err != nil {
+				log.Printf("scan Presbyterian statistics: %v", err)
+				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+				return
 			}
 			results = append(results, row)
-
 		}
-		err = rows.Err()
-		if err != nil {
-			log.Println(err)
+		if err := rows.Err(); err != nil {
+			log.Printf("iterate Presbyterian statistics: %v", err)
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
 		}
 
-		response, _ := json.Marshal(results)
+		response, err := json.Marshal(results)
+		if err != nil {
+			log.Printf("marshal Presbyterian statistics: %v", err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
+
 		w.Header().Set("Content-Type", "application/json")
-		fmt.Fprint(w, string(response))
+		if _, err := w.Write(response); err != nil {
+			log.Printf("write Presbyterian statistics response: %v", err)
+		}
 	}
 }

@@ -1,9 +1,8 @@
 package apiary
 
 import (
-	"context"
-	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -11,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/gorilla/mux"
+	"github.com/jackc/pgx/v5"
 )
 
 // This file creates a series of endpoints to return all possible names for
@@ -56,30 +56,41 @@ func (s *Server) CountiesInState() http.HandlerFunc {
 		state = strings.ToUpper(state)
 
 		results := make([]PlaceCounty, 0)
-		var row PlaceCounty
 
-		rows, err := s.DB.Query(context.TODO(), query, state)
+		rows, err := s.DB.Query(r.Context(), query, state)
 		if err != nil {
-			log.Println(err)
+			log.Printf("query populated-place counties: %v", err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
 		}
 		defer rows.Close()
+
 		for rows.Next() {
-			err := rows.Scan(&row.CountyAHCB, &row.County)
-			if err != nil {
-				log.Println(err)
+			var row PlaceCounty
+			if err := rows.Scan(&row.CountyAHCB, &row.County); err != nil {
+				log.Printf("scan populated-place county: %v", err)
+				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+				return
 			}
 			results = append(results, row)
 		}
-		err = rows.Err()
-		if err != nil {
-			log.Println(err)
+		if err := rows.Err(); err != nil {
+			log.Printf("iterate populated-place counties: %v", err)
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
 		}
 
-		response, _ := json.Marshal(results)
-		w.Header().Set("Content-Type", "application/json")
-		fmt.Fprint(w, string(response))
+		response, err := json.Marshal(results)
+		if err != nil {
+			log.Printf("marshal populated-place counties: %v", err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
 
+		w.Header().Set("Content-Type", "application/json")
+		if _, err := w.Write(response); err != nil {
+			log.Printf("write populated-place counties response: %v", err)
+		}
 	}
 }
 
@@ -99,30 +110,41 @@ func (s *Server) PlacesInCounty() http.HandlerFunc {
 		county = strings.ToLower(county)
 
 		results := make([]Place, 0)
-		var row Place
 
-		rows, err := s.DB.Query(context.TODO(), query, county)
+		rows, err := s.DB.Query(r.Context(), query, county)
 		if err != nil {
-			log.Println(err)
+			log.Printf("query populated places: %v", err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
 		}
 		defer rows.Close()
+
 		for rows.Next() {
-			err := rows.Scan(&row.PlaceID, &row.Place, &row.MapName)
-			if err != nil {
-				log.Println(err)
+			var row Place
+			if err := rows.Scan(&row.PlaceID, &row.Place, &row.MapName); err != nil {
+				log.Printf("scan populated place: %v", err)
+				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+				return
 			}
 			results = append(results, row)
 		}
-		err = rows.Err()
-		if err != nil {
-			log.Println(err)
+		if err := rows.Err(); err != nil {
+			log.Printf("iterate populated places: %v", err)
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
 		}
 
-		response, _ := json.Marshal(results)
-		w.Header().Set("Content-Type", "application/json")
-		fmt.Fprint(w, string(response))
+		response, err := json.Marshal(results)
+		if err != nil {
+			log.Printf("marshal populated places: %v", err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
 
+		w.Header().Set("Content-Type", "application/json")
+		if _, err := w.Write(response); err != nil {
+			log.Printf("write populated places response: %v", err)
+		}
 	}
 }
 
@@ -145,20 +167,28 @@ func (s *Server) Place() http.HandlerFunc {
 
 		var result PlaceDetails
 
-		err = s.DB.QueryRow(context.TODO(), query, placeID).Scan(&result.PlaceID, &result.Place,
+		err = s.DB.QueryRow(r.Context(), query, placeID).Scan(&result.PlaceID, &result.Place,
 			&result.MapName, &result.County, &result.CountyAHCB, &result.State)
 		if err != nil {
-			if err == sql.ErrNoRows {
+			if errors.Is(err, pgx.ErrNoRows) {
 				http.Error(w, fmt.Sprintf("Not found: No place with id %v.", placeID), http.StatusNotFound)
 				return
 			}
-			log.Println(err)
+			log.Printf("query populated-place details: %v", err)
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
 		}
 
-		response, _ := json.Marshal(result)
-		w.Header().Set("Content-Type", "application/json")
-		fmt.Fprint(w, string(response))
+		response, err := json.Marshal(result)
+		if err != nil {
+			log.Printf("marshal populated-place details: %v", err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
 
+		w.Header().Set("Content-Type", "application/json")
+		if _, err := w.Write(response); err != nil {
+			log.Printf("write populated-place details response: %v", err)
+		}
 	}
 }

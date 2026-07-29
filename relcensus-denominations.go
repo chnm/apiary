@@ -1,9 +1,7 @@
 package apiary
 
 import (
-	"context"
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
 )
@@ -35,24 +33,28 @@ func (s *Server) RelCensusDenominationFamiliesHandler() http.HandlerFunc {
 
 	return func(w http.ResponseWriter, r *http.Request) {
 		results := make([]DenominationFamily, 0)
-		var row DenominationFamily
 
-		rows, err := s.DB.Query(context.TODO(), query)
+		rows, err := s.DB.Query(r.Context(), query)
 		if err != nil {
-			log.Println(err)
+			log.Printf("query Religious Census denomination families: %v", err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
 		}
 		defer rows.Close()
+
 		for rows.Next() {
-			err := rows.Scan(&row.Name)
-			if err != nil {
-				log.Println(err)
+			var row DenominationFamily
+			if err := rows.Scan(&row.Name); err != nil {
+				log.Printf("scan Religious Census denomination family: %v", err)
+				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+				return
 			}
 			results = append(results, row)
 		}
-		err = rows.Err()
-		if err != nil {
-			log.Println(err)
+		if err := rows.Err(); err != nil {
+			log.Printf("iterate Religious Census denomination families: %v", err)
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
 		}
 
 		container := struct {
@@ -61,9 +63,17 @@ func (s *Server) RelCensusDenominationFamiliesHandler() http.HandlerFunc {
 			FamilyRelec: results,
 		}
 
-		response, _ := json.Marshal(container)
+		response, err := json.Marshal(container)
+		if err != nil {
+			log.Printf("marshal Religious Census denomination families: %v", err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
+
 		w.Header().Set("Content-Type", "application/json")
-		fmt.Fprint(w, string(response))
+		if _, err := w.Write(response); err != nil {
+			log.Printf("write Religious Census denomination families response: %v", err)
+		}
 	}
 }
 
@@ -79,30 +89,47 @@ func (s *Server) RelCensusDenominationsHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		familyRelec := r.URL.Query().Get("family_relec")
 		results := make([]Denomination, 0)
-		var row Denomination
 
-		rows, err := s.DB.Query(context.TODO(), query, familyRelec)
+		rows, err := s.DB.Query(r.Context(), query, familyRelec)
 		if err != nil {
-			log.Println(err)
+			log.Printf("query Religious Census denominations: %v", err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
 		}
 		defer rows.Close()
+
 		for rows.Next() {
-			err := rows.Scan(&row.DenominationID, &row.Name, &row.ShortName, &row.FamilyCensus, &row.FamilyRelec)
-			if err != nil {
-				log.Println(err)
+			var row Denomination
+			if err := rows.Scan(
+				&row.DenominationID,
+				&row.Name,
+				&row.ShortName,
+				&row.FamilyCensus,
+				&row.FamilyRelec,
+			); err != nil {
+				log.Printf("scan Religious Census denomination: %v", err)
+				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+				return
 			}
 			results = append(results, row)
-
 		}
-		err = rows.Err()
-		if err != nil {
-			log.Println(err)
+		if err := rows.Err(); err != nil {
+			log.Printf("iterate Religious Census denominations: %v", err)
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
 		}
 
-		response, _ := json.Marshal(results)
+		response, err := json.Marshal(results)
+		if err != nil {
+			log.Printf("marshal Religious Census denominations: %v", err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
+
 		w.Header().Set("Content-Type", "application/json")
-		fmt.Fprint(w, string(response))
+		if _, err := w.Write(response); err != nil {
+			log.Printf("write Religious Census denominations response: %v", err)
+		}
 	}
 
 }

@@ -70,3 +70,9 @@ func TestPlace(t *testing.T) {
 	}
 
 }
+
+func TestPlaceNotFound(t *testing.T) {
+	req, _ := http.NewRequest("GET", "/pop-places/place/2147483647/", nil)
+	response := executeRequest(req)
+	checkResponseCode(t, http.StatusNotFound, response.Code)
+}
