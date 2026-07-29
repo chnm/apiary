@@ -3,11 +3,36 @@ package apiary
 import (
 	"database/sql"
 	"encoding/json"
+	"log"
+	"net/http"
 	"os"
 	"strconv"
 	"strings"
 	"time"
 )
+
+// internalServerError logs an internal error and returns a generic response to
+// the client so database and encoding details are never exposed.
+func internalServerError(w http.ResponseWriter, operation string, err error) {
+	log.Printf("%s: %v", operation, err)
+	http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+}
+
+// writeJSONResponse marshals a response before writing headers, allowing
+// encoding failures to return a generic 500 response. Write failures can only
+// be logged because the response may already be partially sent.
+func writeJSONResponse(w http.ResponseWriter, value any) {
+	response, err := json.Marshal(value)
+	if err != nil {
+		internalServerError(w, "error marshaling JSON response", err)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	if _, err := w.Write(response); err != nil {
+		log.Printf("error writing JSON response: %v", err)
+	}
+}
 
 // getEnv either returns the value of an environment variable or, if that
 // environment variables does not exist, returns the fallback value provided.

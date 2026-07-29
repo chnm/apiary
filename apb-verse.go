@@ -1,10 +1,7 @@
 package apiary
 
 import (
-	"encoding/json"
 	"errors"
-	"fmt"
-	"log"
 	"net/http"
 
 	"github.com/jackc/pgx/v5"
@@ -51,38 +48,32 @@ func (s *Server) APBVerseHandler() http.HandlerFunc {
 			http.Error(w, "404 Not found.", http.StatusNotFound)
 			return
 		} else if err != nil {
-			log.Println(err)
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			internalServerError(w, "error querying verse", err)
 			return
 		}
 
 		related := make([]string, 0)
 		rows, err := s.DB.Query(r.Context(), relatedVerseQuery, refs[0])
 		if err != nil {
-			log.Println(err)
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			internalServerError(w, "error querying related verses", err)
 			return
 		}
 		defer rows.Close()
 		var rel string
 		for rows.Next() {
-			err := rows.Scan(&rel)
-			if err != nil {
-				log.Println(err)
+			if err := rows.Scan(&rel); err != nil {
+				internalServerError(w, "error scanning related verse", err)
+				return
 			}
 			related = append(related, rel)
 		}
-		err = rows.Err()
-		if err != nil {
-			log.Println(err)
+		if err := rows.Err(); err != nil {
+			internalServerError(w, "error iterating related verses", err)
+			return
 		}
 
 		result.Related = related
-
-		response, _ := json.Marshal(result)
-
-		w.Header().Set("Content-Type", "application/json")
-		fmt.Fprint(w, string(response))
+		writeJSONResponse(w, result)
 	}
 
 }

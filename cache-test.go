@@ -1,8 +1,6 @@
 package apiary
 
 import (
-	"encoding/json"
-	"fmt"
 	"net/http"
 	"time"
 )
@@ -20,8 +18,6 @@ func (s *Server) CacheTest() http.HandlerFunc {
 			Startup: startup,
 			Handler: time.Now(), // This will be the time the handler was run
 		}
-		response, _ := json.Marshal(out)
-		w.Header().Set("Content-Type", "application/json")
-		fmt.Fprint(w, string(response))
+		writeJSONResponse(w, out)
 	}
 }

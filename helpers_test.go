@@ -3,10 +3,57 @@ package apiary
 import (
 	"database/sql"
 	"encoding/json"
+	"errors"
+	"net/http"
+	"net/http/httptest"
 	"reflect"
+	"strings"
 	"testing"
 	"time"
 )
+
+type failingJSONMarshaler struct{}
+
+func (failingJSONMarshaler) MarshalJSON() ([]byte, error) {
+	return nil, errors.New("test encoding failure")
+}
+
+func TestWriteJSONResponse(t *testing.T) {
+	t.Run("success", func(t *testing.T) {
+		response := httptest.NewRecorder()
+
+		writeJSONResponse(response, struct {
+			Status string `json:"status"`
+		}{Status: "ok"})
+
+		if response.Code != http.StatusOK {
+			t.Fatalf("status = %d, want %d", response.Code, http.StatusOK)
+		}
+		if contentType := response.Header().Get("Content-Type"); contentType != "application/json" {
+			t.Fatalf("Content-Type = %q, want application/json", contentType)
+		}
+		if body := response.Body.String(); body != `{"status":"ok"}` {
+			t.Fatalf(`body = %q, want {"status":"ok"}`, body)
+		}
+	})
+
+	t.Run("encoding failure", func(t *testing.T) {
+		response := httptest.NewRecorder()
+
+		writeJSONResponse(response, failingJSONMarshaler{})
+
+		if response.Code != http.StatusInternalServerError {
+			t.Fatalf("status = %d, want %d", response.Code, http.StatusInternalServerError)
+		}
+		if body := strings.TrimSpace(response.Body.String()); body != http.StatusText(http.StatusInternalServerError) {
+			t.Fatalf(
+				"body = %q, want %q",
+				body,
+				http.StatusText(http.StatusInternalServerError),
+			)
+		}
+	})
+}
 
 func Test_dateInRange(t *testing.T) {
 	minDate, _ := time.Parse("2006-01-02", "1783-09-03")

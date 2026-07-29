@@ -1,7 +1,6 @@
 package apiary
 
 import (
-	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -204,8 +203,7 @@ func (s *Server) DeathCausesHandler() http.HandlerFunc {
 
 		rows, err = s.DB.Query(r.Context(), query, params...)
 		if err != nil {
-			log.Printf("error querying death causes: %v", err)
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			internalServerError(w, "error querying death causes", err)
 			return
 		}
 
@@ -229,23 +227,17 @@ func (s *Server) DeathCausesHandler() http.HandlerFunc {
 				&row.TotalRecords,
 			)
 			if err != nil {
-				log.Printf("Error scanning row: %v", err)
-				log.Printf("Types: death=%T, name=%T, billType=%T, count=%T, definition=%T, definitionSource=%T, weekID=%T, weekNumber=%T, startDay=%T, startMonth=%T, endDay=%T, endMonth=%T, year=%T, splitYear=%T, totalRecords=%T",
-					row.Death, row.Name, row.BillType, row.Count, row.Definition, row.DefinitionSource, row.WeekID, row.WeekNumber, row.StartDay, row.StartMonth, row.EndDay, row.EndMonth, row.Year, row.SplitYear, row.TotalRecords)
-				continue
+				internalServerError(w, "error scanning death cause", err)
+				return
 			}
 			results = append(results, row)
 		}
-		err = rows.Err()
-		if err != nil {
-			log.Println(err)
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		if err := rows.Err(); err != nil {
+			internalServerError(w, "error iterating death causes", err)
 			return
 		}
 
-		response, _ := json.Marshal(results)
-		w.Header().Set("Content-Type", "application/json")
-		fmt.Fprint(w, string(response))
+		writeJSONResponse(w, results)
 	}
 }
 
@@ -293,27 +285,22 @@ func (s *Server) ListCausesHandler() http.HandlerFunc {
 		}
 
 		if err != nil {
-			log.Println(err)
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			internalServerError(w, "error querying cause list", err)
 			return
 		}
 		defer rows.Close()
 		for rows.Next() {
-			err := rows.Scan(&row.Name, &row.BillType)
-			if err != nil {
-				log.Println(err)
+			if err := rows.Scan(&row.Name, &row.BillType); err != nil {
+				internalServerError(w, "error scanning cause list", err)
+				return
 			}
 			results = append(results, row)
 		}
-		err = rows.Err()
-		if err != nil {
-			log.Println(err)
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		if err := rows.Err(); err != nil {
+			internalServerError(w, "error iterating cause list", err)
 			return
 		}
 
-		response, _ := json.Marshal(results)
-		w.Header().Set("Content-Type", "application/json")
-		fmt.Fprint(w, string(response))
+		writeJSONResponse(w, results)
 	}
 }

@@ -2,9 +2,6 @@ package apiary
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
-	"log"
 	"net/http"
 )
 
@@ -76,27 +73,29 @@ func (s *Server) ParishesHandler() http.HandlerFunc {
 
 		rows, err := s.DB.Query(r.Context(), query)
 		if err != nil {
-			log.Println(err)
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			internalServerError(w, "error querying parishes", err)
 			return
 		}
 		defer rows.Close()
 		for rows.Next() {
-			err := rows.Scan(&row.ParishID, &row.Name, &row.CanonicalName, &row.BillSubunit, &row.FoundationYear, &row.Notes)
-			if err != nil {
-				log.Println(err)
+			if err := rows.Scan(
+				&row.ParishID,
+				&row.Name,
+				&row.CanonicalName,
+				&row.BillSubunit,
+				&row.FoundationYear,
+				&row.Notes,
+			); err != nil {
+				internalServerError(w, "error scanning parish", err)
+				return
 			}
 			results = append(results, row)
 		}
-		err = rows.Err()
-		if err != nil {
-			log.Println(err)
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		if err := rows.Err(); err != nil {
+			internalServerError(w, "error iterating parishes", err)
 			return
 		}
 
-		response, _ := json.Marshal(results)
-		w.Header().Set("Content-Type", "application/json")
-		fmt.Fprint(w, string(response))
+		writeJSONResponse(w, results)
 	}
 }

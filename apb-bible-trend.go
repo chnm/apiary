@@ -1,9 +1,6 @@
 package apiary
 
 import (
-	"encoding/json"
-	"fmt"
-	"log"
 	"net/http"
 )
 
@@ -42,29 +39,24 @@ func (s *Server) APBBibleTrendHandler() http.HandlerFunc {
 
 		rows, err := s.DB.Query(r.Context(), query, corpus, minYear, maxYear)
 		if err != nil {
-			log.Println(err)
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			internalServerError(w, "error querying Bible trend", err)
 			return
 		}
 		defer rows.Close()
 		for rows.Next() {
-			err := rows.Scan(&row.Year, &row.N, &row.QuotationRateSmooth)
-			if err != nil {
-				log.Println(err)
+			if err := rows.Scan(&row.Year, &row.N, &row.QuotationRateSmooth); err != nil {
+				internalServerError(w, "error scanning Bible trend", err)
+				return
 			}
 			results = append(results, row)
 		}
-		err = rows.Err()
-		if err != nil {
-			log.Println(err)
+		if err := rows.Err(); err != nil {
+			internalServerError(w, "error iterating Bible trend", err)
+			return
 		}
 
 		wrapper := VerseTrendResponse{Reference: "bible", Corpus: corpus, Trend: results}
-
-		response, _ := json.Marshal(wrapper)
-
-		w.Header().Set("Content-Type", "application/json")
-		fmt.Fprint(w, string(response))
+		writeJSONResponse(w, wrapper)
 	}
 
 }

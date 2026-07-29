@@ -1,9 +1,6 @@
 package apiary
 
 import (
-	"encoding/json"
-	"fmt"
-	"log"
 	"net/http"
 )
 
@@ -40,21 +37,20 @@ func (s *Server) APBVerseQuotationsHandler() http.HandlerFunc {
 
 		rows, err := s.DB.Query(r.Context(), query, refs[0])
 		if err != nil {
-			log.Println(err)
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			internalServerError(w, "error querying verse quotations", err)
 			return
 		}
 		defer rows.Close()
 		for rows.Next() {
-			err := rows.Scan(&row.Reference, &row.DocID, &row.Date, &row.Probability, &row.Title, &row.State)
-			if err != nil {
-				log.Println(err)
+			if err := rows.Scan(&row.Reference, &row.DocID, &row.Date, &row.Probability, &row.Title, &row.State); err != nil {
+				internalServerError(w, "error scanning verse quotation", err)
+				return
 			}
 			results = append(results, row)
 		}
-		err = rows.Err()
-		if err != nil {
-			log.Println(err)
+		if err := rows.Err(); err != nil {
+			internalServerError(w, "error iterating verse quotations", err)
+			return
 		}
 
 		if len(results) == 0 {
@@ -62,10 +58,7 @@ func (s *Server) APBVerseQuotationsHandler() http.HandlerFunc {
 			return
 		}
 
-		response, _ := json.Marshal(results)
-
-		w.Header().Set("Content-Type", "application/json")
-		fmt.Fprint(w, string(response))
+		writeJSONResponse(w, results)
 	}
 
 }
