@@ -1,9 +1,7 @@
 package apiary
 
 import (
-	"context"
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
 )
@@ -46,31 +44,43 @@ func (s *Server) CatholicDiocesesHandler() http.HandlerFunc {
 
 	return func(w http.ResponseWriter, r *http.Request) {
 		results := make([]CatholicDiocese, 0)
-		var row CatholicDiocese
 
-		rows, err := s.DB.Query(context.TODO(), query)
+		rows, err := s.DB.Query(r.Context(), query)
 		if err != nil {
-			log.Println(err)
+			log.Printf("query Catholic dioceses: %v", err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
 		}
 		defer rows.Close()
+
 		for rows.Next() {
-			err := rows.Scan(&row.City, &row.State, &row.Country, &row.Rite,
+			var row CatholicDiocese
+			if err := rows.Scan(&row.City, &row.State, &row.Country, &row.Rite,
 				&row.YearErected, &row.YearMetropolitan, &row.YearDestroyed,
-				&row.Lon, &row.Lat)
-			if err != nil {
-				log.Println(err)
+				&row.Lon, &row.Lat); err != nil {
+				log.Printf("scan Catholic diocese: %v", err)
+				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+				return
 			}
 			results = append(results, row)
 		}
-		err = rows.Err()
-		if err != nil {
-			log.Println(err)
+		if err := rows.Err(); err != nil {
+			log.Printf("iterate Catholic dioceses: %v", err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
 		}
 
-		response, _ := json.Marshal(results)
+		response, err := json.Marshal(results)
+		if err != nil {
+			log.Printf("marshal Catholic dioceses: %v", err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
 
 		w.Header().Set("Content-Type", "application/json")
-		fmt.Fprint(w, string(response))
+		if _, err := w.Write(response); err != nil {
+			log.Printf("write Catholic dioceses response: %v", err)
+		}
 	}
 
 }
@@ -100,29 +110,41 @@ func (s *Server) CatholicDiocesesPerDecadeHandler() http.HandlerFunc {
 
 	return func(w http.ResponseWriter, r *http.Request) {
 		results := make([]CatholicDiocesesPerDecade, 0, 52) // Preallocate slice capacity
-		var row CatholicDiocesesPerDecade
 
-		rows, err := s.DB.Query(context.TODO(), query)
+		rows, err := s.DB.Query(r.Context(), query)
 		if err != nil {
-			log.Println(err)
+			log.Printf("query Catholic dioceses per decade: %v", err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
 		}
 		defer rows.Close()
+
 		for rows.Next() {
-			err := rows.Scan(&row.Decade, &row.Count)
-			if err != nil {
-				log.Println(err)
+			var row CatholicDiocesesPerDecade
+			if err := rows.Scan(&row.Decade, &row.Count); err != nil {
+				log.Printf("scan Catholic dioceses per decade: %v", err)
+				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+				return
 			}
 			results = append(results, row)
 		}
-		err = rows.Err()
-		if err != nil {
-			log.Println(err)
+		if err := rows.Err(); err != nil {
+			log.Printf("iterate Catholic dioceses per decade: %v", err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
 		}
 
-		response, _ := json.Marshal(results)
+		response, err := json.Marshal(results)
+		if err != nil {
+			log.Printf("marshal Catholic dioceses per decade: %v", err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
 
 		w.Header().Set("Content-Type", "application/json")
-		fmt.Fprint(w, string(response))
+		if _, err := w.Write(response); err != nil {
+			log.Printf("write Catholic dioceses per decade response: %v", err)
+		}
 	}
 
 }
