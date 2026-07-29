@@ -1,8 +1,13 @@
-cmd/apiary/apiary
 .env
-cmd/apiary/.env
-cmd/apiary/__debug_bin
-
 .env.fish
-.claude/
+cmd/apiary/.env
 
+# Go build and test outputs
+/apiary
+/cmd/apiary/apiary
+/cmd/apiary/__debug_bin
+/cmd/dataapi/dataapi
+*.test
+coverage.out
+
+.claude/

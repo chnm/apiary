@@ -23,8 +23,9 @@ Building from source requires Go 1.25 or newer. The module selects Go 1.26.5
 as its preferred toolchain. There is a `Makefile` in the root of the repository
 that can be used for compiling and for running the service locally.
 
-- `make build` will build the binary.
-- `make install` will build the binary and install it under the name `apiary` to your `$GOPATH`.
+- `make build` will build the local binary at `cmd/apiary/apiary`.
+- `make install` will install the `apiary` binary to `$GOBIN`, or to
+  `$GOPATH/bin` when `$GOBIN` is not set.
 - `make serve` will serve the API locally.
 - `make docker-build` will create a Docker container for the API.
 - `make docker-serve` will create the container and run it locally via Docker.
