@@ -1,9 +1,7 @@
 package apiary
 
 import (
-	"context"
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
 	"strconv"
@@ -148,49 +146,58 @@ func (s *Server) RelCensusCityMembershipHandler() http.HandlerFunc {
 		}
 
 		results := make([]CityMembership, 0)
-		var row CityMembership
 		var rows pgx.Rows
 
 		// We've already done the error checking for the call to the API, so we can
 		// just use the right query as necessary.
 		switch {
 		case denomination != "":
-			rows, err = s.DB.Query(context.TODO(), queryDenomination, yearInt, denomination)
+			rows, err = s.DB.Query(r.Context(), queryDenomination, yearInt, denomination)
 		case denominationFamily != "":
-			rows, err = s.DB.Query(context.TODO(), queryFamily, yearInt, denominationFamily)
+			rows, err = s.DB.Query(r.Context(), queryFamily, yearInt, denominationFamily)
 		case denomination == "" && denominationFamily == "":
-			rows, err = s.DB.Query(context.TODO(), queryAll, yearInt)
+			rows, err = s.DB.Query(r.Context(), queryAll, yearInt)
 		}
 		if err != nil {
-			log.Println(err)
+			log.Printf("query Religious Census city membership: %v", err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
 		}
 		defer rows.Close()
 
 		for rows.Next() {
-			err := rows.Scan(
+			var row CityMembership
+			if err := rows.Scan(
 				&row.Year,
 				&row.Group,
 				&row.City, &row.State,
 				&row.Denominations, &row.Churches, &row.Members,
 				&row.Population1926,
-				&row.Lon, &row.Lat)
-			if err != nil {
-				log.Println(err)
-				log.Println(row)
+				&row.Lon, &row.Lat,
+			); err != nil {
+				log.Printf("scan Religious Census city membership: %v", err)
+				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+				return
 			}
 			results = append(results, row)
-
 		}
-		err = rows.Err()
-		if err != nil {
-			log.Println(err)
+		if err := rows.Err(); err != nil {
+			log.Printf("iterate Religious Census city membership: %v", err)
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 			return
 		}
 
-		response, _ := json.Marshal(results)
+		response, err := json.Marshal(results)
+		if err != nil {
+			log.Printf("marshal Religious Census city membership: %v", err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
+
 		w.Header().Set("Content-Type", "application/json")
-		fmt.Fprint(w, string(response))
+		if _, err := w.Write(response); err != nil {
+			log.Printf("write Religious Census city membership response: %v", err)
+		}
 	}
 }
 
@@ -204,33 +211,50 @@ func (s *Server) RelCensusLocationsHandler() http.HandlerFunc {
 
 	return func(w http.ResponseWriter, r *http.Request) {
 		results := make([]LocationInfo, 0)
-		var row LocationInfo
 
-		rows, err := s.DB.Query(context.TODO(), query)
+		rows, err := s.DB.Query(r.Context(), query)
 		if err != nil {
-			log.Println(err)
+			log.Printf("query Religious Census locations: %v", err)
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 			return
 		}
 		defer rows.Close()
 
 		for rows.Next() {
-			err := rows.Scan(&row.PlaceID, &row.City, &row.County, &row.State, &row.CountyAHCB, &row.MapName, &row.Lat, &row.Lon)
-			if err != nil {
-				log.Println(err)
+			var row LocationInfo
+			if err := rows.Scan(
+				&row.PlaceID,
+				&row.City,
+				&row.County,
+				&row.State,
+				&row.CountyAHCB,
+				&row.MapName,
+				&row.Lat,
+				&row.Lon,
+			); err != nil {
+				log.Printf("scan Religious Census location: %v", err)
+				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+				return
 			}
 			results = append(results, row)
 		}
 
-		err = rows.Err()
-		if err != nil {
-			log.Println(err)
+		if err := rows.Err(); err != nil {
+			log.Printf("iterate Religious Census locations: %v", err)
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 			return
 		}
 
-		response, _ := json.Marshal(results)
+		response, err := json.Marshal(results)
+		if err != nil {
+			log.Printf("marshal Religious Census locations: %v", err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
+
 		w.Header().Set("Content-Type", "application/json")
-		fmt.Fprint(w, string(response))
+		if _, err := w.Write(response); err != nil {
+			log.Printf("write Religious Census locations response: %v", err)
+		}
 	}
 }
