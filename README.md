@@ -1,37 +1,121 @@
-# Apiary: The RRCHNM Data API
+# Apiary: the RRCHNM Data API
 
-This repository provides an API to access data stored in a PostgreSQL database. It is a component of [American Religious Ecologies](http://religiousecologies.org), [America's Public Bible](https://americaspublicbible.org), [Death by Numbers](https://deathbynumbers.org) and other projects at the [Roy Rosenzweig Center for History and New Media](https://rrchnm.org). The API is intended for use by RRCHNM projects and is not general purpose, but we provide the source code in case it is useful. You can read more about the rationale for this piece of RRCHNM's infrastructure [on our website](https://rrchnm.org/uncategorized/rrchnms-custom-api-for-data-driven-projects/).
+Apiary is the shared PostgreSQL-backed data API for projects at the
+[Roy Rosenzweig Center for History and New Media](https://rrchnm.org),
+including:
 
-## Documentation 
+- [American Religious Ecologies](https://religiousecologies.org)
+- [America's Public Bible](https://americaspublicbible.org)
+- [Death by Numbers](https://deathbynumbers.org)
 
-Documentation for the various endpoints and parameters to them can be found on the [Go package website](https://pkg.go.dev/github.com/chnm/apiary). Handlers are all methods on the main server type, so you can find [any endpoint specific documentation](https://pkg.go.dev/github.com/chnm/apiary#Server) on that type.
+The service is intended primarily for RRCHNM projects rather than as a
+general-purpose public API. Its source is available as a reference and for
+reuse. For background on why RRCHNM maintains a shared API, see
+[RRCHNM's custom API for data-driven projects](https://rrchnm.org/uncategorized/rrchnms-custom-api-for-data-driven-projects/).
 
-Note that the root of the API lists out all the endpoints and sample URLs, and may be more useful than the documentation for understanding how to use the API.
+## Using the API
+
+The root URL returns a JSON catalog of every registered endpoint together with
+sample requests. It is the best starting point for exploring a running
+instance:
+
+```console
+curl https://data.chnm.org/
+```
+
+Handlers are methods on [`Server`](https://pkg.go.dev/github.com/chnm/apiary#Server).
+The [Go package documentation](https://pkg.go.dev/github.com/chnm/apiary)
+provides additional endpoint and type documentation.
+
+All routes accept `GET` and `HEAD`. Responses are CORS-enabled and compressed
+when the client supports it. Successful responses may be cached; append the
+`nocache` query parameter when you need the server to refresh a cached result:
+
+```console
+curl "http://localhost:8090/bom/parishes?nocache"
+```
+
+## Requirements
+
+- Go 1.25 or newer; `go.mod` selects Go 1.26.5 as the preferred toolchain
+- PostgreSQL and a connection string for running the service
+- Docker for container builds and the database integration test in `db/`
 
 ## Configuration
 
-Set the following environment variables to configure the server:
+Apiary reads configuration from environment variables:
 
-- `APIARY_DB` (default: none). A connection string to the database. An example connection string looks like this: `postgres://username:password@host:portnum/databasename`.
-- `APIARY_INTERFACE` (default: `0.0.0.0`). The interface to serve the API on.
-- `APIARY_PORT` (default: `8090`). The port to serve the API on.
-- `APIARY_LOGGING` (default: `on`). If logging is on, then access logs will be written to stdout in the Apache Common Log format. Errors and status messages will always be written to stderr.
+| Variable | Default | Description |
+| --- | --- | --- |
+| `APIARY_DB` | none | PostgreSQL connection string, such as `postgres://user:password@host:5432/database` |
+| `APIARY_INTERFACE` | `0.0.0.0` | Interface on which the HTTP server listens |
+| `APIARY_PORT` | `8090` | HTTP port |
+| `APIARY_LOGGING` | `on` | Set to `off` to disable access logs; errors and status messages still go to stderr |
 
-## Compiling or running a container
+Keep local credentials in an ignored `.env` file or your shell environment.
+The application does not load `.env` files by itself.
 
-Building from source requires Go 1.25 or newer. The module selects Go 1.26.5
-as its preferred toolchain. There is a `Makefile` in the root of the repository
-that can be used for compiling and for running the service locally.
+## Run locally
 
-- `make build` will build the local binary at `cmd/apiary/apiary`.
-- `make install` will install the `apiary` binary to `$GOBIN`, or to
-  `$GOPATH/bin` when `$GOBIN` is not set.
-- `make serve` will serve the API locally.
-- `make docker-build` will create a Docker container for the API.
-- `make docker-serve` will create the container and run it locally via Docker.
-- `make serve-ghcr`.  If you just need to run the Data API locally, it may be most convenient to just run a [Docker container](https://github.com/chnm/dataapi/pkgs/container/apiary) served from the GitHub Container Registry. There are versions that are tagged with each of the GitHub branches that have been pushed, so that you can try the development version from your current branch. You still need to set the environment variables.
+Export a database connection and start the server:
 
-## Testing
+```console
+export APIARY_DB="postgres://user:password@localhost:5432/apiary"
+make serve
+```
+
+Then inspect the endpoint catalog:
+
+```console
+curl http://localhost:8090/
+```
+
+Useful Make targets include:
+
+| Command | Purpose |
+| --- | --- |
+| `make build` | Build the local binary at `cmd/apiary/apiary` |
+| `make serve` | Build and serve on `localhost` |
+| `make install` | Install `apiary` into `$GOBIN`, or `$GOPATH/bin` when `$GOBIN` is unset |
+| `make test` | Run all Go tests; some require database or Docker access |
+| `make bench` | Run benchmarks with access logging disabled |
+| `make vuln` | Run `govulncheck` |
+| `make docker-build` | Build a local `apiary:test` image |
+| `make docker-serve` | Build and run that image with local environment variables |
+| `make serve-ghcr` | Run the GHCR image tagged for the current Git branch; the branch name must be a valid container tag |
+
+To use Docker directly:
+
+```console
+docker build --tag apiary:test .
+docker run --rm --publish 8090:8090 \
+  --env APIARY_DB \
+  --name apiary-test \
+  apiary:test
+```
+
+## Test and validate
+
+The root package tests are hermetic and form the fast local feedback loop:
+
+```console
+go test .
+go vet ./...
+go build ./...
+```
+
+The CI check additionally verifies module files, runs the root tests with the
+race detector, compiles the database tests without starting Docker, and runs
+security and workflow linters:
+
+```console
+go mod verify
+go mod tidy -diff
+go test -race .
+go test -run '^$' ./db
+gosec -exclude-dir=.claude ./...
+actionlint -color
+```
 
 The test suites have different runtime requirements:
 
@@ -42,3 +126,10 @@ The test suites have different runtime requirements:
 - `go test ./db` runs the Gnomock connection test and requires a Docker daemon.
 - `make test` or `go test ./...` runs all suites and therefore requires both
   PostgreSQL and Docker.
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for repository layout, change guidance,
+and the pull request checklist.
+
+## License
+
+See [LICENSE.txt](LICENSE.txt).
