@@ -1,11 +1,13 @@
 package apiary
 
 import (
-	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
+
+	"github.com/jackc/pgx/v5"
 )
 
 // Verse describes the reference and text of a single Bible verse
@@ -45,9 +47,8 @@ func (s *Server) APBVerseHandler() http.HandlerFunc {
 		var result Verse
 
 		err := s.DB.QueryRow(r.Context(), verseQuery, refs[0]).Scan(&result.Reference, &result.Text)
-		if err == sql.ErrNoRows {
-			w.WriteHeader(http.StatusNotFound)
-			w.Write([]byte("404 Not found."))
+		if errors.Is(err, pgx.ErrNoRows) {
+			http.Error(w, "404 Not found.", http.StatusNotFound)
 			return
 		} else if err != nil {
 			log.Println(err)

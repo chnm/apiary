@@ -58,8 +58,7 @@ func (w *noStoreOnError) WriteHeader(status int) {
 // NotFoundHandler returns 404 errors
 func (s *Server) NotFoundHandler() http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusNotFound)
-		w.Write([]byte("404 Not found."))
+		http.Error(w, "404 Not found.", http.StatusNotFound)
 	})
 
 }

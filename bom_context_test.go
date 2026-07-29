@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
@@ -163,6 +164,15 @@ func TestBOMHandlersPropagateRequestCancellation(t *testing.T) {
 
 			if response.Code != http.StatusInternalServerError {
 				t.Fatalf("status = %d, want %d", response.Code, http.StatusInternalServerError)
+			}
+			if tt.name == "statistics" {
+				if body := strings.TrimSpace(response.Body.String()); body != http.StatusText(http.StatusInternalServerError) {
+					t.Fatalf(
+						"body = %q, want %q",
+						body,
+						http.StatusText(http.StatusInternalServerError),
+					)
+				}
 			}
 		})
 	}

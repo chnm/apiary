@@ -84,6 +84,12 @@ func TestAPBVerse(t *testing.T) {
 
 }
 
+func TestAPBVerseNotFound(t *testing.T) {
+	req, _ := http.NewRequest("GET", "/apb/verse?ref=Not+A+Bible+Verse", nil)
+	response := executeRequest(req)
+	checkResponseCode(t, http.StatusNotFound, response.Code)
+}
+
 func TestAPBVerseTrend(t *testing.T) {
 	// Check that we get the right response
 	req, _ := http.NewRequest("GET", "/apb/verse-trend?ref=Genesis+1:1&corpus=chronam", nil)
@@ -109,6 +115,18 @@ func TestAPBVerseTrend(t *testing.T) {
 		t.Error("Not enough data points returned.")
 	}
 
+}
+
+func TestAPBVerseTrendRejectsMissingReference(t *testing.T) {
+	req, _ := http.NewRequest("GET", "/apb/verse-trend", nil)
+	response := executeRequest(req)
+	checkResponseCode(t, http.StatusBadRequest, response.Code)
+}
+
+func TestAPBVerseTrendRejectsInvalidCorpus(t *testing.T) {
+	req, _ := http.NewRequest("GET", "/apb/verse-trend?ref=Genesis+1:1&corpus=invalid", nil)
+	response := executeRequest(req)
+	checkResponseCode(t, http.StatusBadRequest, response.Code)
 }
 
 func TestAPBBibleTrend(t *testing.T) {
@@ -155,6 +173,12 @@ func TestAPBVerseQuotations(t *testing.T) {
 		t.Error("Not enough verses returned.")
 	}
 
+}
+
+func TestAPBVerseQuotationsNotFound(t *testing.T) {
+	req, _ := http.NewRequest("GET", "/apb/verse-quotations?ref=Not+A+Bible+Verse", nil)
+	response := executeRequest(req)
+	checkResponseCode(t, http.StatusNotFound, response.Code)
 }
 
 func TestBiblicalIndex(t *testing.T) {

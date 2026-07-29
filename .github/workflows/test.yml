@@ -44,6 +44,12 @@ jobs:
       - name: Vet
         run: go vet ./...
 
+      - name: Install gosec
+        run: go install github.com/securego/gosec/v2/cmd/gosec@v2.28.0
+
+      - name: Security lint
+        run: gosec -exclude-dir=.claude ./...
+
       # Hermetic unit tests (root package) with the race detector. CGO is
       # available on ubuntu runners, which -race requires.
       - name: Unit tests (race)
