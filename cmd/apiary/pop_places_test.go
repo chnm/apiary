@@ -30,7 +30,7 @@ func TestPlacesInCounty(t *testing.T) {
 	county := fetchCountiesInState(t, "ma")[0]
 	data := fetchPlacesInCounty(t, county.CountyAHCB)
 	for index, place := range data {
-		if place.PlaceID <= 0 || place.Place == "" {
+		if place.PlaceID <= 0 || place.Place == "" || place.Lat == 0 || place.Lon == 0 {
 			t.Errorf("place %d is missing identifying fields: %+v", index, place)
 		}
 	}
@@ -50,7 +50,8 @@ func TestPlace(t *testing.T) {
 	data := decodeResponse[apiary.PlaceDetails](t, response)
 	if data.PlaceID != place.PlaceID ||
 		data.Place != place.Place ||
-		data.MapName != place.MapName ||
+		data.Lat != place.Lat ||
+		data.Lon != place.Lon ||
 		data.CountyAHCB != county.CountyAHCB {
 		t.Fatalf(
 			"place details = %+v, want list record %+v in county %+v",

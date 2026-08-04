@@ -22,21 +22,23 @@ type PlaceCounty struct {
 	County     string `json:"name"`
 }
 
-// Place represents a place with ID and name
+// Place represents a populated place with its ID, name, and coordinates.
 type Place struct {
-	PlaceID int    `json:"place_id"`
-	Place   string `json:"place"`
-	MapName string `json:"map_name"`
+	PlaceID int     `json:"place_id"`
+	Place   string  `json:"place"`
+	Lat     float64 `json:"lat"`
+	Lon     float64 `json:"lon"`
 }
 
-// PlaceDetails represents details about a place
+// PlaceDetails represents details about a populated place.
 type PlaceDetails struct {
-	PlaceID    int    `json:"place_id"`
-	Place      string `json:"place"`
-	MapName    string `json:"map_name"`
-	County     string `json:"county"`
-	CountyAHCB string `json:"county_ahcb"`
-	State      string `json:"state"`
+	PlaceID    int     `json:"place_id"`
+	Place      string  `json:"place"`
+	Lat        float64 `json:"lat"`
+	Lon        float64 `json:"lon"`
+	County     string  `json:"county"`
+	CountyAHCB string  `json:"county_ahcb"`
+	State      string  `json:"state"`
 }
 
 // CountiesInState returns a list of all the counties in a state, with
@@ -98,7 +100,7 @@ func (s *Server) CountiesInState() http.HandlerFunc {
 func (s *Server) PlacesInCounty() http.HandlerFunc {
 
 	query := `
-		SELECT place_id, place, map_name
+		SELECT place_id, place, lat, lon
 		FROM relcensus.popplaces_1926
 		WHERE county_ahcb = $1
 		ORDER BY place;
@@ -121,7 +123,7 @@ func (s *Server) PlacesInCounty() http.HandlerFunc {
 
 		for rows.Next() {
 			var row Place
-			if err := rows.Scan(&row.PlaceID, &row.Place, &row.MapName); err != nil {
+			if err := rows.Scan(&row.PlaceID, &row.Place, &row.Lat, &row.Lon); err != nil {
 				log.Printf("scan populated place: %v", err)
 				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 				return
@@ -152,7 +154,7 @@ func (s *Server) PlacesInCounty() http.HandlerFunc {
 func (s *Server) Place() http.HandlerFunc {
 
 	query := `
-		SELECT place_id, place, map_name, county, county_ahcb, state
+		SELECT place_id, place, lat, lon, county, county_ahcb, state
 		FROM relcensus.popplaces_1926
 		WHERE place_id = $1
 		`
@@ -168,7 +170,7 @@ func (s *Server) Place() http.HandlerFunc {
 		var result PlaceDetails
 
 		err = s.DB.QueryRow(r.Context(), query, placeID).Scan(&result.PlaceID, &result.Place,
-			&result.MapName, &result.County, &result.CountyAHCB, &result.State)
+			&result.Lat, &result.Lon, &result.County, &result.CountyAHCB, &result.State)
 		if err != nil {
 			if errors.Is(err, pgx.ErrNoRows) {
 				http.Error(w, fmt.Sprintf("Not found: No place with id %v.", placeID), http.StatusNotFound)
