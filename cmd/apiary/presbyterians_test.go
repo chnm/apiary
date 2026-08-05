@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"testing"
 
-	apiary "github.com/chnm/apiary"
+	"github.com/chnm/apiary/internal/datasets/presbyterians"
 )
 
 func TestPresbyterians(t *testing.T) {
@@ -13,7 +13,7 @@ func TestPresbyterians(t *testing.T) {
 	response := executeRequest(req)
 	checkResponseCode(t, http.StatusOK, response.Code)
 
-	data := decodeResponse[[]apiary.PresbyteriansByYear](t, response)
+	data := decodeResponse[[]presbyterians.PresbyteriansByYear](t, response)
 	if len(data) == 0 {
 		t.Fatal("expected Presbyterian statistics")
 	}

@@ -7,51 +7,9 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/gorilla/mux"
 )
-
-func TestCacheTestHandler(t *testing.T) {
-	handler := (&Server{}).CacheTest()
-	first := httptest.NewRecorder()
-	handler.ServeHTTP(first, httptest.NewRequest(http.MethodGet, "/cache", nil))
-
-	if first.Code != http.StatusOK {
-		t.Fatalf("status = %d, want %d", first.Code, http.StatusOK)
-	}
-	if contentType := first.Header().Get("Content-Type"); contentType != "application/json" {
-		t.Fatalf("Content-Type = %q, want application/json", contentType)
-	}
-
-	var firstResponse struct {
-		Startup time.Time `json:"startup"`
-		Handler time.Time `json:"handler"`
-	}
-	if err := json.Unmarshal(first.Body.Bytes(), &firstResponse); err != nil {
-		t.Fatalf("unmarshal first cache response: %v", err)
-	}
-	if firstResponse.Startup.IsZero() || firstResponse.Handler.IsZero() {
-		t.Fatalf("cache response contains zero timestamps: %+v", firstResponse)
-	}
-
-	second := httptest.NewRecorder()
-	handler.ServeHTTP(second, httptest.NewRequest(http.MethodGet, "/cache", nil))
-	var secondResponse struct {
-		Startup time.Time `json:"startup"`
-		Handler time.Time `json:"handler"`
-	}
-	if err := json.Unmarshal(second.Body.Bytes(), &secondResponse); err != nil {
-		t.Fatalf("unmarshal second cache response: %v", err)
-	}
-	if !secondResponse.Startup.Equal(firstResponse.Startup) {
-		t.Fatalf(
-			"startup changed from %s to %s",
-			firstResponse.Startup,
-			secondResponse.Startup,
-		)
-	}
-}
 
 func TestEndpointsHandler(t *testing.T) {
 	tests := []struct {
@@ -90,8 +48,8 @@ func TestEndpointsHandler(t *testing.T) {
 			if err := json.Unmarshal(response.Body.Bytes(), &endpoints); err != nil {
 				t.Fatalf("unmarshal endpoint index: %v", err)
 			}
-			if len(endpoints) == 0 {
-				t.Fatal("endpoint index is empty")
+			if len(endpoints) != 41 {
+				t.Fatalf("endpoint count = %d, want 41", len(endpoints))
 			}
 			for _, endpoint := range endpoints {
 				if !strings.HasPrefix(endpoint.URL, tt.wantPrefix) {

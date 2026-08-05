@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	apiary "github.com/chnm/apiary"
+	"github.com/chnm/apiary/internal/datasets/bom"
 )
 
 func TestBomParishes(t *testing.T) {
@@ -17,7 +17,7 @@ func TestBomParishes(t *testing.T) {
 	checkResponseCode(t, http.StatusOK, response.Code)
 
 	// Get the data
-	var data []apiary.Parish
+	var data []bom.Parish
 	err := json.Unmarshal(response.Body.Bytes(), &data)
 	if err != nil {
 		t.Error(err)
@@ -46,7 +46,7 @@ func TestBomBills(t *testing.T) {
 	checkResponseCode(t, http.StatusOK, response.Code)
 
 	// Get the data
-	var data apiary.PaginatedResponse
+	var data bom.PaginatedResponse
 	err := json.Unmarshal(response.Body.Bytes(), &data)
 	if err != nil {
 		t.Error(err)
@@ -61,7 +61,7 @@ func TestBomTotalBills(t *testing.T) {
 	response := executeRequest(req)
 	checkResponseCode(t, http.StatusOK, response.Code)
 
-	var data []apiary.TotalBills
+	var data []bom.TotalBills
 	if err := json.Unmarshal(response.Body.Bytes(), &data); err != nil {
 		t.Fatal(err)
 	}
@@ -75,7 +75,7 @@ func TestBomStatistics(t *testing.T) {
 	response := executeRequest(req)
 	checkResponseCode(t, http.StatusOK, response.Code)
 
-	var data []apiary.YearlySummary
+	var data []bom.YearlySummary
 	if err := json.Unmarshal(response.Body.Bytes(), &data); err != nil {
 		t.Fatal(err)
 	}
@@ -91,7 +91,7 @@ func TestBomChristenings(t *testing.T) {
 	checkResponseCode(t, http.StatusOK, response.Code)
 
 	// Get the data
-	var data []apiary.ChristeningsByYear
+	var data []bom.ChristeningsByYear
 	err := json.Unmarshal(response.Body.Bytes(), &data)
 	if err != nil {
 		t.Error(err)
@@ -103,7 +103,7 @@ func TestBomCauses(t *testing.T) {
 	response := executeRequest(req)
 	checkResponseCode(t, http.StatusOK, response.Code)
 
-	var data []apiary.DeathCauses
+	var data []bom.DeathCauses
 	err := json.Unmarshal(response.Body.Bytes(), &data)
 	if err != nil {
 		t.Error(err)
@@ -115,7 +115,7 @@ func TestBomListChristenings(t *testing.T) {
 	response := executeRequest(req)
 	checkResponseCode(t, http.StatusOK, response.Code)
 
-	var data []apiary.Christenings
+	var data []bom.Christenings
 	err := json.Unmarshal(response.Body.Bytes(), &data)
 	if err != nil {
 		t.Error(err)
@@ -127,7 +127,7 @@ func TestBomListCauses(t *testing.T) {
 	response := executeRequest(req)
 	checkResponseCode(t, http.StatusOK, response.Code)
 
-	var data []apiary.Causes
+	var data []bom.Causes
 	err := json.Unmarshal(response.Body.Bytes(), &data)
 	if err != nil {
 		t.Error(err)
@@ -320,7 +320,7 @@ func TestIsValidBillType(t *testing.T) {
 	t.Run("ValidBillTypes", func(t *testing.T) {
 		validTypes := []string{"Weekly", "General", "Total", "weekly", "WEEKLY", "general", "GENERAL", "total", "TOTAL"}
 		for _, billType := range validTypes {
-			if !apiary.IsValidBillType(billType) {
+			if !bom.IsValidBillType(billType) {
 				t.Errorf("Expected %s to be a valid bill type, but it was rejected", billType)
 			}
 		}
@@ -330,7 +330,7 @@ func TestIsValidBillType(t *testing.T) {
 	t.Run("InvalidBillTypes", func(t *testing.T) {
 		invalidTypes := []string{"", "Invalid", "MonthlyReport", "monthly", "Daily"}
 		for _, billType := range invalidTypes {
-			if apiary.IsValidBillType(billType) {
+			if bom.IsValidBillType(billType) {
 				t.Errorf("Expected %s to be an invalid bill type, but it was accepted", billType)
 			}
 		}
@@ -342,7 +342,7 @@ func TestIsValidCountType(t *testing.T) {
 	t.Run("ValidCountTypes", func(t *testing.T) {
 		validTypes := []string{"Buried", "Plague", "buried", "BURIED", "plague", "PLAGUE"}
 		for _, countType := range validTypes {
-			if !apiary.IsValidCountType(countType) {
+			if !bom.IsValidCountType(countType) {
 				t.Errorf("Expected %s to be a valid count type, but it was rejected", countType)
 			}
 		}
@@ -352,7 +352,7 @@ func TestIsValidCountType(t *testing.T) {
 	t.Run("InvalidCountTypes", func(t *testing.T) {
 		invalidTypes := []string{"", "Invalid", "Deaths", "Christenings", "dead", "sick"}
 		for _, countType := range invalidTypes {
-			if apiary.IsValidCountType(countType) {
+			if bom.IsValidCountType(countType) {
 				t.Errorf("Expected %s to be an invalid count type, but it was accepted", countType)
 			}
 		}
@@ -388,7 +388,7 @@ func TestBomBillsInvalidParish(t *testing.T) {
 	parishRequest, _ := http.NewRequest(http.MethodGet, "/bom/parishes", nil)
 	parishResponse := executeRequest(parishRequest)
 	checkResponseCode(t, http.StatusOK, parishResponse.Code)
-	parishes := decodeResponse[[]apiary.Parish](t, parishResponse)
+	parishes := decodeResponse[[]bom.Parish](t, parishResponse)
 	if len(parishes) == 0 {
 		t.Fatal("expected at least one parish")
 	}

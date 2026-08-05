@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"testing"
 
-	apiary "github.com/chnm/apiary"
+	"github.com/chnm/apiary/internal/datasets/catholic"
 )
 
 func TestCatholicDioceses(t *testing.T) {
@@ -13,7 +13,7 @@ func TestCatholicDioceses(t *testing.T) {
 	response := executeRequest(req)
 	checkResponseCode(t, http.StatusOK, response.Code)
 
-	data := decodeResponse[[]apiary.CatholicDiocese](t, response)
+	data := decodeResponse[[]catholic.CatholicDiocese](t, response)
 	if len(data) == 0 {
 		t.Fatal("expected Catholic dioceses")
 	}
@@ -30,7 +30,7 @@ func TestCatholicDiocesesPerDecade(t *testing.T) {
 	response := executeRequest(req)
 	checkResponseCode(t, http.StatusOK, response.Code)
 
-	data := decodeResponse[[]apiary.CatholicDiocesesPerDecade](t, response)
+	data := decodeResponse[[]catholic.CatholicDiocesesPerDecade](t, response)
 	if len(data) == 0 {
 		t.Fatal("expected Catholic diocese decade statistics")
 	}

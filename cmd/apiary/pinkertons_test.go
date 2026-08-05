@@ -9,7 +9,7 @@ import (
 	"sync/atomic"
 	"testing"
 
-	apiary "github.com/chnm/apiary"
+	"github.com/chnm/apiary/internal/datasets/pinkertons"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -34,7 +34,7 @@ func (*pinkertonsQueryCounter) TraceQueryEnd(
 ) {
 }
 
-func fetchDetectiveActivities(t *testing.T, path string) []apiary.Activity {
+func fetchDetectiveActivities(t *testing.T, path string) []pinkertons.Activity {
 	t.Helper()
 
 	req, err := http.NewRequest(http.MethodGet, path, nil)
@@ -44,7 +44,7 @@ func fetchDetectiveActivities(t *testing.T, path string) []apiary.Activity {
 	response := executeRequest(req)
 	checkResponseCode(t, http.StatusOK, response.Code)
 
-	var activities []apiary.Activity
+	var activities []pinkertons.Activity
 	if err := json.Unmarshal(response.Body.Bytes(), &activities); err != nil {
 		t.Fatalf("Unmarshal response: %v", err)
 	}
@@ -58,7 +58,7 @@ func TestDetectivesActivities(t *testing.T) {
 	checkResponseCode(t, http.StatusOK, response.Code)
 
 	// Get the data
-	var data []apiary.Activity
+	var data []pinkertons.Activity
 	err := json.Unmarshal(response.Body.Bytes(), &data)
 	if err != nil {
 		t.Error("Failed to unmarshal response:", err)
@@ -125,14 +125,13 @@ func TestDetectivesActivitiesUsesTwoQueries(t *testing.T) {
 	}
 	t.Cleanup(pool.Close)
 
-	server := &apiary.Server{DB: pool}
 	req := httptest.NewRequest(
 		http.MethodGet,
 		"/pinkertons/activities?limit=10",
 		nil,
 	)
 	response := httptest.NewRecorder()
-	server.ActivitiesHandler().ServeHTTP(response, req)
+	pinkertons.New(pool).ActivitiesHandler().ServeHTTP(response, req)
 	checkResponseCode(t, http.StatusOK, response.Code)
 
 	if got := queryCounter.count.Load(); got != 2 {
@@ -197,7 +196,7 @@ func TestDetectivesActivitiesWithLocations(t *testing.T) {
 	checkResponseCode(t, http.StatusOK, response.Code)
 
 	// Get the data
-	var data []apiary.Activity
+	var data []pinkertons.Activity
 	err := json.Unmarshal(response.Body.Bytes(), &data)
 	if err != nil {
 		t.Error("Failed to unmarshal response:", err)
@@ -223,7 +222,7 @@ func TestDetectivesActivitiesFilterByOperative(t *testing.T) {
 	response := executeRequest(req)
 	checkResponseCode(t, http.StatusOK, response.Code)
 
-	var data []apiary.Activity
+	var data []pinkertons.Activity
 	err := json.Unmarshal(response.Body.Bytes(), &data)
 	if err != nil {
 		t.Error("Failed to unmarshal response:", err)
@@ -243,7 +242,7 @@ func TestDetectivesActivitiesFilterByDateRange(t *testing.T) {
 	response := executeRequest(req)
 	checkResponseCode(t, http.StatusOK, response.Code)
 
-	var data []apiary.Activity
+	var data []pinkertons.Activity
 	err := json.Unmarshal(response.Body.Bytes(), &data)
 	if err != nil {
 		t.Error("Failed to unmarshal response:", err)
@@ -264,7 +263,7 @@ func TestDetectivesActivityByID(t *testing.T) {
 		t.Skip("Skipping test: no activities available")
 	}
 
-	var activities []apiary.Activity
+	var activities []pinkertons.Activity
 	err := json.Unmarshal(response.Body.Bytes(), &activities)
 	if err != nil || len(activities) == 0 {
 		t.Skip("Skipping test: no activities available")
@@ -278,7 +277,7 @@ func TestDetectivesActivityByID(t *testing.T) {
 	response = executeRequest(req)
 	checkResponseCode(t, http.StatusOK, response.Code)
 
-	var activity apiary.Activity
+	var activity pinkertons.Activity
 	err = json.Unmarshal(response.Body.Bytes(), &activity)
 	if err != nil {
 		t.Error("Failed to unmarshal response:", err)
@@ -313,7 +312,7 @@ func TestDetectivesLocations(t *testing.T) {
 	checkResponseCode(t, http.StatusOK, response.Code)
 
 	// Get the data
-	var data []apiary.Location
+	var data []pinkertons.Location
 	err := json.Unmarshal(response.Body.Bytes(), &data)
 	if err != nil {
 		t.Error("Failed to unmarshal response:", err)
@@ -377,7 +376,7 @@ func TestDetectivesCombinedFilters(t *testing.T) {
 	response := executeRequest(req)
 	checkResponseCode(t, http.StatusOK, response.Code)
 
-	var data []apiary.Activity
+	var data []pinkertons.Activity
 	err := json.Unmarshal(response.Body.Bytes(), &data)
 	if err != nil {
 		t.Error("Failed to unmarshal response:", err)
