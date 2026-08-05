@@ -65,6 +65,14 @@ type QueryOptions struct {
 	Offset int
 }
 
+const defaultBillsSort = "year"
+
+var billsSortExpressions = map[string]string{
+	"year":           "b.year, w.week_number, p.canonical_name",
+	"week_number":    "w.week_number, b.year, p.canonical_name",
+	"canonical_name": "p.canonical_name, b.year, w.week_number",
+}
+
 // QueryBuilder holds the query string and parameters
 type QueryBuilder struct {
 	Query  string
@@ -213,7 +221,7 @@ func parseAPIParameters(r *http.Request) (APIParameters, error) {
 		StartYear: 1648, // Default values
 		EndYear:   1750,
 		Parish:    []int{},
-		Sort:      "year, week_number, canonical_name",
+		Sort:      defaultBillsSort,
 	}
 
 	// Parse start year
@@ -332,6 +340,9 @@ func parseAPIParameters(r *http.Request) (APIParameters, error) {
 
 	// Parse sorting
 	if sort := r.URL.Query().Get("sort"); sort != "" {
+		if _, ok := billsSortExpressions[sort]; !ok {
+			return params, fmt.Errorf("invalid sort: supported values are year, week_number, and canonical_name")
+		}
 		params.Sort = sort
 	}
 
@@ -481,12 +492,17 @@ func buildBillsQueryWithParams(params APIParameters) (*QueryBuilder, error) {
 		baseQuery += " AND " + strings.Join(conditions, " AND ")
 	}
 
-	// Add sorting (ensure consistent ordering for cursor pagination)
-	if params.Sort != "" {
-		baseQuery += " ORDER BY " + params.Sort + " ASC"
-	} else {
-		baseQuery += " ORDER BY b.year, w.week_number, p.canonical_name ASC"
+	// Cursor pagination depends on the same ordering as its year/week/name
+	// continuation tuple. Other pagination modes may select a supported order.
+	sort := params.Sort
+	if sort == "" || params.Cursor != "" {
+		sort = defaultBillsSort
 	}
+	sortExpression, ok := billsSortExpressions[sort]
+	if !ok {
+		return nil, fmt.Errorf("unsupported bills sort %q", sort)
+	}
+	baseQuery += " ORDER BY " + sortExpression + " ASC"
 
 	// Handle pagination - cursor-based is the default and preferred method
 	if params.Cursor != "" {
