@@ -23,6 +23,23 @@ func TestTotalBillsHandlerRejectsInvalidType(t *testing.T) {
 	}
 }
 
+func TestBillsHandlerRejectsInvalidSort(t *testing.T) {
+	request := httptest.NewRequest(http.MethodGet, "/bom/bills", nil)
+	query := request.URL.Query()
+	query.Set("sort", "year; select pg_sleep(10)")
+	request.URL.RawQuery = query.Encode()
+	response := httptest.NewRecorder()
+
+	(&Server{}).BillsHandler().ServeHTTP(response, request)
+
+	if response.Code != http.StatusBadRequest {
+		t.Fatalf("status = %d, want %d", response.Code, http.StatusBadRequest)
+	}
+	if body := strings.TrimSpace(response.Body.String()); body != "invalid sort: supported values are year, week_number, and canonical_name" {
+		t.Fatalf("body = %q, want fixed invalid sort error", body)
+	}
+}
+
 func TestParseAPIParametersParish(t *testing.T) {
 	// Non-integer parish IDs are rejected by the parser.
 	r := httptest.NewRequest("GET", "/bom/bills?parish=abc", nil)
@@ -208,6 +225,48 @@ func TestParseAPIParameters(t *testing.T) {
 	}
 }
 
+func TestParseAPIParametersSort(t *testing.T) {
+	tests := []struct {
+		name    string
+		sort    string
+		want    string
+		wantErr bool
+	}{
+		{name: "default", want: defaultBillsSort},
+		{name: "year", sort: "year", want: "year"},
+		{name: "week number", sort: "week_number", want: "week_number"},
+		{name: "canonical name", sort: "canonical_name", want: "canonical_name"},
+		{name: "SQL expression", sort: "lower(canonical_name)", wantErr: true},
+		{name: "stacked statement", sort: "year; select pg_sleep(10)", wantErr: true},
+		{name: "unsupported direction", sort: "year desc", wantErr: true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			request := httptest.NewRequest(http.MethodGet, "/bom/bills", nil)
+			query := request.URL.Query()
+			if tt.sort != "" {
+				query.Set("sort", tt.sort)
+				request.URL.RawQuery = query.Encode()
+			}
+
+			params, err := parseAPIParameters(request)
+			if tt.wantErr {
+				if err == nil {
+					t.Fatal("parseAPIParameters returned nil error")
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("parseAPIParameters: %v", err)
+			}
+			if params.Sort != tt.want {
+				t.Fatalf("sort = %q, want %q", params.Sort, tt.want)
+			}
+		})
+	}
+}
+
 func TestParseAPIParametersRejectsMalformedValues(t *testing.T) {
 	tests := []struct {
 		name  string
@@ -294,6 +353,70 @@ func TestBuildBillsQueryPaginationModes(t *testing.T) {
 			}
 			if !reflect.DeepEqual(query.Params, tt.wantParams) {
 				t.Fatalf("params = %#v, want %#v", query.Params, tt.wantParams)
+			}
+		})
+	}
+}
+
+func TestBuildBillsQuerySorts(t *testing.T) {
+	tests := []struct {
+		name    string
+		params  APIParameters
+		want    string
+		wantErr bool
+	}{
+		{
+			name:   "default",
+			params: APIParameters{},
+			want:   "ORDER BY b.year, w.week_number, p.canonical_name ASC",
+		},
+		{
+			name:   "year",
+			params: APIParameters{Sort: "year"},
+			want:   "ORDER BY b.year, w.week_number, p.canonical_name ASC",
+		},
+		{
+			name:   "week number",
+			params: APIParameters{Sort: "week_number"},
+			want:   "ORDER BY w.week_number, b.year, p.canonical_name ASC",
+		},
+		{
+			name:   "canonical name",
+			params: APIParameters{Sort: "canonical_name"},
+			want:   "ORDER BY p.canonical_name, b.year, w.week_number ASC",
+		},
+		{
+			name: "cursor retains continuation order",
+			params: APIParameters{
+				Sort:       "canonical_name",
+				Cursor:     "cursor",
+				CursorYear: 1665,
+				CursorWeek: 12,
+				CursorName: "All Hallows",
+			},
+			want: "ORDER BY b.year, w.week_number, p.canonical_name ASC",
+		},
+		{
+			name:    "rejects unvalidated caller",
+			params:  APIParameters{Sort: "year; select pg_sleep(10)"},
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			query, err := buildBillsQueryWithParams(tt.params)
+			if tt.wantErr {
+				if err == nil {
+					t.Fatal("buildBillsQueryWithParams returned nil error")
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("buildBillsQueryWithParams: %v", err)
+			}
+			if !strings.Contains(query.Query, tt.want) {
+				t.Fatalf("query does not contain %q", tt.want)
 			}
 		})
 	}
