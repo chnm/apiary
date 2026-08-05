@@ -23,9 +23,10 @@ instance:
 curl https://data.chnm.org/
 ```
 
-Handlers are methods on [`Server`](https://pkg.go.dev/github.com/chnm/apiary#Server).
-The [Go package documentation](https://pkg.go.dev/github.com/chnm/apiary)
-provides additional endpoint and type documentation.
+Apiary is deployed as a service rather than consumed as an importable Go
+library. Handler implementations, response types, route registration, and
+catalog metadata are grouped by dataset under `internal/datasets`; the running
+service's root catalog is the authoritative endpoint reference.
 
 All routes accept `GET` and `HEAD`. Responses are CORS-enabled and compressed
 when the client supports it. Successful responses may be cached; append the
@@ -96,10 +97,11 @@ docker run --rm --publish 8090:8090 \
 
 ## Test and validate
 
-The root package tests are hermetic and form the fast local feedback loop:
+The root and internal package tests are hermetic and form the fast local
+feedback loop:
 
 ```console
-go test .
+go test . ./internal/...
 go vet ./...
 go build ./...
 ```
@@ -111,7 +113,7 @@ security and workflow linters:
 ```console
 go mod verify
 go mod tidy -diff
-go test -race .
+go test -race . ./internal/...
 go test -run '^$' ./db
 gosec -exclude-dir=.claude ./...
 actionlint -color
@@ -119,7 +121,8 @@ actionlint -color
 
 The test suites have different runtime requirements:
 
-- `go test -race .` runs the deterministic root-package unit tests.
+- `go test -race . ./internal/...` runs the deterministic service and dataset
+  unit tests.
 - `go test ./cmd/apiary` runs integration tests against the PostgreSQL
   database configured by `APIARY_DB`. These tests validate response contracts
   and stable invariants rather than snapshotting mutable database records.

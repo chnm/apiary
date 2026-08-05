@@ -21,7 +21,9 @@ Before editing:
 1. Read `README.md` and `CONTRIBUTING.md`.
 2. Check `git status --short --branch` and active worktrees. Other agents may be
    working in this repository; preserve their branches and uncommitted changes.
-3. Inspect `routes.go`, `endpoints.go`, and the relevant feature file and tests.
+3. Inspect the relevant dataset's `handler.go`, `endpoints.go`,
+   implementation files, and tests. Inspect the root assemblers when adding a
+   dataset or changing service-level behavior.
 4. Use the Go version/toolchain declared in `go.mod`.
 
 The architecture is deliberately small:
@@ -29,11 +31,16 @@ The architecture is deliberately small:
 - `cmd/apiary/main.go` owns process signals and graceful shutdown.
 - `server.go` loads environment configuration, connects to PostgreSQL, creates
   the in-memory response cache, and assembles the server.
-- `routes.go` is the canonical route registry.
-- `endpoints.go` generates the root endpoint catalog.
+- `internal/datasets/<dataset>/` owns that dataset's handlers, SQL, response
+  types, route registration, catalog metadata, and focused tests.
+- `routes.go` assembles the dataset route registrations and service-level
+  routes.
+- `endpoints.go` assembles dataset catalogs into the root endpoint response.
 - `middleware.go` defines middleware order and cache/error behavior.
 - `db/` owns connection setup.
-- Top-level feature files group handlers, SQL, and response types by dataset.
+- `internal/httpx/` and `internal/params/` contain narrowly shared HTTP and
+  parameter helpers.
+- `internal/testsupport/` contains reusable test helpers.
 
 ## Implementation rules
 
@@ -51,7 +58,8 @@ The architecture is deliberately small:
   a one-week client cache header; errors are `no-store`; the server-side cache
   has a one-hour TTL and uses `nocache` as its refresh key.
 - Preserve `GET` and `HEAD` registration unless the endpoint contract changes.
-- Keep `routes.go` and the catalog/examples in `endpoints.go` synchronized.
+- Keep each dataset's route registration and endpoint catalog synchronized.
+  Add new dataset packages to both root assemblers.
 - Add focused regression tests. Prefer table-driven tests when covering
   validation boundaries or several related cases.
 
@@ -65,10 +73,10 @@ Run checks in proportion to the change, escalating from fast to external:
 
 ```console
 gofmt -w path/to/changed_file.go
-go test .
+go test . ./internal/...
 go build ./...
 go vet ./...
-go test -race .
+go test -race . ./internal/...
 go mod verify
 go mod tidy -diff
 go test -run '^$' ./db
@@ -93,8 +101,9 @@ changes executable examples or accompanies code.
 When adding or modifying a route, verify all of the following:
 
 - handler and response types
-- registration in `routes.go`
-- discoverability and examples in `endpoints.go`
+- registration in the dataset's `handler.go`
+- discoverability and examples in the dataset's `endpoints.go`
+- root route and catalog assembly when introducing a dataset package
 - path/query validation and parameterized SQL
 - request-context propagation
 - content type, status codes, and error cache behavior
