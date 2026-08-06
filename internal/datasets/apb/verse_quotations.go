@@ -29,13 +29,15 @@ func (h *Handler) APBVerseQuotationsHandler() http.HandlerFunc {
 	`
 
 	return func(w http.ResponseWriter, r *http.Request) {
-
-		refs := r.URL.Query()["ref"]
+		ref, ok := requireSingleReference(w, r)
+		if !ok {
+			return
+		}
 
 		results := make([]VerseQuotation, 0)
 		var row VerseQuotation
 
-		rows, err := h.db.Query(r.Context(), query, refs[0])
+		rows, err := h.db.Query(r.Context(), query, ref)
 		if err != nil {
 			internalServerError(w, "error querying verse quotations", err)
 			return

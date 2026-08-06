@@ -38,12 +38,14 @@ func (h *Handler) APBVerseHandler() http.HandlerFunc {
 	`
 
 	return func(w http.ResponseWriter, r *http.Request) {
-
-		refs := r.URL.Query()["ref"]
+		ref, ok := requireSingleReference(w, r)
+		if !ok {
+			return
+		}
 
 		var result Verse
 
-		err := h.db.QueryRow(r.Context(), verseQuery, refs[0]).Scan(&result.Reference, &result.Text)
+		err := h.db.QueryRow(r.Context(), verseQuery, ref).Scan(&result.Reference, &result.Text)
 		if errors.Is(err, pgx.ErrNoRows) {
 			http.Error(w, "404 Not found.", http.StatusNotFound)
 			return
@@ -53,7 +55,7 @@ func (h *Handler) APBVerseHandler() http.HandlerFunc {
 		}
 
 		related := make([]string, 0)
-		rows, err := h.db.Query(r.Context(), relatedVerseQuery, refs[0])
+		rows, err := h.db.Query(r.Context(), relatedVerseQuery, ref)
 		if err != nil {
 			internalServerError(w, "error querying related verses", err)
 			return
