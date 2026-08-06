@@ -44,14 +44,8 @@ func (h *Handler) APBVerseTrendHandler() http.HandlerFunc {
 	`
 
 	return func(w http.ResponseWriter, r *http.Request) {
-
-		// Return a 404 error if we don't get exactly one reference
-		queryRef := r.URL.Query()["ref"]
-		var ref string
-		if len(queryRef) == 1 {
-			ref = queryRef[0]
-		} else {
-			http.Error(w, "400 Bad request. Please provide exactly one reference.", http.StatusBadRequest)
+		ref, ok := requireSingleReference(w, r)
+		if !ok {
 			return
 		}
 

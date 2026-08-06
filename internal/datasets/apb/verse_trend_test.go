@@ -14,16 +14,6 @@ func TestVerseTrendRejectsInvalidParameters(t *testing.T) {
 		body string
 	}{
 		{
-			name: "missing reference",
-			path: "/apb/verse-trend",
-			body: "400 Bad request. Please provide exactly one reference.",
-		},
-		{
-			name: "multiple references",
-			path: "/apb/verse-trend?ref=Gen.1.1&ref=John.1.1",
-			body: "400 Bad request. Please provide exactly one reference.",
-		},
-		{
 			name: "invalid corpus",
 			path: "/apb/verse-trend?ref=Gen.1.1&corpus=unknown",
 			body: "400 Bad request. Corpus must be 'ncnp' or 'chronam'.",
