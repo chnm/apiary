@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"testing"
 
-	apiary "github.com/chnm/apiary"
+	"github.com/chnm/apiary/internal/datasets/apb"
 )
 
 func TestAPBFeaturedVerses(t *testing.T) {
@@ -15,7 +15,7 @@ func TestAPBFeaturedVerses(t *testing.T) {
 	checkResponseCode(t, http.StatusOK, response.Code)
 
 	// Get the data
-	var data []apiary.APBIndexItem
+	var data []apb.APBIndexItem
 	err := json.Unmarshal(response.Body.Bytes(), &data)
 	if err != nil {
 		t.Error(err)
@@ -34,7 +34,7 @@ func TestAPBTopVerses(t *testing.T) {
 	checkResponseCode(t, http.StatusOK, response.Code)
 
 	// Get the data
-	var data []apiary.APBIndexItem
+	var data []apb.APBIndexItem
 	err := json.Unmarshal(response.Body.Bytes(), &data)
 	if err != nil {
 		t.Error(err)
@@ -53,7 +53,7 @@ func TestAPBVersePeaks(t *testing.T) {
 	checkResponseCode(t, http.StatusOK, response.Code)
 
 	// Get the data
-	var data []apiary.APBIndexItem
+	var data []apb.APBIndexItem
 	err := json.Unmarshal(response.Body.Bytes(), &data)
 	if err != nil {
 		t.Error(err)
@@ -72,7 +72,7 @@ func TestAPBVerse(t *testing.T) {
 	checkResponseCode(t, http.StatusOK, response.Code)
 
 	// Get the data
-	var data apiary.Verse
+	var data apb.Verse
 	err := json.Unmarshal(response.Body.Bytes(), &data)
 	if err != nil {
 		t.Error(err)
@@ -97,7 +97,7 @@ func TestAPBVerseTrend(t *testing.T) {
 	checkResponseCode(t, http.StatusOK, response.Code)
 
 	// Get the data
-	var data apiary.VerseTrendResponse
+	var data apb.VerseTrendResponse
 	err := json.Unmarshal(response.Body.Bytes(), &data)
 	if err != nil {
 		t.Error(err)
@@ -136,7 +136,7 @@ func TestAPBBibleTrend(t *testing.T) {
 	checkResponseCode(t, http.StatusOK, response.Code)
 
 	// Get the data
-	var data apiary.VerseTrendResponse
+	var data apb.VerseTrendResponse
 	err := json.Unmarshal(response.Body.Bytes(), &data)
 	if err != nil {
 		t.Error(err)
@@ -163,7 +163,7 @@ func TestAPBVerseQuotations(t *testing.T) {
 	checkResponseCode(t, http.StatusOK, response.Code)
 
 	// Get the data
-	var data []apiary.VerseQuotation
+	var data []apb.VerseQuotation
 	err := json.Unmarshal(response.Body.Bytes(), &data)
 	if err != nil {
 		t.Error(err)
@@ -188,7 +188,7 @@ func TestBiblicalIndex(t *testing.T) {
 	checkResponseCode(t, http.StatusOK, response.Code)
 
 	// Get the data
-	var data []apiary.BibleBook
+	var data []apb.BibleBook
 	err := json.Unmarshal(response.Body.Bytes(), &data)
 	if err != nil {
 		t.Error(err)
@@ -202,7 +202,7 @@ func TestBibleAllIndex(t *testing.T) {
 	checkResponseCode(t, http.StatusOK, response.Code)
 
 	// Get the data
-	var data []apiary.APBIndexItemText
+	var data []apb.APBIndexItemText
 	err := json.Unmarshal(response.Body.Bytes(), &data)
 	if err != nil {
 		t.Error(err)
@@ -216,7 +216,7 @@ func TestBibleSimilarity(t *testing.T) {
 	checkResponseCode(t, http.StatusOK, response.Code)
 
 	// Get the data
-	var data []apiary.BibleSimilarityEdge
+	var data []apb.BibleSimilarityEdge
 	err := json.Unmarshal(response.Body.Bytes(), &data)
 	if err != nil {
 		t.Error(err)
@@ -230,7 +230,7 @@ func TestBibleBooks(t *testing.T) {
 	checkResponseCode(t, http.StatusOK, response.Code)
 
 	// Get the data
-	var data []apiary.BibleBook
+	var data []apb.BibleBook
 	err := json.Unmarshal(response.Body.Bytes(), &data)
 	if err != nil {
 		t.Error(err)

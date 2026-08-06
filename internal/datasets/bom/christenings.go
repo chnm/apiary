@@ -1,0 +1,271 @@
+package bom
+
+import (
+	"fmt"
+	"net/http"
+	"strconv"
+	"strings"
+
+	"github.com/jackc/pgx/v5"
+)
+
+// ChristeningsByYear describes a christening's description, total count, week number,
+// week ID, year, and bill type.
+type ChristeningsByYear struct {
+	Christening  string     `json:"christening"`
+	TotalCount   NullInt64  `json:"count"`
+	WeekNumber   NullInt64  `json:"week_number"`
+	StartDay     NullInt64  `json:"start_day"`
+	StartMonth   NullString `json:"start_month"`
+	EndDay       NullInt64  `json:"end_day"`
+	EndMonth     NullString `json:"end_month"`
+	Year         int        `json:"year"`
+	BillType     NullString `json:"bill_type"`
+	SplitYear    string     `json:"split_year"`
+	TotalRecords int        `json:"totalrecords"`
+}
+
+// Christenings describes a christening location.
+type Christenings struct {
+	Name     string `json:"name"`
+	BillType string `json:"bill_type"`
+}
+
+// ChristeningsHandler returns the christenings for a given range of years. It expects a start year and
+// end year as query parameters. Optional query parameters: id (location filter), bill-type (general/weekly filter).
+func (h *Handler) ChristeningsHandler() http.HandlerFunc {
+	queryLocation := `
+	SELECT
+		c.christening,
+		c.count,
+		c.week_number,
+		c.start_day,
+		c.start_month,
+		c.end_day,
+		c.end_month,
+		y.year,
+		c.bill_type,
+		COUNT(*) OVER() AS totalrecords
+	FROM
+		bom.christenings c
+	JOIN
+		bom.year y ON y.year = c.year
+	JOIN
+		bom.christening_locations l ON l.name = c.christening
+	WHERE
+		y.year >= $1::int
+		AND y.year < $2::int
+		AND (
+			$3::int[] IS NULL
+			OR l.id = ANY($3::int[])
+		)
+		AND (
+			$6::text IS NULL
+			OR c.bill_type = $6::text
+		)	
+	ORDER BY
+		year ASC,
+		week_number ASC
+	LIMIT $4
+	OFFSET $5;
+	`
+
+	query := `
+	SELECT
+		c.christening,
+		c.count,
+		c.week_number,
+		c.start_day,
+		c.start_month,
+		c.end_day,
+		c.end_month,
+		y.year,
+		c.bill_type,
+		COUNT(*) OVER() AS totalrecords
+	FROM
+		bom.christenings c
+	JOIN
+		bom.year y ON y.year = c.year
+	WHERE
+		y.year >= $1::int
+		AND y.year < $2::int
+		AND (
+			$5::text IS NULL
+			OR c.bill_type = $5::text
+		)
+	ORDER BY
+		year ASC,
+		week_number ASC
+	LIMIT $3
+	OFFSET $4;
+	`
+
+	return func(w http.ResponseWriter, r *http.Request) {
+		startYear := r.URL.Query().Get("start-year")
+		endYear := r.URL.Query().Get("end-year")
+		location := r.URL.Query().Get("id")
+		billType := r.URL.Query().Get("bill-type")
+		limit := r.URL.Query().Get("limit")
+		offset := r.URL.Query().Get("offset")
+
+		if startYear == "" || endYear == "" {
+			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+			return
+		}
+
+		startYearInt, err := strconv.Atoi(startYear)
+		if err != nil {
+			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+			return
+		}
+
+		endYearInt, err := strconv.Atoi(endYear)
+		if err != nil {
+			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+			return
+		}
+
+		if limit == "" {
+			limit = "25"
+		}
+		if offset == "" {
+			offset = "0"
+		}
+
+		// location needs to be a postgres array
+		location = fmt.Sprintf("{%s}", strings.TrimSpace(location))
+
+		// Validate bill_type parameter
+		if billType != "" && billType != "general" && billType != "weekly" {
+			http.Error(w, "bill-type must be 'general' or 'weekly'", http.StatusBadRequest)
+			return
+		}
+
+		// Convert empty bill_type to nil for SQL query
+		var billTypeParam interface{}
+		if billType == "" {
+			billTypeParam = nil
+		} else {
+			billTypeParam = billType
+		}
+
+		limitInt, err := strconv.Atoi(limit)
+		if err != nil {
+			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+			return
+		}
+
+		offsetInt, err := strconv.Atoi(offset)
+		if err != nil {
+			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+			return
+		}
+
+		results := make([]ChristeningsByYear, 0)
+		var row ChristeningsByYear
+		var rows pgx.Rows
+
+		switch {
+		case location == "{}":
+			rows, err = h.db.Query(r.Context(), query, startYearInt, endYearInt, limitInt, offsetInt, billTypeParam)
+		case location != "{}":
+			rows, err = h.db.Query(r.Context(), queryLocation, startYearInt, endYearInt, location, limitInt, offsetInt, billTypeParam)
+		default:
+			rows, err = h.db.Query(r.Context(), query, startYearInt, endYearInt, limitInt, offsetInt, billTypeParam)
+		}
+
+		if err != nil {
+			internalServerError(w, "error querying christenings", err)
+			return
+		}
+		defer rows.Close()
+		for rows.Next() {
+			err := rows.Scan(
+				&row.Christening,
+				&row.TotalCount,
+				&row.WeekNumber,
+				&row.StartDay,
+				&row.StartMonth,
+				&row.EndDay,
+				&row.EndMonth,
+				&row.Year,
+				&row.BillType,
+				&row.TotalRecords,
+			)
+			if err != nil {
+				internalServerError(w, "error scanning christening", err)
+				return
+			}
+			results = append(results, row)
+		}
+		if err := rows.Err(); err != nil {
+			internalServerError(w, "error iterating christenings", err)
+			return
+		}
+
+		writeJSONResponse(w, results)
+	}
+}
+
+// ListChristeningsHandler returns a list of unique christening names filtered by bill type.
+func (h *Handler) ListChristeningsHandler() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		billType := r.URL.Query().Get("bill-type")
+
+		// Validate bill type if provided
+		if billType != "" {
+			if !IsValidBillType(billType) {
+				http.Error(w, "Invalid bill type", http.StatusBadRequest)
+				return
+			}
+		}
+
+		query := `
+		SELECT DISTINCT
+			christening,
+			bill_type
+		FROM
+			bom.christenings
+		WHERE
+			christening IS NOT NULL
+		`
+
+		// Add bill type filter if provided
+		if billType != "" {
+			query += " AND bill_type = $1"
+		}
+
+		query += " ORDER BY christening ASC, bill_type ASC"
+
+		results := make([]Christenings, 0)
+		var row Christenings
+		var rows pgx.Rows
+		var err error
+
+		// Execute query with or without bill type parameter
+		if billType != "" {
+			rows, err = h.db.Query(r.Context(), query, billType)
+		} else {
+			rows, err = h.db.Query(r.Context(), query)
+		}
+
+		if err != nil {
+			internalServerError(w, "error querying christening list", err)
+			return
+		}
+		defer rows.Close()
+		for rows.Next() {
+			if err := rows.Scan(&row.Name, &row.BillType); err != nil {
+				internalServerError(w, "error scanning christening list", err)
+				return
+			}
+			results = append(results, row)
+		}
+		if err := rows.Err(); err != nil {
+			internalServerError(w, "error iterating christening list", err)
+			return
+		}
+
+		writeJSONResponse(w, results)
+	}
+}

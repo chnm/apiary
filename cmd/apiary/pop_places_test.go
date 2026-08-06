@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"testing"
 
-	apiary "github.com/chnm/apiary"
+	"github.com/chnm/apiary/internal/datasets/popplaces"
 )
 
 func TestCountiesInState(t *testing.T) {
@@ -47,7 +47,7 @@ func TestPlace(t *testing.T) {
 	response := executeRequest(req)
 	checkResponseCode(t, http.StatusOK, response.Code)
 
-	data := decodeResponse[apiary.PlaceDetails](t, response)
+	data := decodeResponse[popplaces.PlaceDetails](t, response)
 	if data.PlaceID != place.PlaceID ||
 		data.Place != place.Place ||
 		data.Lat != place.Lat ||
@@ -68,7 +68,7 @@ func TestPlaceNotFound(t *testing.T) {
 	checkResponseCode(t, http.StatusNotFound, response.Code)
 }
 
-func fetchCountiesInState(t *testing.T, state string) []apiary.PlaceCounty {
+func fetchCountiesInState(t *testing.T, state string) []popplaces.PlaceCounty {
 	t.Helper()
 
 	request, _ := http.NewRequest(
@@ -78,14 +78,14 @@ func fetchCountiesInState(t *testing.T, state string) []apiary.PlaceCounty {
 	)
 	response := executeRequest(request)
 	checkResponseCode(t, http.StatusOK, response.Code)
-	data := decodeResponse[[]apiary.PlaceCounty](t, response)
+	data := decodeResponse[[]popplaces.PlaceCounty](t, response)
 	if len(data) == 0 {
 		t.Fatalf("expected populated-place counties for state %q", state)
 	}
 	return data
 }
 
-func fetchPlacesInCounty(t *testing.T, county string) []apiary.Place {
+func fetchPlacesInCounty(t *testing.T, county string) []popplaces.Place {
 	t.Helper()
 
 	request, _ := http.NewRequest(
@@ -95,7 +95,7 @@ func fetchPlacesInCounty(t *testing.T, county string) []apiary.Place {
 	)
 	response := executeRequest(request)
 	checkResponseCode(t, http.StatusOK, response.Code)
-	data := decodeResponse[[]apiary.Place](t, response)
+	data := decodeResponse[[]popplaces.Place](t, response)
 	if len(data) == 0 {
 		t.Fatalf("expected populated places for county %q", county)
 	}

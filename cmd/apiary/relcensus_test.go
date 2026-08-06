@@ -5,7 +5,7 @@ import (
 	"net/url"
 	"testing"
 
-	apiary "github.com/chnm/apiary"
+	"github.com/chnm/apiary/internal/datasets/relcensus"
 )
 
 func TestRelCensusDenominations(t *testing.T) {
@@ -14,7 +14,7 @@ func TestRelCensusDenominations(t *testing.T) {
 	response := executeRequest(req)
 	checkResponseCode(t, http.StatusOK, response.Code)
 
-	data := decodeResponse[[]apiary.Denomination](t, response)
+	data := decodeResponse[[]relcensus.Denomination](t, response)
 	if len(data) == 0 {
 		t.Fatal("expected Religious Census denominations")
 	}
@@ -27,7 +27,7 @@ func TestRelCensusFamilies(t *testing.T) {
 	checkResponseCode(t, http.StatusOK, response.Code)
 
 	data := decodeResponse[struct {
-		FamilyRelec []apiary.DenominationFamily `json:"family_relec"`
+		FamilyRelec []relcensus.DenominationFamily `json:"family_relec"`
 	}](t, response)
 	if len(data.FamilyRelec) == 0 {
 		t.Fatal("expected Religious Census denomination families")
@@ -49,27 +49,27 @@ func TestRelCensusFamilies(t *testing.T) {
 	}
 }
 
-func fetchRelCensusDenominations(t *testing.T) []apiary.Denomination {
+func fetchRelCensusDenominations(t *testing.T) []relcensus.Denomination {
 	t.Helper()
 
 	request, _ := http.NewRequest(http.MethodGet, "/relcensus/denominations", nil)
 	response := executeRequest(request)
 	checkResponseCode(t, http.StatusOK, response.Code)
-	data := decodeResponse[[]apiary.Denomination](t, response)
+	data := decodeResponse[[]relcensus.Denomination](t, response)
 	if len(data) == 0 {
 		t.Fatal("expected Religious Census denominations")
 	}
 	return data
 }
 
-func fetchRelCensusFamilies(t *testing.T) []apiary.DenominationFamily {
+func fetchRelCensusFamilies(t *testing.T) []relcensus.DenominationFamily {
 	t.Helper()
 
 	request, _ := http.NewRequest(http.MethodGet, "/relcensus/denomination-families", nil)
 	response := executeRequest(request)
 	checkResponseCode(t, http.StatusOK, response.Code)
 	data := decodeResponse[struct {
-		FamilyRelec []apiary.DenominationFamily `json:"family_relec"`
+		FamilyRelec []relcensus.DenominationFamily `json:"family_relec"`
 	}](t, response)
 	if len(data.FamilyRelec) == 0 {
 		t.Fatal("expected Religious Census denomination families")
@@ -88,7 +88,7 @@ func TestRelCensusCityDenominations(t *testing.T) {
 	response := executeRequest(req)
 	checkResponseCode(t, http.StatusOK, response.Code)
 
-	data := decodeResponse[[]apiary.CityMembership](t, response)
+	data := decodeResponse[[]relcensus.CityMembership](t, response)
 	for index, row := range data {
 		if row.Year != 1926 || row.Group != denomination {
 			t.Errorf(
@@ -113,7 +113,7 @@ func TestRelCensusCityFamilies(t *testing.T) {
 	response := executeRequest(req)
 	checkResponseCode(t, http.StatusOK, response.Code)
 
-	data := decodeResponse[[]apiary.CityMembership](t, response)
+	data := decodeResponse[[]relcensus.CityMembership](t, response)
 	for index, row := range data {
 		if row.Year != 1926 || row.Group != family {
 			t.Errorf(
@@ -133,7 +133,7 @@ func TestRelCensusCityAggregates(t *testing.T) {
 	response := executeRequest(req)
 	checkResponseCode(t, http.StatusOK, response.Code)
 
-	data := decodeResponse[[]apiary.CityMembership](t, response)
+	data := decodeResponse[[]relcensus.CityMembership](t, response)
 	if len(data) == 0 {
 		t.Fatal("expected aggregated Religious Census city membership")
 	}
@@ -154,7 +154,7 @@ func TestRelCensusLocations(t *testing.T) {
 	response := executeRequest(req)
 	checkResponseCode(t, http.StatusOK, response.Code)
 
-	data := decodeResponse[[]apiary.LocationInfo](t, response)
+	data := decodeResponse[[]relcensus.LocationInfo](t, response)
 	if len(data) == 0 {
 		t.Fatal("expected Religious Census locations")
 	}

@@ -11,11 +11,14 @@ notes.
 | --- | --- |
 | `cmd/apiary/` | Executable entry point and database-backed endpoint tests |
 | `db/` | PostgreSQL connection pool and container-backed integration test |
-| `routes.go` | Canonical route registration |
-| `endpoints.go` | Root endpoint catalog and example requests |
+| `internal/datasets/<dataset>/` | Dataset-owned handlers, SQL, routes, response types, and focused tests |
+| `internal/httpx/` | Shared HTTP response and nullable JSON helpers for dataset packages |
+| `internal/params/` | Shared request-parameter parsing helpers |
+| `internal/testsupport/` | Reusable helpers imported only by tests |
+| `routes.go` | Assembles dataset route registrations and service-level routes |
+| `endpoints.go` | Assembles dataset catalogs into the root endpoint response |
 | `server.go` | Configuration, database connection, cache, and HTTP server lifecycle |
 | `middleware.go` | Logging, CORS, client caching, compression, response cache, and recovery |
-| top-level feature files | Handlers, SQL, and response types grouped by dataset |
 | `.github/workflows/` | Build, test, vulnerability, image, and deployment automation |
 
 ## Development workflow
@@ -33,9 +36,11 @@ and verify that `go mod tidy -diff` is clean.
 
 An endpoint change usually requires updates in several places:
 
-1. Implement the handler and its response types in the relevant feature file.
-2. Register the route and allowed methods in `routes.go`.
-3. Add the route and useful examples to the catalog in `endpoints.go`.
+1. Implement the handler and its response types in the relevant dataset package.
+2. Register the route and allowed methods alongside that dataset. Add a single
+   dataset registration call to `routes.go` when introducing a new package.
+3. Add the route and useful examples to the dataset's endpoint catalog. Add a
+   single catalog assembly call to `endpoints.go` when introducing a new package.
 4. Validate query and path parameters before executing SQL.
 5. Pass `r.Context()` into database calls so canceled requests stop work.
 6. Use PostgreSQL parameters for values. Never build SQL by concatenating
@@ -54,9 +59,31 @@ changing `null` behavior, or altering default pagination and filters.
 Use the smallest useful test while iterating:
 
 ```console
-go test .
+go test . ./internal/...
 go test ./path/to/package -run TestName
 ```
+
+### Test organization
+
+Go discovers tests by the `*_test.go` suffix, not by requiring one test file
+per production file. Keep dataset tests beside the code they exercise:
+
+- A small dataset can use one `handler_test.go` or `<dataset>_test.go` file.
+- Split larger suites by behavior, such as `bills_test.go`,
+  `pagination_test.go`, or `context_test.go`, when that makes them easier to
+  navigate.
+- Put request-cancellation checks in the dataset's `context_test.go` and use
+  the shared helper in `internal/testsupport`.
+- Reserve `internal/datasets` tests for contracts that span packages, such as
+  checking that every catalog example has a registered route.
+- Keep deterministic validation and query-building tests in dataset packages.
+  Database-backed response-contract tests belong in `cmd/apiary`; container
+  and connection behavior belongs in `db`.
+
+Prefer table-driven tests when several inputs exercise the same behavior. There
+is no repository-wide numeric coverage target: tests should deliberately cover
+the useful happy path, validation boundaries, request cancellation, and
+database/query error behavior appropriate to each handler.
 
 Before opening a pull request, run the hermetic CI-equivalent checks:
 
@@ -65,7 +92,7 @@ go mod verify
 go mod tidy -diff
 go build ./...
 go vet ./...
-go test -race .
+go test -race . ./internal/...
 go test -run '^$' ./db
 ```
 
@@ -86,7 +113,8 @@ request rather than implying the full suite passed.
       compatibility impact is documented.
 - [ ] SQL values derived from requests are parameterized.
 - [ ] Database calls use the request context where possible.
-- [ ] `routes.go` and `endpoints.go` agree.
+- [ ] The dataset's route registration and endpoint catalog agree; new dataset
+      packages are included in both root assemblers.
 - [ ] Focused tests cover the change.
 - [ ] Hermetic build, vet, and test checks pass.
 - [ ] User-facing or operator-facing documentation is updated.
