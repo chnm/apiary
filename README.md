@@ -38,7 +38,7 @@ curl "http://localhost:8090/bom/parishes?nocache"
 
 ## Requirements
 
-- Go 1.25 or newer; `go.mod` selects Go 1.26.5 as the preferred toolchain
+- Go 1.25 or newer; `go.mod` selects Go 1.26.8 as the preferred toolchain
 - PostgreSQL and a connection string for running the service
 - Docker for container builds and the database integration test in `db/`
 

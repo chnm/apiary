@@ -2,7 +2,7 @@ module github.com/chnm/apiary
 
 go 1.25.0
 
-toolchain go1.26.5
+toolchain go1.26.8
 
 require (
 	github.com/cenkalti/backoff/v4 v4.3.0
