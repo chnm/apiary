@@ -14,8 +14,8 @@ func TestEndpointCatalogMatchesRegisteredRoutes(t *testing.T) {
 	New(nil).RegisterRoutes(router)
 
 	endpoints := Endpoints("https://data.example")
-	if len(endpoints) != 9 {
-		t.Fatalf("endpoint count = %d, want 9", len(endpoints))
+	if len(endpoints) != 10 {
+		t.Fatalf("endpoint count = %d, want 10", len(endpoints))
 	}
 
 	for _, endpoint := range endpoints {

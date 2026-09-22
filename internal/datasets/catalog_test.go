@@ -29,7 +29,7 @@ func TestDatasetCatalogsMatchRegisteredRoutes(t *testing.T) {
 	}{
 		{name: "AHCB", wantCount: 5, register: ahcb.New(nil).RegisterRoutes, endpoints: ahcb.Endpoints(baseURL)},
 		{name: "APB", wantCount: 11, register: apb.New(nil).RegisterRoutes, endpoints: apb.Endpoints(baseURL)},
-		{name: "BOM", wantCount: 9, register: bom.New(nil).RegisterRoutes, endpoints: bom.Endpoints(baseURL)},
+		{name: "BOM", wantCount: 10, register: bom.New(nil).RegisterRoutes, endpoints: bom.Endpoints(baseURL)},
 		{name: "Catholic", wantCount: 2, register: catholic.New(nil).RegisterRoutes, endpoints: catholic.Endpoints(baseURL)},
 		{name: "Natural Earth", wantCount: 1, register: naturalearth.New(nil).RegisterRoutes, endpoints: naturalearth.Endpoints(baseURL)},
 		{name: "populated places", wantCount: 3, register: popplaces.New(nil).RegisterRoutes, endpoints: popplaces.Endpoints(baseURL)},

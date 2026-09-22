@@ -48,8 +48,8 @@ func TestEndpointsHandler(t *testing.T) {
 			if err := json.Unmarshal(response.Body.Bytes(), &endpoints); err != nil {
 				t.Fatalf("unmarshal endpoint index: %v", err)
 			}
-			if len(endpoints) != 41 {
-				t.Fatalf("endpoint count = %d, want 41", len(endpoints))
+			if len(endpoints) != 42 {
+				t.Fatalf("endpoint count = %d, want 42", len(endpoints))
 			}
 			for _, endpoint := range endpoints {
 				if !strings.HasPrefix(endpoint.URL, tt.wantPrefix) {

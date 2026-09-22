@@ -402,3 +402,28 @@ func TestBomBillsInvalidParish(t *testing.T) {
 	response = executeRequest(req)
 	checkResponseCode(t, http.StatusOK, response.Code)
 }
+
+func TestBomArithmetic(t *testing.T) {
+	req, _ := http.NewRequest("GET", "/bom/arithmetic?start-year=1665&end-year=1665&count-type=buried", nil)
+	response := executeRequest(req)
+	checkResponseCode(t, http.StatusOK, response.Code)
+
+	var data []bom.WeeklyArithmetic
+	if err := json.Unmarshal(response.Body.Bytes(), &data); err != nil {
+		t.Fatal(err)
+	}
+	if len(data) == 0 {
+		t.Fatal("expected weekly arithmetic data")
+	}
+	for _, row := range data {
+		if row.Year != 1665 || row.CountType != "buried" {
+			t.Errorf("row outside requested filters: %+v", row)
+		}
+		if row.Difference != row.SubtotalSum-row.ParishSum {
+			t.Errorf("difference does not equal subtotal minus parish sum: %+v", row)
+		}
+	}
+
+	req, _ = http.NewRequest("GET", "/bom/arithmetic?count-type=christened", nil)
+	checkResponseCode(t, http.StatusBadRequest, executeRequest(req).Code)
+}

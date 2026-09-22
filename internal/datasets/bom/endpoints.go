@@ -69,6 +69,15 @@ func Endpoints(baseURL string) []httpx.Endpoint {
 			},
 		},
 		{
+			Name: "BOM: Weekly arithmetic",
+			URL:  baseURL + "/bom/arithmetic?start-year=1665&end-year=1665",
+			Examples: []httpx.ExampleURL{
+				{URL: baseURL + "/bom/arithmetic", Purpose: "Printed weekly subtotals compared with the sum of parish counts for every comparable week, 1636-1754"},
+				{URL: baseURL + "/bom/arithmetic?start-year=1665&end-year=1666&count-type=plague", Purpose: "Plague counts only for a range of years (inclusive)"},
+				{URL: baseURL + "/bom/arithmetic?legible=true", Purpose: "Only weeks with no parish count or subtotal marked illegible"},
+			},
+		},
+		{
 			Name: "BOM: List of unique Causes of Death",
 			URL:  baseURL + "/bom/list-deaths",
 		},

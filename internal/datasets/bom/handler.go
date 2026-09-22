@@ -30,6 +30,7 @@ func (h *Handler) RegisterRoutes(router *mux.Router) {
 	router.HandleFunc("/bom/causes", h.DeathCausesHandler()).Methods("GET", "HEAD")
 	router.HandleFunc("/bom/list-deaths", h.ListCausesHandler()).Methods("GET", "HEAD")
 	router.HandleFunc("/bom/list-christenings", h.ListChristeningsHandler()).Methods("GET", "HEAD")
+	router.HandleFunc("/bom/arithmetic", h.ArithmeticHandler()).Methods("GET", "HEAD")
 }
 
 type NullInt64 = httpx.NullInt64

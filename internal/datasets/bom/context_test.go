@@ -19,6 +19,7 @@ func TestHandlersPropagateRequestCancellation(t *testing.T) {
 		{Name: "christenings", Path: "/bom/christenings?start-year=1669&end-year=1670", Handler: func(pool *pgxpool.Pool) http.HandlerFunc { return newHandler(pool).ChristeningsHandler() }},
 		{Name: "list christenings", Path: "/bom/list-christenings", Handler: func(pool *pgxpool.Pool) http.HandlerFunc { return newHandler(pool).ListChristeningsHandler() }},
 		{Name: "parishes", Path: "/bom/parishes", Handler: func(pool *pgxpool.Pool) http.HandlerFunc { return newHandler(pool).ParishesHandler() }},
+		{Name: "weekly arithmetic", Path: "/bom/arithmetic?start-year=1665&end-year=1665", Handler: func(pool *pgxpool.Pool) http.HandlerFunc { return newHandler(pool).ArithmeticHandler() }},
 		{Name: "bill geometries", Path: "/bom/shapefiles?start-year=1669&end-year=1670&bill-type=weekly&count-type=plague", Handler: func(pool *pgxpool.Pool) http.HandlerFunc { return newHandler(pool).BillsShapefilesHandler() }},
 	})
 }
